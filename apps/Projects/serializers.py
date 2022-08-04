@@ -3,7 +3,6 @@ from datetime import datetime
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
-import TestCasesDiretorys
 from Projects.models import Projects
 from TestCasesDiretorys.models import TestcaseDirectory
 from TestCasesDiretorys.serializers import TestCaseDirectorySerializer

@@ -44,7 +44,6 @@ INSTALLED_APPS = [
     'Projects',
     'Users',
     'Interfaces',
-    # 'ProjectRoles',
     'drf_yasg',  # swagger接口文档
     'TestCasesDiretorys',
 
