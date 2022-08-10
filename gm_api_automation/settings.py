@@ -133,7 +133,6 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
 REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'gm_api_automation.Utils.exception.custom_handler',
     'DEFAULT_PARSER_CLASSES': [
