@@ -18,8 +18,9 @@ class ProjectSerializers(serializers.ModelSerializer):
 
         extra_kwargs = {
             'name': {
-                'required': True,
-                'validators': [UniqueValidator(queryset=Projects.objects.all(), message='项目名称不能重复')],
+                'required': True,  # 必填
+                'validators': [UniqueValidator(queryset=Projects.objects.all(), message="项目名称已存在")],
+                'error_messages': {'required': '项目名称不能为空'}
             },
             'owner': {'required': False},
             'app': {'required': False},

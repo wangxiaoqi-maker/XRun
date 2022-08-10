@@ -1,3 +1,5 @@
+import datetime
+
 from django.shortcuts import render
 
 # Create your views here.
@@ -53,3 +55,12 @@ class TestCasesDirectorysView(ModelViewSet):
         """
         super().update(request, *args, **kwargs)
         return Response({'code': 00, 'msg': '目录更新成功', 'success': True})
+
+    def destroy(self, request, *args, **kwargs):
+        # 将物理删除改成逻辑删除
+        instance = self.get_object()
+        instance.is_delete = True
+        instance.deleted_time = datetime.datetime.now()
+        instance.update_user = self.request.user.username
+        instance.save()
+        return Response({'code': 00, 'msg': '目录删除成功', 'success': True})

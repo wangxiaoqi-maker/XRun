@@ -29,7 +29,7 @@ SECRET_KEY = 'django-insecure-g22g73=wpb+m!eil2m(vj6t1czk=6-edeyyujo9n4_tyrd#&5&
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -121,7 +121,7 @@ TIME_ZONE = 'Asia/Shanghai'
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
@@ -135,13 +135,14 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 REST_FRAMEWORK = {
+    'EXCEPTION_HANDLER': 'gm_api_automation.Utils.exception.custom_handler',
     'DEFAULT_PARSER_CLASSES': [
         'rest_framework.parsers.JSONParser',
         'rest_framework.parsers.FormParser',
         'rest_framework.parsers.MultiPartParser'
     ],
     'DEFAULT_RENDERER_CLASSES': [
-        'rest_framework.renderers.JSONRenderer',
+        'gm_api_automation.Utils.renderer.CustomRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
     ],
     # 'DEFAULT_FILTER_BACKENDS': ['rest_framework.filters.SearchFilter',

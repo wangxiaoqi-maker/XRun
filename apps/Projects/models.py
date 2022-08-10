@@ -9,7 +9,7 @@ class Projects(BaseModels):
     base_url = models.CharField(max_length=50, verbose_name='项目基础url', help_text='项目基础url', null=True, blank=True)
     owner = models.CharField(max_length=50, verbose_name='项目负责人', help_text='项目负责人')
     app = models.CharField(max_length=50, verbose_name='项目所属应用', help_text='项目所属应用')
-    type = models.CharField(max_length=50, verbose_name='项目类型', help_text='项目类型', unique=True)
+    type = models.CharField(max_length=50, verbose_name='项目类型', help_text='项目类型')
     desc = models.TextField(verbose_name='项目描述信息', help_text='项目描述信息', null=True, blank=True, default='')
 
     class Meta:
@@ -22,3 +22,7 @@ class Projects(BaseModels):
 
     def __str__(self):
         return f"Projects({self.name})"
+
+    def delete(self, using=None, keep_parents=False):
+        self.is_delete = True
+        self.save()
