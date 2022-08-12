@@ -13,6 +13,7 @@ from Projects import serializers
 from Projects.models import Projects
 from Projects.serializers import ProjectSerializers
 from TestCasesDiretorys.models import TestcaseDirectory
+from gm_api_automation.Utils.custom_json_response import JsonResponse
 from gm_api_automation.Utils.page_number_pagination import PageNumberPagination
 
 
@@ -25,9 +26,6 @@ class CreateProjectView(CreateAPIView):
     def create(self, request, *args, **kwargs):
         super().create(request, *args, **kwargs)
         return Response({'code': 00, 'message': '项目创建成功', 'success': True})
-
-    def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
 
 
 class GetProjectView(ListAPIView):

@@ -20,10 +20,13 @@ class ProjectSerializers(serializers.ModelSerializer):
             'name': {
                 'required': True,  # 必填
                 'validators': [UniqueValidator(queryset=Projects.objects.all(), message="项目名称已存在")],
-                'error_messages': {'required': '项目名称不能为空'}
+                'error_messages': {'required': '项目名称不能为空', 'blank': '项目名称不能为空', 'null': '项目名称不能为空'}
             },
-            'owner': {'required': False},
+            'owner': {'error_messages': {'required': '项目负责人不能为空', 'blank': '项目负责人不能为空', 'null': '项目负责人不能为空'}},
             'app': {'required': False},
+            'type': {'error_messages': {'required': '项目类型不能为空', 'blank': '项目类型不能为空', 'null': '项目类型不能为空'}},
+            'version': {'error_messages': {'required': '项目版本不能为空', 'blank': '项目版本不能为空', 'null': '项目版本不能为空'}}
+
         }
 
     def create(self, validated_data):

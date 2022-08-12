@@ -26,6 +26,6 @@ class TestCaseDirectorySerializer(serializers.ModelSerializer):
                                                           parent_id=validated_data.get('parent'))
         if duplicate_name:
             # 判断是否是同一个目录
-            raise serializers.ValidationError({"code": "400", "msg": "目录名称已存在", "success": False})
+            raise serializers.ValidationError({"code": "400", "message": "目录名称已存在", "success": False})
         validated_data['create_user'] = self.context['request'].user
         return super().create(validated_data)

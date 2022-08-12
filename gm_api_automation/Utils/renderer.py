@@ -1,3 +1,4 @@
+# 导入控制返回的JSON格式的类
 from rest_framework import status
 from rest_framework.renderers import JSONRenderer
 
@@ -6,25 +7,7 @@ class CustomRenderer(JSONRenderer):
     # 重构render方法
     def render(self, data, accepted_media_type=None, renderer_context=None):
         if renderer_context:
-            # 响应的信息，成功和错误的都是这个
-            # 成功和异常响应的信息，异常信息在前面自定义异常处理中已经处理为{'message': 'error'}这种格式
-
-            # 如果返回的data为字典
             if isinstance(data, dict):
-                # 响应信息中有message和code这两个key，则获取响应信息中的message和code，并且将原本data中的这两个key删除，放在自定义响应信息里
-                # 响应信息中没有则将msg内容改为请求成功 code改为请求的状态码
-
-                # 如果响应信息中有message则在字典中将message删除
-                # 将data中的报错信息取出，放在message中
-                # if data.get('message') == 'Bad Request':
-                #     msg = renderer_context['response'].data
-                #     del msg['message']
-                #     message = []
-                #     for key, value in msg.items():
-                #         message.append(msg[key][0])
-                #     msg = message
-                # else:
-                #     msg = data.pop('message', '操作成功')
                 msg = data.pop('message', '操作成功')
                 code = data.pop('code', renderer_context["response"].status_code)
                 if data.get('success') is not None:
@@ -36,13 +19,19 @@ class CustomRenderer(JSONRenderer):
                     success = True
                 else:
                     success = False
-            # 如果不是字典则将msg内容改为请求成功 code改为响应的状态码
             else:
+                msg = '操作失败'
                 code = renderer_context["response"].status_code
-                msg = '操作成功'
                 success = False
 
-            # 自定义返回的格式
+            # 重新构建返回的JSON字典
+            for key in data:
+                # 判断是否有自定义的异常的字段
+                if key == 'message':
+                    msg = data[key]
+                    data = {}
+                    code = 0
+
             ret = {
                 'code': code,
                 'message': msg,

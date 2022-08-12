@@ -11,6 +11,7 @@ class Projects(BaseModels):
     app = models.CharField(max_length=50, verbose_name='项目所属应用', help_text='项目所属应用')
     type = models.CharField(max_length=50, verbose_name='项目类型', help_text='项目类型')
     desc = models.TextField(verbose_name='项目描述信息', help_text='项目描述信息', null=True, blank=True, default='')
+    version = models.CharField(max_length=50, verbose_name='版本号', help_text='版本号')
 
     class Meta:
         # db_table指定创建的数据表名称
