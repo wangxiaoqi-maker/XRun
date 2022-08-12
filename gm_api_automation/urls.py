@@ -13,6 +13,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.contrib import admin
 from django.urls import path, include, re_path
 
 from rest_framework.documentation import include_docs_urls
@@ -36,13 +37,14 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     # path('admin/', admin.site.urls),
-    path('user/login/', obtain_jwt_token),
-    path('register/', RegisterView.as_view({'post': 'create'})),
+    path('user/login', obtain_jwt_token),
+    path('register', RegisterView.as_view({'post': 'create'})),
     path('', include('Projects.urls')),
     path('', include('TestCasesDiretorys.urls')),
-    path('docs/', include_docs_urls(title='测试平台接口文档', description='国民接口文档')),  # 配置coreapi接口文档
+    path('docs', include_docs_urls(title='测试平台接口文档', description='国民接口文档')),  # 配置coreapi接口文档
     re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     # 配置swagger json、yaml接口文档
-    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),  # 配置swagger ui接口文档
-    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),  # 配置redoc接口文档
+    path('swagger', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),  # 配置swagger ui接口文档
+    path('redoc', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),  # 配置redoc接口文档
+    path('admin', admin.site.urls),
 ]

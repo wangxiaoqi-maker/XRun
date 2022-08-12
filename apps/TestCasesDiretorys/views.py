@@ -43,7 +43,7 @@ class TestCasesDirectorysView(ModelViewSet):
         """
         # 判断当parent_directory字段为空时，不用对序列化器进行校验
         super().create(request, *args, **kwargs)
-        return Response({'code': 00, 'message': '目录创建成功', 'success': True})
+        return Response({'message': '目录创建成功', 'success': True})
 
     def update(self, request, *args, **kwargs):
         """
@@ -54,7 +54,7 @@ class TestCasesDirectorysView(ModelViewSet):
         :return:
         """
         super().update(request, *args, **kwargs)
-        return Response({'code': 00, 'message': '目录更新成功', 'success': True})
+        return Response({'message': '目录更新成功', 'success': True})
 
     def destroy(self, request, *args, **kwargs):
         # 将物理删除改成逻辑删除
@@ -63,4 +63,4 @@ class TestCasesDirectorysView(ModelViewSet):
         instance.deleted_time = datetime.datetime.now()
         instance.update_user = self.request.user.username
         instance.save()
-        return Response({'code': 00, 'message': '目录删除成功', 'success': True})
+        return Response({'message': '目录删除成功', 'success': True})
