@@ -25,7 +25,7 @@ class CreateProjectView(CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         super().create(request, *args, **kwargs)
-        return Response({'code': 00, 'message': '项目创建成功', 'success': True})
+        return Response({'message': '项目创建成功', 'success': True})
 
 
 class GetProjectView(ListAPIView):
@@ -40,12 +40,12 @@ class GetProjectView(ListAPIView):
     def list(self, request, *args, **kwargs):
         # 判断传的页码无效，返回指定响应数据
         if int(request.query_params.get('page')) < 0:
-            return Response({'code': 00, 'message': '页码无效', 'success': False})
+            return Response({'message': '页码无效', 'success': False})
         # 判断传的页码查询无数据，返回指定响应数据
         try:
             pagination_count = self.pagination_class().paginate_queryset(self.get_queryset(), request)
         except Exception as e:
-            return Response({'code': 00, 'message': '页码无效', 'success': False})
+            return Response({'message': '页码无效', 'success': False})
         response = super().list(request, *args, **kwargs)
         return response
 
@@ -73,14 +73,14 @@ class UpdateProjectView(mixins.UpdateModelMixin, viewsets.GenericViewSet):
         :return:
         """
         if request.data.get('id') is None:
-            return Response({'code': 00, 'message': '项目id不能为空', 'success': False})
+            return Response({'message': '项目id不能为空', 'success': False})
         instance = self.get_queryset().filter(id=request.data.get('id')).first()
         if not instance:
-            return Response({'code': 1, 'message': '项目不存在', 'success': False})
+            return Response({'message': '项目不存在', 'success': False})
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
-        return Response({'code': 00, 'message': '项目更新成功', 'success': True})
+        return Response({'message': '项目更新成功', 'success': True})
 
 
 class DeleteProjectView(mixins.DestroyModelMixin, viewsets.GenericViewSet):
@@ -90,7 +90,7 @@ class DeleteProjectView(mixins.DestroyModelMixin, viewsets.GenericViewSet):
 
     def destroy(self, request, *args, **kwargs):
         super().destroy(request, *args, **kwargs)
-        return Response({'code': 00, 'message': '项目删除成功', 'success': True})
+        return Response({'message': '项目删除成功', 'success': True})
 
     def perform_destroy(self, instance):
         """
@@ -114,7 +114,7 @@ class GetProjectDetailView(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         # 判断当获取的项目是否存在
         instance = self.get_queryset().filter(id=kwargs.get('pk')).first()
         if not instance:
-            return Response({'code': 1, 'message': '项目不存在', 'success': False})
+            return Response({'message': '项目不存在', 'success': False})
         response = super().retrieve(request, *args, **kwargs)
         return response
 
