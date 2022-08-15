@@ -6,12 +6,12 @@ class PageNumberPagination(_PageNumberPagination):
     page_size = 3
 
     # 前端用于指定页码的查询字符串参数名称
-    page_query_param = 'page'
+    page_query_param = 'pageNo'
     # 前端用于指定页码的查询字符串参数描述
     page_query_description = '获取的页码'
 
     # 前端用于指定每一页显示的数据条数，查询字符串参数名称
-    page_size_query_param = 'sum'
+    page_size_query_param = 'pageSize'
     page_size_query_description = '每一页数据条数'
 
     max_page_size = 50

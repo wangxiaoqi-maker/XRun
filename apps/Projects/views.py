@@ -39,7 +39,7 @@ class GetProjectView(ListAPIView):
 
     def list(self, request, *args, **kwargs):
         # 判断传的页码无效，返回指定响应数据
-        if int(request.query_params.get('page')) < 0:
+        if int(request.query_params.get('pageNo')) < 0:
             return Response({'message': '页码无效', 'success': False})
         # 判断传的页码查询无数据，返回指定响应数据
         try:
