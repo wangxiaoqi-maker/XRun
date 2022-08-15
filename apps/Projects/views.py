@@ -3,11 +3,12 @@ from datetime import datetime
 from django.shortcuts import render
 
 # Create your views here.
-from rest_framework import viewsets, mixins, filters
+from rest_framework import viewsets, mixins, filters, generics
 from rest_framework.decorators import action
 from rest_framework.generics import CreateAPIView, ListAPIView, GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from django_filters.rest_framework import DjangoFilterBackend
 
 from Projects import serializers
 from Projects.models import Projects
@@ -33,19 +34,11 @@ class GetProjectView(ListAPIView):
     serializer_class = ProjectSerializers
     pagination_class = PageNumberPagination
     permission_classes = [IsAuthenticated]
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['=name', '=owner', '=id']
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['name', 'owner', 'id']
     ordering_fields = ['id', 'name', 'owner']
 
     def list(self, request, *args, **kwargs):
-        # 判断传的页码无效，返回指定响应数据
-        if int(request.query_params.get('pageNo')) < 0:
-            return Response({'message': '页码无效', 'success': False})
-        # 判断传的页码查询无数据，返回指定响应数据
-        try:
-            pagination_count = self.pagination_class().paginate_queryset(self.get_queryset(), request)
-        except Exception as e:
-            return Response({'message': '页码无效', 'success': False})
         response = super().list(request, *args, **kwargs)
         return response
 

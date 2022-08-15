@@ -22,4 +22,6 @@ class PageNumberPagination(_PageNumberPagination):
         response = super().get_paginated_response(data)
         response.data['current_num'] = self.page.number
         response.data['max_num'] = self.page.paginator.num_pages
+        response.data['total'] = response.data['count']
+        del response.data['count']
         return response

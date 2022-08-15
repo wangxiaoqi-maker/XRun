@@ -145,9 +145,9 @@ REST_FRAMEWORK = {
         'gm_api_automation.Utils.renderer.CustomRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
     ],
-    'DEFAULT_FILTER_BACKENDS': ['rest_framework.filters.SearchFilter',
-                                'rest_framework.filters.OrderingFilter', ],  # 增加查询过滤器和排序过滤器
-    'SEARCH_PARAM': 'search',  # 设置查询关键字的参数名
+    # 'DEFAULT_FILTER_BACKENDS': ['rest_framework.filters.SearchFilter',
+    #                             'rest_framework.filters.OrderingFilter', ],  # 增加查询过滤器和排序过滤器
+    # 'SEARCH_PARAM': 'search',  # 设置查询关键字的参数名
     # ' ': 'rest_framework.pagination.PageNumberPagination',  # 设置分页器
     # 'PAGE_SIZE': 10,  # 设置每页显示的数据条数
     'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.AutoSchema',  # 设置默认的schema类
