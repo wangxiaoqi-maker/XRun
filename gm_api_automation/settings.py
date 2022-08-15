@@ -165,7 +165,7 @@ JWT_AUTH = {
     'JWT_AUTH_HEADER_PREFIX': 'Bearer',
 
     # 指定TOKEN过期时间，默认为5分钟，可以使用JWT_EXPIRATION_DELTA指定
-    'JWT_EXPIRATION_DELTA': datetime.timedelta(days=1),
+    'JWT_EXPIRATION_DELTA': datetime.timedelta(days=30),
 
     # 修改处理payload的函数
     'JWT_RESPONSE_PAYLOAD_HANDLER':
