@@ -9,6 +9,6 @@ urlpatterns = [
     path('createrProject', views.CreateProjectView.as_view()),
     path('getProject', views.GetProjectView.as_view()),
     path('updateProject', views.UpdateProjectView.as_view({"post": "update"})),
-    path('delProject/<int:pk>', views.DeleteProjectView.as_view({"post": "destroy"})),
+    path('delProject', views.DeleteProjectView.as_view({"post": "destroy"})),
     path('getProjectDetail/<int:pk>', views.GetProjectDetailView.as_view({'get': 'retrieve'})),
 ]

@@ -28,7 +28,6 @@ class ProjectSerializers(serializers.ModelSerializer):
             'version': {'error_messages': {'required': '项目版本不能为空', 'blank': '项目版本不能为空', 'null': '项目版本不能为空'}},
             'updated_time': {'format': '%Y-%m-%d %H:%M:%S', 'read_only': True},
             'created_time': {'format': '%Y-%m-%d %H:%M:%S', 'read_only': True}
-
         }
 
     def create(self, validated_data):

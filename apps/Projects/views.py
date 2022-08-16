@@ -86,8 +86,17 @@ class DeleteProjectView(mixins.DestroyModelMixin, viewsets.GenericViewSet):
     permission_classes = [IsAuthenticated]
 
     def destroy(self, request, *args, **kwargs):
-        super().destroy(request, *args, **kwargs)
-        return Response({'message': '项目删除成功', 'success': True})
+        """
+        使用body传参的方式删除数据，不使用pk值
+        """
+        if request.data.get('id') is None:
+            return Response({'message': '项目id不能为空', 'success': False})
+        instance = self.get_queryset().filter(id=request.data.get('id')).first()
+        if not instance:
+            return Response({'message': '项目不存在', 'success': False})
+        self.perform_destroy(instance)
+        return Response({'message': StatusCodeEnum.Project_Delete_Success.message,
+                         'success': StatusCodeEnum.Project_Delete_Success.is_success})
 
     def perform_destroy(self, instance):
         """
