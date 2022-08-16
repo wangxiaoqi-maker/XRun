@@ -14,7 +14,7 @@ class ProjectSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = Projects
-        exclude = ('created_time', 'is_delete', "create_user", "update_user", "deleted_time")
+        exclude = ('is_delete', "create_user", "update_user", "deleted_time")
 
         extra_kwargs = {
             'name': {
@@ -27,6 +27,7 @@ class ProjectSerializers(serializers.ModelSerializer):
             'type': {'error_messages': {'required': '项目类型不能为空', 'blank': '项目类型不能为空', 'null': '项目类型不能为空'}},
             'version': {'error_messages': {'required': '项目版本不能为空', 'blank': '项目版本不能为空', 'null': '项目版本不能为空'}},
             'updated_time': {'format': '%Y-%m-%d %H:%M:%S', 'read_only': True},
+            'created_time': {'format': '%Y-%m-%d %H:%M:%S', 'read_only': True}
 
         }
 

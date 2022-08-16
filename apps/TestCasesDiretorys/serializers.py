@@ -12,7 +12,9 @@ class TestCaseDirectorySerializer(serializers.ModelSerializer):
         model = TestcaseDirectory
         fields = ('id', 'name', 'projects', 'parent')
         extra_kwargs = {
-            'parent': {'required': False}}
+            'parent': {'required': False},
+            'id': {'error_messages': {'required': '目录id不能为空', 'blank': '目录id不能为空', 'null': '目录id不能为空'}},
+        }
 
     def create(self, validated_data):
         """
@@ -29,3 +31,13 @@ class TestCaseDirectorySerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"code": "400", "message": "目录名称已存在", "success": False})
         validated_data['create_user'] = self.context['request'].user
         return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        """
+        调用update方法时将该用户设置为最后修改人
+        :param instance:
+        :param validated_data:
+        :return:
+        """
+        validated_data['update_user'] = self.context['request'].user.username
+        return super().update(instance, validated_data)

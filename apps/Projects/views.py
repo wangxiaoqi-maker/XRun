@@ -17,6 +17,8 @@ from TestCasesDiretorys.models import TestcaseDirectory
 from gm_api_automation.Utils.custom_json_response import JsonResponse
 from gm_api_automation.Utils.page_number_pagination import PageNumberPagination
 
+from gm_api_automation.Utils.public_response_information import StatusCodeEnum
+
 
 # 创建项目的视图
 class CreateProjectView(CreateAPIView):
@@ -26,7 +28,8 @@ class CreateProjectView(CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         super().create(request, *args, **kwargs)
-        return Response({'message': '项目创建成功', 'success': True})
+        return Response({'message': StatusCodeEnum.Project_Create_Success.message,
+                         'success': StatusCodeEnum.Project_Create_Success.is_success})
 
 
 class GetProjectView(ListAPIView):
@@ -73,7 +76,8 @@ class UpdateProjectView(mixins.UpdateModelMixin, viewsets.GenericViewSet):
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
-        return Response({'message': '项目更新成功', 'success': True})
+        # 返回更新后的项目信息
+        return Response(serializer.data)
 
 
 class DeleteProjectView(mixins.DestroyModelMixin, viewsets.GenericViewSet):
