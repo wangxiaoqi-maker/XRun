@@ -1,27 +1,37 @@
 import datetime
 
+from django.db import IntegrityError
 from django.shortcuts import render
 
 # Create your views here.
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, mixins, filters
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
+from Interfaces.models import Interfaces
 from Projects.models import Projects
 from TestCasesDiretorys.models import TestcaseDirectory
 from TestCasesDiretorys.serializers import TestCaseDirectorySerializer
+from gm_api_automation.Utils.page_number_pagination import PageNumberPagination
 
 
 class TestCasesDirectorysView(ModelViewSet):
     queryset = TestcaseDirectory.objects.all()
     serializer_class = TestCaseDirectorySerializer
     permission_classes = [IsAuthenticated]
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['=name', '=projects', '=id']
-    ordering_fields = ['id', 'name', 'projects']
+    pagination_class = PageNumberPagination
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['name', 'id', 'projects']
+    ordering_fields = ['id', 'name', 'owner']
 
     def list(self, request, *args, **kwargs):
+        # 查询项目下的所有目录
+        if request.query_params.get('projects') is not None:
+            project = Projects.objects.filter(id=request.query_params.get('projects')).first()
+            if not project:
+                return Response({'message': '项目不存在', 'success': False})
         response = super().list(request, *args, **kwargs)
         return response
 
@@ -43,12 +53,10 @@ class TestCasesDirectorysView(ModelViewSet):
         :return:
         """
         # 判断项目是否存在
-        if request.data.get('projects') is None:
-            return Response({'message': '项目id不能为空', 'success': False})
-        project = Projects.objects.filter(id=request.data.get('projects')).first()
-        if not project:
-            return Response({'message': '项目不存在', 'success': False})
-        super().create(request, *args, **kwargs)
+        try:
+            super().create(request, *args, **kwargs)
+        except IntegrityError:
+            return Response({'message': '目录名称重复', 'success': False})
         return Response({'message': '目录创建成功', 'success': True})
 
     def update(self, request, *args, **kwargs):
@@ -59,7 +67,7 @@ class TestCasesDirectorysView(ModelViewSet):
         :param kwargs:
         :return:
         """
-        if request.data.get('id') is None:
+        if request.data.get('id') is None and request.data.get('id') == '':
             return Response({'message': '目录id不能为空', 'success': False})
         instance = self.get_queryset().filter(id=request.data.get('id')).first()
         if not instance:
@@ -77,10 +85,35 @@ class TestCasesDirectorysView(ModelViewSet):
         return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):
-        # 将物理删除改成逻辑删除
-        instance = self.get_object()
+        # 将物理删除改成逻辑删除,使用body传参的方式更新测试用例目录，不使用pk值
+        if request.data.get('id') is None and request.data.get('id') == '':
+            return Response({'message': '目录id不能为空', 'success': False})
+        instance = self.get_queryset().filter(id=request.data.get('id')).first()
+        if not instance:
+            return Response({'message': '目录不存在', 'success': False})
+        self.perform_destroy(instance)
+        return Response({'message': '目录删除成功', 'success': True})
+
+    def perform_destroy(self, instance):
         instance.is_delete = True
         instance.deleted_time = datetime.datetime.now()
         instance.update_user = self.request.user.username
         instance.save()
-        return Response({'message': '目录删除成功', 'success': True})
+        Interfaces.objects.filter(directory=instance.id).update(is_delete=True, deleted_time=datetime.datetime.now(),
+                                                                update_user=self.request.user.username)
+
+    def retrieve(self, request, *args, **kwargs):
+        """
+        查询单个目录下的接口信息，使用body传参的方式，不使用pk值
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        if request.query_params.get('id') is None and request.query_params.get('id') == "":
+            return Response({'message': '目录id不能为空', 'success': False})
+        instance = self.get_queryset().filter(id=request.query_params.get('id')).first()
+        if not instance:
+            return Response({'message': '目录不存在', 'success': False})
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)

@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from django.db.models import Model
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
@@ -19,7 +20,6 @@ class ProjectSerializers(serializers.ModelSerializer):
         extra_kwargs = {
             'name': {
                 'required': True,  # 必填
-                'validators': [UniqueValidator(queryset=Projects.objects.all(), message="项目名称已存在")],
                 'error_messages': {'required': '项目名称不能为空', 'blank': '项目名称不能为空', 'null': '项目名称不能为空'}
             },
             'owner': {'error_messages': {'required': '项目负责人不能为空', 'blank': '项目负责人不能为空', 'null': '项目负责人不能为空'}},
@@ -27,7 +27,7 @@ class ProjectSerializers(serializers.ModelSerializer):
             'type': {'error_messages': {'required': '项目类型不能为空', 'blank': '项目类型不能为空', 'null': '项目类型不能为空'}},
             'version': {'error_messages': {'required': '项目版本不能为空', 'blank': '项目版本不能为空', 'null': '项目版本不能为空'}},
             'updated_time': {'format': '%Y-%m-%d %H:%M:%S', 'read_only': True},
-            'created_time': {'format': '%Y-%m-%d %H:%M:%S', 'read_only': True}
+            'created_time': {'format': '%Y-%m-%d %H:%M:%S', 'read_only': True},
         }
 
     def create(self, validated_data):
@@ -36,6 +36,8 @@ class ProjectSerializers(serializers.ModelSerializer):
         :param validated_data:
         :return:
         """
+
+
         validated_data['create_user'] = self.context['request'].user
         return super().create(validated_data)
 
@@ -43,3 +45,4 @@ class ProjectSerializers(serializers.ModelSerializer):
         # 将当前用户设置为更新用户
         validated_data['update_user'] = self.context['request'].user.username
         return super().update(instance, validated_data)
+

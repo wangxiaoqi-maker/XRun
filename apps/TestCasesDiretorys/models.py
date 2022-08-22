@@ -12,7 +12,7 @@ class TestcaseDirectory(BaseModels):
     parent = models.ForeignKey('self', on_delete=models.CASCADE, verbose_name='父目录',
                                help_text='父目录', null=True, blank=True, db_constraint=False,
                                related_name='parent_directory')
-    desc = models.TextField(verbose_name='目录描述信息', help_text='目录描述信息', null=True, blank=True, default='')
+    desc = models.TextField(verbose_name='目录描述信息', help_text='目录描述信息', null=True, blank=True)
 
     class Meta:
         # db_table指定创建的数据表名称
@@ -20,6 +20,7 @@ class TestcaseDirectory(BaseModels):
         # 为当前数据表设置中文描述信息
         verbose_name = '用例目录表'
         verbose_name_plural = '用例目录表'
+        unique_together = ('name', 'is_delete', 'projects', 'parent')
         ordering = ['id']
 
     def __str__(self):

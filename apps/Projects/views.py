@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from django.db import IntegrityError
+from django.db.models import Model
 from django.shortcuts import render
 
 # Create your views here.
@@ -10,6 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 
+from Interfaces.models import Interfaces
 from Projects import serializers
 from Projects.models import Projects
 from Projects.serializers import ProjectSerializers
@@ -27,7 +30,11 @@ class CreateProjectView(CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
-        super().create(request, *args, **kwargs)
+        # 校验当该项目被逻辑删除时，创建项目不需要校验唯一性
+        try:
+            super().create(request, *args, **kwargs)
+        except IntegrityError:
+            return Response({'message': '项目已存在', 'success': False})
         return Response({'message': StatusCodeEnum.Project_Create_Success.message,
                          'success': StatusCodeEnum.Project_Create_Success.is_success})
 
@@ -68,14 +75,17 @@ class UpdateProjectView(mixins.UpdateModelMixin, viewsets.GenericViewSet):
         :param kwargs:
         :return:
         """
-        if request.data.get('id') is None:
+        if request.data.get('id') is None and request.data.get('id') == "":
             return Response({'message': '项目id不能为空', 'success': False})
         instance = self.get_queryset().filter(id=request.data.get('id')).first()
         if not instance:
             return Response({'message': '项目不存在', 'success': False})
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
+        try:
+            serializer = self.get_serializer(instance, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+        except IntegrityError:
+            return Response({'message': '项目已存在', 'success': False})
         # 返回更新后的项目信息
         return Response(serializer.data)
 
@@ -89,7 +99,7 @@ class DeleteProjectView(mixins.DestroyModelMixin, viewsets.GenericViewSet):
         """
         使用body传参的方式删除数据，不使用pk值
         """
-        if request.data.get('id') is None:
+        if request.data.get('id') is None and request.data.get('id') == "":
             return Response({'message': '项目id不能为空', 'success': False})
         instance = self.get_queryset().filter(id=request.data.get('id')).first()
         if not instance:
@@ -109,6 +119,11 @@ class DeleteProjectView(mixins.DestroyModelMixin, viewsets.GenericViewSet):
         # 逻辑删除该项目下的所有目录
         TestcaseDirectory.objects.filter(projects_id=instance.id).update(is_delete=True, deleted_time=datetime.now(),
                                                                          update_user=self.request.user.username)
+        # 通过项目id查询所有的目录，将目录下的接口删除
+        directories = TestcaseDirectory.objects.filter(projects_id=instance.id)
+        for directory in directories:
+            Interfaces.objects.filter(directory_id=directory.id).update(is_delete=True, deleted_time=datetime.now(),
+                                                                        update_user=self.request.user.username)
 
 
 class GetProjectDetailView(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
@@ -117,12 +132,16 @@ class GetProjectDetailView(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     permission_classes = [IsAuthenticated]
 
     def retrieve(self, request, *args, **kwargs):
-        # 判断当获取的项目是否存在
-        instance = self.get_queryset().filter(id=kwargs.get('pk')).first()
+        """
+        通过param传参方式获取项目的详情
+        """
+        if request.query_params.get('id') is None and request.query_params.get('id') == "":
+            return Response({'message': '项目id不能为空', 'success': False})
+        instance = self.get_queryset().filter(id=request.query_params.get('id')).first()
         if not instance:
             return Response({'message': '项目不存在', 'success': False})
-        response = super().retrieve(request, *args, **kwargs)
-        return response
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
     def get_queryset(self):
         """
@@ -132,3 +151,4 @@ class GetProjectDetailView(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         if self.request.user.is_superuser:
             return self.queryset.filter(is_delete=False)
         return self.queryset.filter(owner=self.request.user)
+
