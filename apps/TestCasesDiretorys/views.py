@@ -75,7 +75,7 @@ class TestCasesDirectorysView(ModelViewSet):
         # 校验父目录是否存在
         parent_id = request.data.get('parent')
         if parent_id is not None and parent_id != "":
-            parent = TestcaseDirectory.objects.filter(parent_id=request.data.get('parent')).first()
+            parent = TestcaseDirectory.objects.filter(id=request.data.get('parent'), is_delete=False).first()
             if not parent:
                 return Response({'message': '父目录不存在', 'success': False})
         try:
