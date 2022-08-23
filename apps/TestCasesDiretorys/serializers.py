@@ -13,7 +13,7 @@ class TestCaseDirectorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TestcaseDirectory
-        fields = ('name', 'projects', 'parent', 'interfaces', 'desc')
+        fields = ('id', 'name', 'projects', 'parent', 'interfaces', 'desc')
         extra_kwargs = {
             'parent': {'required': False},
             'id': {'error_messages': {'required': '目录id不能为空', 'blank': '目录id不能为空', 'null': '目录id不能为空'}},
