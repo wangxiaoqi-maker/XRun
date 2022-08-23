@@ -5,6 +5,7 @@ from Interfaces.models import Interfaces
 
 
 class InterfaceSeralizers(serializers.ModelSerializer):
+
     class Meta:
         model = Interfaces
         exclude = ('is_delete', "create_user", "update_user", "deleted_time")
@@ -42,3 +43,11 @@ class InterfaceSeralizers(serializers.ModelSerializer):
         """
         validated_data['update_user'] = self.context['request'].user.username
         return super().update(instance, validated_data)
+
+    def validate(self, attrs):
+        names = Interfaces.objects.filter(name=attrs.get('name'), is_delete=False)  # 第二个调用
+        if names:
+            if attrs.get('id') == str(names.first().id):
+                return attrs
+            raise serializers.ValidationError({"message": "接口名称已存在", "success": True})
+        return attrs

@@ -17,7 +17,6 @@ class Projects(BaseModels):
     class Meta:
         # db_table指定创建的数据表名称
         db_table = 'gm_projects'
-        unique_together = ('name', 'is_delete')
         # 为当前数据表设置中文描述信息
         verbose_name = '项目表'
         verbose_name_plural = '项目表'

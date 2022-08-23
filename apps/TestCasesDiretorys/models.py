@@ -20,7 +20,7 @@ class TestcaseDirectory(BaseModels):
         # 为当前数据表设置中文描述信息
         verbose_name = '用例目录表'
         verbose_name_plural = '用例目录表'
-        unique_together = ('name', 'is_delete', 'projects', 'parent')
+        # unique_together = ('name', 'is_delete', 'projects', 'parent')
         ordering = ['id']
 
     def __str__(self):

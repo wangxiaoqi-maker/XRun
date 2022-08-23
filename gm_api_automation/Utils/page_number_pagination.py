@@ -3,7 +3,7 @@ from rest_framework.pagination import PageNumberPagination as _PageNumberPaginat
 
 class PageNumberPagination(_PageNumberPagination):
     # 指定默认每一页显示3条数据
-    page_size = 3
+    page_size = 1000
 
     # 前端用于指定页码的查询字符串参数名称
     page_query_param = 'pageNo'
@@ -14,7 +14,7 @@ class PageNumberPagination(_PageNumberPagination):
     page_size_query_param = 'pageSize'
     page_size_query_description = '每一页数据条数'
 
-    max_page_size = 50
+    max_page_size = 1000
 
     invalid_page_message = '无效页码'
 

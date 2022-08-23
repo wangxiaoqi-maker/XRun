@@ -67,20 +67,23 @@ class TestCasesDirectorysView(ModelViewSet):
         :param kwargs:
         :return:
         """
-        if request.data.get('id') is None and request.data.get('id') == '':
+        if request.data.get('id') is None or request.data.get('id') == '':
             return Response({'message': '目录id不能为空', 'success': False})
         instance = self.get_queryset().filter(id=request.data.get('id')).first()
         if not instance:
             return Response({'message': '目录不存在', 'success': False})
         # 校验父目录是否存在
-        if request.data.get('parent') is not None:
-            parent = TestcaseDirectory.objects.filter(id=request.data.get('parent')).first()
+        parent_id = request.data.get('parent')
+        if parent_id is not None and parent_id != "":
+            parent = TestcaseDirectory.objects.filter(parent_id=request.data.get('parent')).first()
             if not parent:
                 return Response({'message': '父目录不存在', 'success': False})
-
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
+        try:
+            serializer = self.get_serializer(instance, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+        except IntegrityError:
+            return Response({'message': '目录名称重复', 'success': False})
         # 返回更新后的目录信息
         return Response(serializer.data)
 

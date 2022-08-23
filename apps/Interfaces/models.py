@@ -15,7 +15,7 @@ class Interfaces(BaseModels):
     body = models.TextField(verbose_name='请求body', help_text='请求body', null=True, blank=True, default='')
     body_type = models.CharField(max_length=10, verbose_name='请求body类型', help_text='请求body类型', default='json')
     directory = models.ForeignKey('TestCasesDiretorys.TestcaseDirectory', on_delete=models.CASCADE,
-                                  verbose_name='目录表外键', db_constraint=False, related_name='interfaces',)
+                                  verbose_name='目录表外键', db_constraint=False, related_name='interfaces')
     expected_result = models.TextField(verbose_name='预期结果', help_text='预期结果', null=True, blank=True, default='')
     actual_result = models.TextField(verbose_name='实际结果', help_text='实际结果', null=True, blank=True, default='')
     status = models.CharField(max_length=10, verbose_name='测试结果', help_text='测试结果')
@@ -30,7 +30,6 @@ class Interfaces(BaseModels):
         db_table = 'gm_interfaces'
         verbose_name = '接口表'
         verbose_name_plural = '接口表'
-        unique_together = ('name', 'is_delete')
         ordering = ['id']
 
     def __str__(self):

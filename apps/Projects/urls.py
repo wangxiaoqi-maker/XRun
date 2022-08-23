@@ -3,8 +3,6 @@ from rest_framework import routers
 
 from Projects import views
 
-# router = routers.SimpleRouter()
-# router.register('', views.CreateProjectView)
 urlpatterns = [
     path('createrProject', views.CreateProjectView.as_view()),
     path('getProject', views.GetProjectView.as_view()),

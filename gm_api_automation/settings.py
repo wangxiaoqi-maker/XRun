@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'Interfaces',
     'drf_yasg',  # swagger接口文档
     'TestCasesDiretorys',
+    'Configs'
 
 ]
 # AUTH_USER_MODEL = 'Users.Users'

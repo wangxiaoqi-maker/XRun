@@ -110,12 +110,14 @@ class DeleteProjectView(mixins.DestroyModelMixin, viewsets.GenericViewSet):
 
     def perform_destroy(self, instance):
         """
-        将物理删除改为逻辑删除
+        将物理删除改为逻辑删除,
         """
-        instance.deleted_time = datetime.now()
-        instance.update_user = self.request.user.username
-        instance.save()
-        super().perform_destroy(instance)
+        try:
+            instance.deleted_time = datetime.now()
+            instance.update_user = self.request.user.username
+            instance.save()
+        except IntegrityError:
+            instance.delete()
         # 逻辑删除该项目下的所有目录
         TestcaseDirectory.objects.filter(projects_id=instance.id).update(is_delete=True, deleted_time=datetime.now(),
                                                                          update_user=self.request.user.username)
