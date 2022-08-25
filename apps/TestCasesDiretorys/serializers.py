@@ -81,6 +81,8 @@ class TestCaseDirectorySerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         """
-        过滤被逻辑删除项目的
+        过滤目录下被逻辑删除的接口信息
         """
-        pass
+        ret = super().to_representation(instance)
+        ret['interfaces'] = InterfaceSeralizers(instance.interfaces.filter(is_delete=False), many=True).data
+        return ret
