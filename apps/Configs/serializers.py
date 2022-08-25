@@ -7,12 +7,14 @@ from Configs.models import Config
 class ConfigSerializer(serializers.ModelSerializer):
     class Meta:
         model = Config
-        fields = 'name', 'base_url', 'desc'
+        fields = 'name', 'base_url', 'desc , created_time', 'update_time'
         extra_kwargs = {
             'name': {"required": True,
                      "error_messages": {"required": "配置名称不能为空", "blank": "配置名称不能为空", "null": "配置名称不能为空"}},
             'base_url': {"required": True,
                          "error_messages": {"required": "公共url不能为空", "blank": "公共url不能为空", "null": "公共url不能为空"}},
+            'created_time': {'read_only': True, 'format': '%Y-%m-%d %H:%M:%S'},
+            'update_time': {'read_only': True, 'format': '%Y-%m-%d %H:%M:%S'},
         }
 
     def create(self, validated_data):

@@ -60,6 +60,9 @@ class ProjectSerializers(serializers.ModelSerializer):
         return attrs
 
     def to_representation(self, instance):
+        """
+        过滤已被物理删除的目录
+        """
         instances = super().to_representation(instance)
         testcase_directorys = instances.get('testcase_directory')
         if testcase_directorys:

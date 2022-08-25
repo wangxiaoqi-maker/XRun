@@ -1,7 +1,9 @@
+from django.db.models import QuerySet
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
 from Interfaces.serializers import InterfaceSeralizers
+from Projects.models import Projects
 from TestCasesDiretorys.models import TestcaseDirectory
 
 
@@ -41,18 +43,37 @@ class TestCaseDirectorySerializer(serializers.ModelSerializer):
         validated_data['update_user'] = self.context['request'].user.username
         return super().update(instance, validated_data)
 
-    def validate(self, attrs):
-        projects = TestcaseDirectory.objects.filter(projects=attrs.get('projects'),
-                                                    is_delete=False)
-        if projects:
-            # 判断项目是否存在
-            raise serializers.ValidationError({"code": "400", "message": "目录名称已存在", "success": False})
+    def validate(self, attrs: dict) -> dict:
+        # 判断项目是否存在
+        projects: QuerySet[Projects] = Projects.objects.filter(id=attrs.get('projects').id,
+                                                               is_delete=False)
+        if not projects:
+            raise serializers.ValidationError('项目不存在')
         # 校验目录名称不能重复
-        names = TestcaseDirectory.objects.filter(name=attrs.get('name'), is_delete=False)  # 第二个调用
-        if names:
-            # 当筛选的模型类不为空时，校验相同项目下相同父目录不能创建相同的目录名称
-            if self.context['request'].data.get('id') != str(names.first().id) and attrs.get(
-                    'name') == names.first().name and attrs.get('projects') == names.first().projects and attrs.get(
-                'parent') == names.first().parent:
-                raise serializers.ValidationError({"message": "目录名称已存在", "success": True})
+        name = attrs.get('name')
+        parent = attrs.get('parent')
+        projects = attrs.get('projects')
+        if parent:
+            # 同项目下不同目录级别可以创建相同目录名称
+            directorys = TestcaseDirectory.objects.filter(name=name, parent=parent, projects=projects,
+                                                          is_delete=False)
+            parent_directory = TestcaseDirectory.objects.filter(id=parent.id, is_delete=False)
+            if not parent_directory:
+                raise serializers.ValidationError('父目录不存在')
+        else:
+            # 不同项目下可以创建相同目录名称
+            directorys: QuerySet[TestcaseDirectory] = TestcaseDirectory.objects.filter(name=name, projects=projects,
+                                                                                       is_delete=False)
+        if directorys:
+            raise serializers.ValidationError('目录名称已存在')
         return attrs
+
+    def to_representation(self, instance):
+        """
+        过滤已被逻辑删除目录下的接口信息
+        :param instance:
+        :return:
+        """
+        ret = super().to_representation(instance)
+        ret['interfaces'] = InterfaceSeralizers(instance.interfaces.filter(is_delete=False), many=True).data
+        return ret
