@@ -68,12 +68,19 @@ class TestCaseDirectorySerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('目录名称已存在')
         return attrs
 
-    def to_representation(self, instance):
+    def validate_projects(self, value):
         """
-        过滤已被逻辑删除目录下的接口信息
-        :param instance:
+        校验项目是否存在
+        :param value:
         :return:
         """
-        ret = super().to_representation(instance)
-        ret['interfaces'] = InterfaceSeralizers(instance.interfaces.filter(is_delete=False), many=True).data
-        return ret
+        projects: QuerySet[Projects] = Projects.objects.filter(id=value.id, is_delete=False)
+        if not projects:
+            raise serializers.ValidationError('项目不存在')
+        return value
+
+    def to_representation(self, instance):
+        """
+        过滤被逻辑删除项目的
+        """
+        pass
