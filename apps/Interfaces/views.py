@@ -45,27 +45,21 @@ class InterfacesView(ModelViewSet):
         :param kwargs:
         :return:
         """
-        try:
-            super().create(request, *args, **kwargs)
-        except IntegrityError:
-            return Response({'message': '接口名称已存在', 'success': False})
+        super().create(request, *args, **kwargs)
         return Response({'message': '接口创建成功', 'success': True})
 
     def update(self, request, *args, **kwargs):
         """
         使用body传参的方式更新数据，不使用pk值
         """
-        if request.data.get('id') is None and request.data.get('id') == '':
+        if request.data.get('id') is None or request.data.get('id') == '':
             return Response({'message': '接口id不能为空', 'success': False})
         instance = self.filter_queryset(self.get_queryset()).filter(id=request.data.get("id")).first()
         if not instance:
             return Response({'message': '接口不存在', 'success': False})
-        try:
-            serializer = self.get_serializer(instance, data=request.data, partial=True)
-            serializer.is_valid(raise_excetion=True)
-            self.perform_update(serializer)
-        except IntegrityError:
-            return Response({'message': '接口名称已存在', 'success': False})
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
         return Response({'message': '接口更新成功', 'success': True})
 
     def destroy(self, request, *args, **kwargs):
@@ -88,13 +82,10 @@ class InterfacesView(ModelViewSet):
         """
         物理删除改为逻辑删除
         """
-        try:
-            instance.is_delete = True
-            instance.deleted_time = datetime.now()
-            instance.update_user = self.request.user.username
-            instance.save()
-        except IntegrityError:
-            instance.delete()
+        instance.is_delete = True
+        instance.deleted_time = datetime.now()
+        instance.update_user = self.request.user.username
+        instance.save()
 
     def retrieve(self, request, *args, **kwargs):
         """

@@ -49,12 +49,22 @@ class ProjectSerializers(serializers.ModelSerializer):
         validated_data['update_user'] = self.context['request'].user.username
         return super().update(instance, validated_data)
 
-    def to_representation(self, instance):
-        text = super().to_representation(instance)
-        testcase_directorys = text.get('testcase_directory')
-        for testcase_directory in testcase_directorys:
-            pop_id = TestcaseDirectory.objects.filter(id=testcase_directory.get('id'), is_delete=True)
-            if pop_id:
-                testcase_directory.clear()
+    def validate(self, attrs):
+        # 校验项目名称不能重复
+        names = Projects.objects.filter(name=attrs.get('name'), is_delete=False)  # 第二个调用
+        if names:
+            # 当筛选的模型类不为空时，数据库中的主键id和传入需要更新的主键id是否一致，若一致则可以更新，不一致则抛出异常
+            if self.context['request'].data.get('id') != str(names.first().id) and attrs.get(
+                    'name') == names.first().name:
+                raise serializers.ValidationError({"message": "项目名称已存在", "success": True})
+        return attrs
 
-        return text
+    def to_representation(self, instance):
+        instances = super().to_representation(instance)
+        testcase_directorys = instances.get('testcase_directory')
+        if testcase_directorys:
+            for testcase_directory in testcase_directorys:
+                clear_id = TestcaseDirectory.objects.filter(id=testcase_directory.get('id'), is_delete=True)
+                if clear_id:
+                    testcase_directory.clear()
+        return instances

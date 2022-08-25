@@ -27,13 +27,7 @@ class TestCaseDirectorySerializer(serializers.ModelSerializer):
         :param validated_data:
         :return:
         """
-        duplicate_name = TestcaseDirectory.objects.filter(name=validated_data['name'],
-                                                          projects=validated_data['projects'],
-                                                          parent_id=validated_data.get('parent'),
-                                                          is_delete=False)
-        if duplicate_name:
-            # 判断是否是同一个目录
-            raise serializers.ValidationError({"code": "400", "message": "目录名称已存在", "success": False})
+
         validated_data['create_user'] = self.context['request'].user
         return super().create(validated_data)
 
@@ -46,3 +40,19 @@ class TestCaseDirectorySerializer(serializers.ModelSerializer):
         """
         validated_data['update_user'] = self.context['request'].user.username
         return super().update(instance, validated_data)
+
+    def validate(self, attrs):
+        projects = TestcaseDirectory.objects.filter(projects=attrs.get('projects'),
+                                                    is_delete=False)
+        if projects:
+            # 判断项目是否存在
+            raise serializers.ValidationError({"code": "400", "message": "目录名称已存在", "success": False})
+        # 校验目录名称不能重复
+        names = TestcaseDirectory.objects.filter(name=attrs.get('name'), is_delete=False)  # 第二个调用
+        if names:
+            # 当筛选的模型类不为空时，校验相同项目下相同父目录不能创建相同的目录名称
+            if self.context['request'].data.get('id') != str(names.first().id) and attrs.get(
+                    'name') == names.first().name and attrs.get('projects') == names.first().projects and attrs.get(
+                'parent') == names.first().parent:
+                raise serializers.ValidationError({"message": "目录名称已存在", "success": True})
+        return attrs

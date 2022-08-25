@@ -75,9 +75,9 @@ class UpdateProjectView(mixins.UpdateModelMixin, viewsets.GenericViewSet):
         :param kwargs:
         :return:
         """
-        if request.data.get('id') is None and request.data.get('id') == "":
+        if request.data.get('id') is None or request.data.get('id') == "":
             return Response({'message': '项目id不能为空', 'success': False})
-        instance = self.get_queryset().filter(id=request.data.get('id')).first()
+        instance = self.get_queryset().filter(id=request.data.get('id'), is_delete=False).first()
         if not instance:
             return Response({'message': '项目不存在', 'success': False})
         try:
@@ -101,7 +101,7 @@ class DeleteProjectView(mixins.DestroyModelMixin, viewsets.GenericViewSet):
         """
         if request.data.get('id') is None and request.data.get('id') == "":
             return Response({'message': '项目id不能为空', 'success': False})
-        instance = self.get_queryset().filter(id=request.data.get('id')).first()
+        instance = self.get_queryset().filter(id=request.data.get('id'), is_delete=False).first()
         if not instance:
             return Response({'message': '项目不存在', 'success': False})
         self.perform_destroy(instance)
@@ -112,12 +112,10 @@ class DeleteProjectView(mixins.DestroyModelMixin, viewsets.GenericViewSet):
         """
         将物理删除改为逻辑删除,
         """
-        try:
-            instance.deleted_time = datetime.now()
-            instance.update_user = self.request.user.username
-            instance.save()
-        except IntegrityError:
-            instance.delete()
+        instance.is_delete = True
+        instance.deleted_time = datetime.now()
+        instance.update_user = self.request.user.username
+        instance.save()
         # 逻辑删除该项目下的所有目录
         TestcaseDirectory.objects.filter(projects_id=instance.id).update(is_delete=True, deleted_time=datetime.now(),
                                                                          update_user=self.request.user.username)
@@ -139,7 +137,7 @@ class GetProjectDetailView(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         """
         if request.query_params.get('id') is None and request.query_params.get('id') == "":
             return Response({'message': '项目id不能为空', 'success': False})
-        instance = self.get_queryset().filter(id=request.query_params.get('id')).first()
+        instance = self.get_queryset().filter(id=request.query_params.get('id'), is_delete=False).first()
         if not instance:
             return Response({'message': '项目不存在', 'success': False})
         serializer = self.get_serializer(instance)
@@ -153,4 +151,3 @@ class GetProjectDetailView(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         if self.request.user.is_superuser:
             return self.queryset.filter(is_delete=False)
         return self.queryset.filter(owner=self.request.user)
-
