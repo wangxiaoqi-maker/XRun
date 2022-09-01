@@ -89,16 +89,12 @@ class ConfigsView(ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         """
-        通过param传参的方式查询配置信息
+        通过param传参的方式查询配置信息,
         :param request:
         :param args:
         :param kwargs:
         :return:
         """
-        if request.query_params.get('id') is None and request.query_params.get('id') == '':
-            return Response({'message': '配置信息id不能为空', 'success': False})
-        instance = self.filter_queryset(self.get_queryset()).filter(id=request.query_params.get("id")).first()
-        if not instance:
-            return Response({'message': '配置信息不存在', 'success': False})
-        serializer = self.get_serializer(instance)
+        name = self.filter_queryset(self.get_queryset()).filter(name=request.query_params.get("name")).first()
+        serializer = self.get_serializer(name)
         return Response(serializer.data)

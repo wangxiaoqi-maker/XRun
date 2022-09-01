@@ -1,0 +1,32 @@
+from rest_framework import serializers
+
+from Interfaces.models import Interfaces
+
+
+class SendHttpRequestSeralizer(serializers.ModelSerializer):
+    """
+    发送http请求的序列化器
+    """
+    # 发送请求的接口地址
+    address = serializers.CharField(max_length=100, label='接口地址', help_text='接口地址', required=True,
+                                    error_messages={'required': '接口地址不能为空'})
+    # 发送请求的接口请求方式
+    method = serializers.CharField(max_length=10, label='接口请求方式', help_text='接口请求方式', required=True,
+                                   error_messages={'required': '接口请求方式不能为空'})
+    # 发送请求的接口请求头
+    headers = serializers.CharField(max_length=100, label='接口请求头', help_text='接口请求头', required=False)
+    # 发送请求的接口请求体
+    body = serializers.CharField(max_length=100, label='接口请求体', help_text='接口请求', required=True,
+                                 error_messages={'required': '接口请求体不能为空'})
+    # 发送请求的接口请求体类型
+    body_type = serializers.CharField(max_length=10, label='接口请求体类型', help_text='接口请求体类型', required=True,
+                                      error_messages={'required': '接口请求体类型不能为空'})
+    # 接口的响应结果
+    response = serializers.JSONField(label='接口响应结果', help_text='接口响应结果', read_only=True)
+
+    class Meta:
+        model = Interfaces
+        fields = ('address', 'method', 'headers', 'body', 'body_type', 'response')
+        extra_kwargs = {'response': {'read_only': True},
+                        'headers': {'required': False},
+                        }

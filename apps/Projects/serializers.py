@@ -63,11 +63,15 @@ class ProjectSerializers(serializers.ModelSerializer):
         """
         过滤已被逻辑删除的目录
         """
-        instances = super().to_representation(instance)
-        testcase_directorys = instances.get('testcase_directory')
-        if testcase_directorys:
-            for testcase_directory in testcase_directorys:
-                clear_id = TestcaseDirectory.objects.filter(id=testcase_directory.get('id'), is_delete=True)
-                if clear_id:
-                    testcase_directory.clear()
-        return instances
+        ret = super().to_representation(instance)
+        ret['testcase_directory'] = TestCaseDirectorySerializer(instance.testcase_directory.filter(is_delete=False),
+                                                                many=True).data
+        return ret
+        # instances = super().to_representation(instance)
+        # testcase_directorys = instances.get('testcase_directory')
+        # if testcase_directorys:
+        #     for testcase_directory in testcase_directorys:
+        #         clear_id = TestcaseDirectory.objects.filter(id=testcase_directory.get('id'), is_delete=True)
+        #         if clear_id:
+        #             testcase_directory.clear()
+        # return instances

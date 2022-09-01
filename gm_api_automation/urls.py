@@ -43,6 +43,7 @@ urlpatterns = [
     path('', include('TestCasesDiretorys.urls')),
     path('', include('Interfaces.urls')),
     path('', include('Configs.urls')),
+    path('', include('Executed.urls')),
     path('docs', include_docs_urls(title='测试平台接口文档', description='国民接口文档')),  # 配置coreapi接口文档
     re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     # 配置swagger json、yaml接口文档
