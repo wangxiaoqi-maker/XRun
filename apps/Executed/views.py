@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from Executed.serializers import SendHttpRequestSeralizer
+from gm_api_automation.core.executor import Executor
+from gm_api_automation.core.paramters_parse.jsonpath_parser import JSONPathParser
 from gm_api_automation.middleware.HttpClient import Request
 
 
@@ -21,4 +23,6 @@ class SendHttpRequestView(ModelViewSet):
         headers = request.data.get('headers')
         body_type = request.data.get('body_type')
         data = Request(url, body=bodys).request(method=method, body_type=body_type, headers=headers)
-        return Response(data)
+        actual = JSONPathParser().parse_assert(data, request.data.get('assert_list'))
+        message = Executor().my_assert(actual,True)
+        return Response(message)

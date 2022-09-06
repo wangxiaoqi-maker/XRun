@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 xlrd = "*"
 aiohttp = "*"
+jsonpath = "*"
 
 [dev-packages]
 

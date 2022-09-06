@@ -3,7 +3,6 @@ from datetime import datetime
 from django.db import IntegrityError
 from django.shortcuts import render
 
-
 # Create your views here.
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import IsAuthenticated

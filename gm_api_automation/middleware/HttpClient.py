@@ -1,5 +1,6 @@
 import datetime
 import json
+import time
 from json import JSONDecodeError
 
 import requests
@@ -23,46 +24,64 @@ class Request(object):
             return f"{timer.seconds}.{timer.microseconds // 1000}s"
         return f"{timer.microseconds // 100}ms"
 
+    @staticmethod
+    def get_headers(**kwargs):
+        headers = kwargs.get("headers")
+        if headers:
+            try:
+                return json.loads(headers)
+            except JSONDecodeError:
+                raise Exception("headers格式错误")
+        return {}
+
+    @staticmethod
+    def get_body(**kwargs):
+        body = kwargs.get("body")
+        if body:
+            try:
+                return json.loads(body)
+            except JSONDecodeError:
+                raise Exception("json格式错误")
+        return {}
+
     def request(self, method: str, body_type: str = "json", **kwargs):
         status_code = 0
         elapsed = "-1ms"
+        headers = self.get_headers(**kwargs)
+        start = time.time()
         try:
             if body_type == "json":
-                body = self.kwargs.get("body")
-                if body:
-                    try:
-                        body = json.loads(body)
-                    except Exception as e:
-                        raise Exception(f"json格式错误: {e}")
-                response = self.client.request(method, self.url, json=body, **kwargs)
+                body = self.get_body(**kwargs)
+                response = self.client.request(method, self.url, json=body, headers=headers)
             elif body_type == "params":
-                response = self.client.request(method, self.url, **kwargs)
+                response = self.client.request(method, self.url, headers=headers)
             elif body_type == "form_data":
+                body = self.kwargs.get("body")
                 try:
-                    body = self.kwargs.get("body")
+                    form_data = json.loads(body)
                 except Exception as e:
                     raise Exception(f"json格式错误: {e}")
                 if body:
                     # 因为存储的是字符串，所以需要反序列化
-                    form_data = json.loads(body)
                     if form_data.get("files"):
                         if form_data.get("data"):
                             response = self.client.request(method, self.url, files=form_data.get("files"),
-                                                           data=form_data.get("data"), **kwargs)
+                                                           data=form_data.get("data"), headers=headers)
                         else:
-                            response = self.client.request(method, self.url, files=form_data.get("files"), **kwargs)
+                            response = self.client.request(method, self.url, files=form_data.get("files"),
+                                                           headers=headers)
                     else:
-                        response = self.client.request(method, self.url, data=form_data.get("data"), **kwargs)
+                        response = self.client.request(method, self.url, data=form_data.get("data"), headers=headers)
             else:
-                response = self.client.request(method, self.url, **kwargs, timeout=30)
+                response = self.client.request(method, self.url, headers=headers, **kwargs, timeout=30)
             status_code = response.status_code
+            cost = "%.0fms" % ((time.time() - start) * 1000)
             data = self.get_resp(response)
             if status_code != 200:
                 return Request.collect(False, self.kwargs.get("body"), status_code, data, response.headers,
-                                       response.request.headers, elapsed=elapsed)
-            elapsed = Request.get_elapsed(response.elapsed)
+                                       response.request.headers, elapsed=cost)
             return Request.collect(True, self.kwargs.get("body"), 200, data, response.headers,
-                                   response.request.headers, elapsed=elapsed,
+                                   response.request.headers, elapsed=cost,
                                    cookies=response.cookies)
         except Exception as e:
             return Request.collect(False, self.kwargs.get("data"), status_code, msg=str(e), elapsed=elapsed)
@@ -72,12 +91,12 @@ class Request(object):
         try:
             data = resp.json()
             # 说明是json格式
-            return data, True
+            return data
             # return json.dumps(data, ensure_ascii=False, indent=4), True
         except JSONDecodeError:
             data = resp.text
             # 说明不是json格式，我们不做loads操作了
-            return data, False
+            return data
 
     @staticmethod
     def get_request_data(body):
@@ -86,8 +105,10 @@ class Request(object):
             request_body = request_body.decode()
         if isinstance(body, FormData):
             request_body = str(body)
-        if isinstance(request_body, str) or request_body is None:
+        if isinstance(request_body, str):
             return json.loads(body)
+        if request_body is None:
+            return {}
         return json.dumps(request_body, ensure_ascii=False, indent=4)
 
     @staticmethod
@@ -126,7 +147,8 @@ if __name__ == '__main__':
     "loginType": "1",
     "landingSource": 7
 }"""
-    headers = {
+    header = {
         "token": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJwaG9uZSI6IjE3NjIxNTI1Mzg3IiwiZXhwVGltZSI6MjU5MjAwMDAwMCwiYWNjb3VudE5vIjoiR00yMDIyMDUyMDA5NTYyNjAwMDAwMDAzMDUiLCJyb2xlQ29kZSI6IkhXUjAwMDA0MyIsInRlbmFudElkIjpudWxsLCJlbXBsb3llZUlkIjpudWxsLCJwbGF0VHlwZSI6IjciLCJ1c2VyTmFtZSI6IueOi-Wui-aWhyIsImV4cCI6MTY2NDUwMzkwNSwidXNlcklkIjo0Mzd9.xCpeIhH4POoSn47y_7T1Xs2IYzxm29Z7W6wSkKXiQhk0EYJ7D9st4yoh0hYndvferFeowHKAkR4gkh3n7hC80w"}
 
-    print(Request(url, body=bodys).request(method=method, body_type='json', headers=headers))
+    print(Request(url, body=bodys).request(method=method, body_type='json', headers=header))
+    #
