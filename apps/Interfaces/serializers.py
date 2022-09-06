@@ -27,7 +27,9 @@ class InterfaceSeralizers(serializers.ModelSerializer):
                                'error_messages': {'required': '请求方法不能为空', 'blank': '请求方法不能为空', 'null': '请求方法不能为空'}},
             'body_type': {'required': True,
                           'error_messages': {'required': '请求体类型不能为空', 'blank': '请求体类型不能为空', 'null': '请求体类型不能为空'}},
-            'directory': {'error_messages': {'required': '接口所属目录不能为空', 'blank': '接口所属目录不能为空', 'null': '接口所属目录不能为空'}}
+            'directory': {'error_messages': {'required': '接口所属目录不能为空', 'blank': '接口所属目录不能为空', 'null': '接口所属目录不能为空'}},
+            'status': {'required': False},
+            'tag': {'required': False}
 
         }
 

@@ -37,6 +37,10 @@ class JSONPathParser(object):
         return json.loads(json_str)
 
     def parse_assert(self, source: dict, asserts: List):
+        try:
+            asserts = self.get_object(asserts)
+        except Exception as e:
+            raise CaseParametersException(f"解析断言失败: {e}")
         for ase in asserts:
             if ase.get('assert_obj') == 'response_json':
                 ase['actually'] = self.parse(source, ase['actually'])

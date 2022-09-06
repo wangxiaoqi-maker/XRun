@@ -28,12 +28,12 @@ class Executor(object):
                 # 判断请求返回是否是json格式，如果不是则不进行loads操作
                 actually = item.get('actually')  # 循环拿出实际结果
                 status, err = self.ops(item.get('assert_type'), expected, actually)  # 判断预期结果和实际结果是否相等
-                result[item.id] = {"status": status, "msg": err}  # 将断言结果存入result字典中
+                result = {"status": status, "msg": err}  # 将断言结果存入result字典中
             except Exception as e:
                 if ok is True:
                     ok = False
-                result[item.id] = {"status": False, "msg": f"断言取值失败, 请检查断言语句: {e}"}  # 将断言结果存入result字典中
-        return json.dumps(result, ensure_ascii=False), ok  # 返回断言结果
+                result = {"status": False, "msg": f"断言取值失败, 请检查断言语句: {e}"}  # 将断言结果存入result字典中
+        return result  # 返回断言结果
 
     def ops(self, assert_type: str, exp, act) -> (bool, str):
         """
@@ -41,7 +41,7 @@ class Executor(object):
         """
         if assert_type == "equal":
             if exp == act:
-                return {"Assertion_results": "预期结果{exp} 等于 实际结果: {act}【✔】".format(exp=exp, act=act)}
+                return True, f"预期结果: {exp} 等于 实际结果: {act}【✔】"
             return False, f"预期结果: {exp} 不等于 实际结果: {act}【❌】"
         if assert_type == "not_equal":
             if exp != act:

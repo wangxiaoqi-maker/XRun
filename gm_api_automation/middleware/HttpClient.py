@@ -42,6 +42,8 @@ class Request(object):
                 return json.loads(body)
             except JSONDecodeError:
                 raise Exception("json格式错误")
+            except TypeError:
+                return body
         return {}
 
     def request(self, method: str, body_type: str = "json", **kwargs):
