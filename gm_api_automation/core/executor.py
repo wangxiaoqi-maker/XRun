@@ -27,7 +27,7 @@ class Executor(object):
                 expected = item.get('expected')  # 循环拿出预期结果
                 # 判断请求返回是否是json格式，如果不是则不进行loads操作
                 actually = item.get('actually')  # 循环拿出实际结果
-                status, err = self.ops(item.get('assert_type'), expected, actually)  # 判断预期结果和实际结果是否相等
+                status, err = self.ops(item.get('assert_type'), expected, actually)  # 判断预期结果和实际结果
                 result = {"status": status, "msg": err}  # 将断言结果存入result字典中
             except Exception as e:
                 if ok is True:
@@ -55,14 +55,48 @@ class Executor(object):
             if exp not in act:
                 return True, f"预期结果: {exp} 不包含于 实际结果: {act}【✔】"
             return False, f"预期结果: {exp} 包含于 实际结果: {act}【❌】"
-        if assert_type == "contain":
-            if act in exp:
-                return True, f"预期结果: {exp} 包含 实际结果: {act}【✔】"
-            return False, f"预期结果: {exp} 不包含 实际结果: {act}【❌】"
-        if assert_type == "not_contain":
-            if act not in exp:
-                return True, f"预期结果: {exp} 不包含 实际结果: {act}【✔】"
-            return False, f"预期结果: {exp} 包含 实际结果: {act}【❌】"
+        if assert_type == "int_equal":
+            try:
+                if eval(f"{exp} == {act}"):
+                    return True, f"预期结果: {exp} 等于 实际结果: {act}【✔】"
+                return False, f"预期结果: {exp} 不等于 实际结果: {act}【❌】"
+            except Exception as e:
+                return False, f"断言语句错误: {e}"
+        if assert_type == "int_not_equal":
+            try:
+                if eval(f"{exp} != {act}"):
+                    return True, f"预期结果: {exp} 不等于 实际结果: {act}【✔】"
+                return False, f"预期结果: {exp} 等于 实际结果: {act}【❌】"
+            except Exception as e:
+                return False, f"断言语句错误: {e}"
+        if assert_type == "int_greater_than":
+            try:
+                if eval(f"{exp} > {act}"):
+                    return True, f"预期结果: {exp} 大于 实际结果: {act}【✔】"
+                return False, f"预期结果: {exp} 不大于 实际结果: {act}【❌】"
+            except Exception as e:
+                return False, f"断言语句错误: {e}"
+        if assert_type == "int_greater_than_or_equal":
+            try:
+                if eval(f"{exp} >= {act}"):
+                    return True, f"预期结果: {exp} 大于等于 实际结果: {act}【✔】"
+                return False, f"预期结果: {exp} 不大于等于 实际结果: {act}【❌】"
+            except Exception as e:
+                return False, f"断言语句错误: {e}"
+        if assert_type == "int_less_than":
+            try:
+                if eval(f"{exp} < {act}"):
+                    return True, f"预期结果: {exp} 小于 实际结果: {act}【✔】"
+                return False, f"预期结果: {exp} 不小于 实际结果: {act}【❌】"
+            except Exception as e:
+                return False, f"断言语句错误: {e}"
+        if assert_type == "int_less_than_or_equal":
+            try:
+                if eval(f"{exp} <= {act}"):
+                    return True, f"预期结果: {exp} 小于等于 实际结果: {act}【✔】"
+                return False, f"预期结果: {exp} 不小于等于 实际结果: {act}【❌】"
+            except Exception as e:
+                return False, f"断言语句错误: {e}"
         if assert_type == "length_eq":
             if exp == len(act):
                 return True, f"预期数量: {exp} 等于 实际数量: {len(act)}【✔】"
@@ -110,3 +144,10 @@ class Executor(object):
         反序列化为Python对象
         """
         return json.loads(data)
+
+
+if __name__ == '__main__':
+    exp = 1.05
+    act = "1.05"
+    s = eval(f"{exp} == {act}")
+    print(s)

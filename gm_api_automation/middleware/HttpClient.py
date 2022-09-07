@@ -20,22 +20,41 @@ class Request(object):
 
     @staticmethod
     def get_elapsed(timer: datetime.timedelta):
+        """
+        获取请求耗时
+        """
         if timer.seconds > 0:
             return f"{timer.seconds}.{timer.microseconds // 1000}s"
         return f"{timer.microseconds // 100}ms"
 
     @staticmethod
     def get_headers(**kwargs):
+        """
+        [{"name":"Authorization","value":"Bearer eyJ0eXAiOiJKV1Qi","_type":"String","required":true,"restrict":"","desc":"token值","status":"String"}]
+        :param kwargs: 请求头参数
+        :return: 请求头
+        """
+        header = {}
         headers = kwargs.get("headers")
         if headers:
             try:
-                return json.loads(headers)
+                headers = json.loads(headers)
             except JSONDecodeError:
                 raise Exception("headers格式错误")
-        return {}
+            for h in headers:
+                if h.get("name") and h.get("value"):
+                    header[h.get("name")] = h.get("value")
+                else:
+                    header = {}
+        return header
 
     @staticmethod
     def get_body(**kwargs):
+        """
+        获取请求体
+        :param kwargs: 请求参数
+        :return: 请求体
+        """
         body = kwargs.get("body")
         if body:
             try:
@@ -47,6 +66,12 @@ class Request(object):
         return {}
 
     def request(self, method: str, body_type: str = "json", **kwargs):
+        """
+        :param method: 请求方法
+        :param body_type: 请求体类型
+        :param kwargs: 请求参数
+        :return: 响应体
+        """
         status_code = 0
         elapsed = "-1ms"
         headers = self.get_headers(**kwargs)
@@ -90,6 +115,11 @@ class Request(object):
 
     @staticmethod
     def get_resp(resp):
+        """
+        获取响应体
+        :param resp: 响应体
+        :return: 响应体
+        """
         try:
             data = resp.json()
             # 说明是json格式
@@ -102,6 +132,11 @@ class Request(object):
 
     @staticmethod
     def get_request_data(body):
+        """
+        获取请求体
+        :param body: 请求体
+        :return: 请求体
+        """
         request_body = body
         if isinstance(body, bytes):
             request_body = request_body.decode()
@@ -149,8 +184,9 @@ if __name__ == '__main__':
     "loginType": "1",
     "landingSource": 7
 }"""
-    header = {
+    header1 = {
         "token": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJwaG9uZSI6IjE3NjIxNTI1Mzg3IiwiZXhwVGltZSI6MjU5MjAwMDAwMCwiYWNjb3VudE5vIjoiR00yMDIyMDUyMDA5NTYyNjAwMDAwMDAzMDUiLCJyb2xlQ29kZSI6IkhXUjAwMDA0MyIsInRlbmFudElkIjpudWxsLCJlbXBsb3llZUlkIjpudWxsLCJwbGF0VHlwZSI6IjciLCJ1c2VyTmFtZSI6IueOi-Wui-aWhyIsImV4cCI6MTY2NDUwMzkwNSwidXNlcklkIjo0Mzd9.xCpeIhH4POoSn47y_7T1Xs2IYzxm29Z7W6wSkKXiQhk0EYJ7D9st4yoh0hYndvferFeowHKAkR4gkh3n7hC80w"}
 
-    print(Request(url, body=bodys).request(method=method, body_type='json', headers=header))
-    #
+    header2 = '[{"name1": "Content-Type", "value1": "application/json"}, {"name1": "Accept", "value1": "vnd.nhf.v1+json"}]'
+
+    print(Request(url, body=bodys).get_headers(headers=header2))
