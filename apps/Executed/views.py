@@ -24,9 +24,9 @@ class SendHttpRequestView(ModelViewSet):
         headers = request.data.get('request_headers')
         body_type = request.data.get('body_type')
         data = Request(url, body=bodys).request(method=method, body_type=body_type, headers=headers, body=bodys)
-        actual = JSONPathParser().parse_assert(data, request.data.get('assert_list'))
-        message = Executor().my_assert(actual, True)
-        return Response(message)
+        # actual = JSONPathParser().parse_assert(data, request.data.get('assert_list'))
+        # message = Executor().my_assert(actual, True)
+        return Response(data)
 
     def run_case(self, request):
         case_id = request.data.get('case_id')
