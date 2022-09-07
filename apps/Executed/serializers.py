@@ -27,7 +27,7 @@ class SendHttpRequestSeralizer(serializers.ModelSerializer):
 
     class Meta:
         model = Interfaces
-        fields = ('address', 'method', 'headers', 'body', 'body_type', 'response', 'assert_list')
+        fields = ('url', 'request_method', 'request_headers', 'body', 'body_type', 'response', 'assert_list')
         extra_kwargs = {'response': {'read_only': True},
                         'headers': {'required': False},
                         }
