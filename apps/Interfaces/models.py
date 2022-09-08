@@ -19,7 +19,7 @@ class Interfaces(BaseModels):
                                   verbose_name='目录表外键', db_constraint=False, related_name='interfaces')
     # 断言列表
     assert_list = models.TextField(verbose_name='断言列表', help_text='断言列表', null=True, blank=True, default='')
-    actual_result = models.TextField(verbose_name='实际结果', help_text='实际结果', null=True, blank=True, default='')
+    out_params = models.TextField(verbose_name='出参列表', help_text='出参列表', null=True, blank=True, default='')
     status = models.CharField(max_length=10, verbose_name='测试结果', help_text='测试结果')
     priority = models.CharField(verbose_name='优先级', help_text='优先级', null=True, blank=True, default='', max_length=10)
     case_type = models.CharField(max_length=10, verbose_name='用例类型', help_text='用例类型', null=True, blank=True,
