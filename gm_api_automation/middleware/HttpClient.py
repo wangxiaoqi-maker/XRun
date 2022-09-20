@@ -65,6 +65,29 @@ class Request(object):
                 return body
         return {}
 
+    def get_form_data(self, **kwargs):
+        """
+        '[{\"name\":\"file\",\"value\":\"excel.xlsx\",\"_type\":\"file\",\"required\":true,\"restrict\":\"\",\"description\":\"id值\"},{\"name\":\"result\",\"value\":\"111\",\"_type\":\"text\",\"required\":true,\"restrict\":\"\",\"description\":\"result值\"}]'
+        :param kwargs: 请求参数
+        如果是files格式则取到的是文件名，如果是data格式则组装成字典 格式为{'files': 'excel.xlsx', 'data': {'inter': '222'}}
+        :return: {'files': 'excel.xlsx', 'data': {'inter': '222'}}
+        """
+        data = self.kwargs.get("body")
+        form_data = {}
+        datas = {}
+        if data:
+            try:
+                data = json.loads(data)
+            except JSONDecodeError:
+                raise Exception("json格式错误")
+            for d in data:
+                if d.get("_type") == 'file':
+                    form_data['files'] = d.get('value')
+                if d.get("_type") == 'text':
+                    datas[d.get('name')] = d.get('value')
+            form_data['data'] = datas
+        return form_data
+
     def request(self, method: str, body_type: str = "json", **kwargs):
         """
         :param method: 请求方法
@@ -83,22 +106,17 @@ class Request(object):
             elif body_type == "params":
                 response = self.client.request(method, self.url, headers=headers)
             elif body_type == "form_data":
-                body = self.kwargs.get("body")
-                try:
-                    form_data = json.loads(body)
-                except Exception as e:
-                    raise Exception(f"json格式错误: {e}")
+                body = self.get_form_data(**kwargs)
                 if body:
-                    # 因为存储的是字符串，所以需要反序列化
-                    if form_data.get("files"):
-                        if form_data.get("data"):
-                            response = self.client.request(method, self.url, files=form_data.get("files"),
-                                                           data=form_data.get("data"), headers=headers)
+                    if body.get("files"):
+                        if body.get("data"):
+                            response = self.client.request(method, self.url, files=body.get("files"),
+                                                           data=body.get("data"), headers=headers)
                         else:
-                            response = self.client.request(method, self.url, files=form_data.get("files"),
+                            response = self.client.request(method, self.url, files=body.get("files"),
                                                            headers=headers)
                     else:
-                        response = self.client.request(method, self.url, data=form_data.get("data"), headers=headers)
+                        response = self.client.request(method, self.url, data=body.get("data"), headers=headers)
             else:
                 response = self.client.request(method, self.url, headers=headers, **kwargs, timeout=30)
             status_code = response.status_code
@@ -187,6 +205,6 @@ if __name__ == '__main__':
     header1 = {
         "token": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJwaG9uZSI6IjE3NjIxNTI1Mzg3IiwiZXhwVGltZSI6MjU5MjAwMDAwMCwiYWNjb3VudE5vIjoiR00yMDIyMDUyMDA5NTYyNjAwMDAwMDAzMDUiLCJyb2xlQ29kZSI6IkhXUjAwMDA0MyIsInRlbmFudElkIjpudWxsLCJlbXBsb3llZUlkIjpudWxsLCJwbGF0VHlwZSI6IjciLCJ1c2VyTmFtZSI6IueOi-Wui-aWhyIsImV4cCI6MTY2NDUwMzkwNSwidXNlcklkIjo0Mzd9.xCpeIhH4POoSn47y_7T1Xs2IYzxm29Z7W6wSkKXiQhk0EYJ7D9st4yoh0hYndvferFeowHKAkR4gkh3n7hC80w"}
 
-    header2 = '[{"name1": "Content-Type", "value1": "application/json"}, {"name1": "Accept", "value1": "vnd.nhf.v1+json"}]'
+    header2 = '[{\"name\":\"file\",\"value\":\"excel.xlsx\",\"_type\":\"file\",\"required\":true,\"restrict\":\"\",\"description\":\"id值\"},{\"name\":\"result\",\"value\":\"111\",\"_type\":\"text\",\"required\":true,\"restrict\":\"\",\"description\":\"result值\"},{\"name\":\"inter\",\"value\":\"222\",\"_type\":\"text\",\"required\":true,\"restrict\":\"\",\"description\":\"result值\"}]'
 
-    print(Request(url, body=bodys).get_headers(headers=header2))
+    print(Request(url, body=bodys).get_form_data(body=header2))

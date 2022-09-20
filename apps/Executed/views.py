@@ -5,8 +5,10 @@ from rest_framework.viewsets import ModelViewSet
 
 from Executed.serializers import SendHttpRequestSeralizer, RunCaseSeralizer
 from Interfaces.models import Interfaces
-from gm_api_automation.core.executor import Executor
+from gm_api_automation.core.executor import Executor, Data
 from gm_api_automation.core.paramters_parse.jsonpath_parser import JSONPathParser
+from gm_api_automation.core.run_case import parse_case, ParametrizedTestCase, ExecutorTest, tests
+from gm_api_automation.core.suit import unittest_run_case
 from gm_api_automation.middleware.HttpClient import Request
 
 
@@ -32,21 +34,12 @@ class SendHttpRequestView(ModelViewSet):
         return Response(data)
 
     def run_case(self, request):
+        serializer = RunCaseSeralizer(data=request.data)
+        serializer.is_valid(raise_exception=True)
         case_id = request.data.get('case_id')
         if case_id is None or case_id == '':
             return Response({'message': '用例id不能为空', 'success': False})
-        case = self.queryset.filter(id=case_id).first()
-        if not case:
-            return Response({'message': '用例不存在', 'success': False})
-        # serializer = RunCaseSeralizer(data=case_id)
-        # serializer.is_valid(raise_exception=True)
-        url = case.url
-        method = case.request_method
-        bodys = case.body
-        headers = case.request_headers
-        body_type = case.body_type
-        assert_list = case.assert_list
-        data = Request(url, body=bodys).request(method=method, body_type=body_type, headers=headers, body=bodys)
-        actual = JSONPathParser().parse_assert(data, assert_list)
-        message = Executor().my_assert(actual, True)
+        cases = [1, 2, 3]
+        tests(cases)
+        message = unittest_run_case()
         return Response(message)

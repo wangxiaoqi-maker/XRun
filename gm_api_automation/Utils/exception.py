@@ -42,9 +42,8 @@ def custom_handler(err: ValidationError, context: dict):
             return Response({
                 'message': message,
             }, status=response.status_code, exception=True)
-    except Exception as e:
-        print(err)
+    except Exception:
         return Response({
-            'message': '网络超时'
+            'message': str(err),
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR, exception=True)
 

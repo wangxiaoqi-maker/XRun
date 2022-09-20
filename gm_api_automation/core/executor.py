@@ -2,16 +2,26 @@ import asyncio
 import json
 import re
 import time
+import unittest
 from collections import defaultdict
 from datetime import datetime
 from typing import List, Any
+
+import jsonpath
+from django.db.models import QuerySet
+
+from Interfaces.models import Interfaces
+from gm_api_automation.core.paramters_parse.jsonpath_parser import JSONPathParser
+from gm_api_automation.middleware.HttpClient import Request
+
+
+class Data(object):
+    pass
 
 
 class Executor(object):
     el_exp = r"\$\{(.+?)\}"
     pattern = re.compile(el_exp)
-    # 需要替换全局变量的字段
-    fields = ['body', 'url', 'request_headers']
 
     def my_assert(self, asserts: List, json_format: bool) -> [str, bool]:
         """
@@ -144,6 +154,74 @@ class Executor(object):
         反序列化为Python对象
         """
         return json.loads(data)
+
+    def extract_out_params(self, data: dict, params_obj: Interfaces.objects, case_id):
+        """
+        将传入的out_params列表循环拿出，并通过jsonpath提取response中的参数，并更新out_params列表
+        """
+        out_params = params_obj.filter(id=case_id).first().out_params
+        if out_params:
+            out_params = self.translate(out_params)
+            for param in out_params:
+                try:
+                    value = JSONPathParser().parse(data, param.get('extract_exp'))
+                    setattr(Data, param.get('param_name'), value)
+                except Exception as e:
+                    print(f"提取参数失败: {e}")
+            return out_params
+        return None
+
+    def replace_params(self, params_obj: Interfaces.objects, case_id):
+        """
+        找出用例中需要替换的变量名 ${}包含的变量,并替换为对应的值
+        """
+        params = params_obj.filter(id=case_id).first()
+        # 遍历querySet对象中的所有数据
+        fileds = params.__dict__
+        for k, v in fileds.items():
+            var = self.get_el_expression(v)
+            if var:
+                # 如果变量在Data类中存在，则替换，否则不替换
+                if hasattr(Data, var[0]):
+                    value = getattr(Data, var[0])
+                    value = v.replace("${{mark}}".replace("{mark}", var[0]), value)
+                    setattr(params, k, value)
+                    return params
+        return params
+
+    def run(self, query_set: QuerySet, case_id: list):
+        """
+        运行测试用例
+        """
+        for case in case_id:
+            url = case.url
+            method = case.request_method
+            bodys = case.body
+            headers = case.request_headers
+            body_type = case.body_type
+            data = Request(url, body=bodys).request(method=method, body_type=body_type, headers=headers, body=bodys)
+            Executor().extract_out_params(data, query_set, case_id)
+            params_list = Executor().replace_params(query_set, case_id)
+            actual = JSONPathParser().parse_assert(data, params_list.assert_list)
+            message = Executor().my_assert(actual, True)
+            return message
+
+    def unittest_run_case(self):
+        """
+        使用unittest执行测试用例
+        """
+        suite = unittest.TestSuite()
+        suite.addTest(Executor('run'))
+        runner = unittest.TextTestRunner()
+        runner.run(suite)
+
+    @staticmethod
+    def get_el_expression(string: str):
+        """获取字符串中的el表达式
+        """
+        if string is None or not isinstance(string, str):
+            return []
+        return re.findall(Executor.pattern, string)
 
 
 if __name__ == '__main__':

@@ -21,7 +21,7 @@ class InterfacesView(ModelViewSet):
     permission_classes = [IsAuthenticated]
     pagination_class = PageNumberPagination
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['name', 'id']
+    filterset_fields = ['name', 'id', 'directory_id']
 
     def list(self, request, *args, **kwargs):
         # 查询所有的接口信息，也可通过查询参数进行过滤
@@ -102,5 +102,3 @@ class InterfacesView(ModelViewSet):
             return Response({'message': '接口不存在', 'success': False})
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
-
-

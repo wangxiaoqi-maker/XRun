@@ -138,13 +138,8 @@ class JSONPathParser(object):
 
 
 if __name__ == '__main__':
-    sources = """{
-            "code": 0,
-            "data": {
-                "id": 1,
-                "name": "test",
-                "age": 18},
-            "msg": "success"
-        }"""
+    sources = "[{\"param_name\":\"response\",\"extract_exp\":\"$..code\",\"extract_obj\":\"response_json\"}]"
     expressions = "$.data.name"
-    print(JSONPathParser().parse(sources, expressions))
+    s = JSONPathParser().get_object(sources)
+    for i in s:
+        print(i.get('param_name'))

@@ -1,0 +1,87 @@
+import unittest
+from functools import wraps
+
+import ddt
+from django.db.models import QuerySet
+
+from Interfaces.models import Interfaces
+from gm_api_automation.core.executor import Executor
+from gm_api_automation.core.paramters_parse.jsonpath_parser import JSONPathParser
+from gm_api_automation.middleware import ddt_util
+from gm_api_automation.middleware.HttpClient import Request
+
+
+def parse_case(query_set: QuerySet, case_id: list):
+    """
+    运行测试用例
+    """
+    cases = query_set.filter(id__in=case_id)
+    return cases
+
+
+# 编写获取测试类中变量的装饰器
+def get_test_data(func):
+    @wraps(func)
+    def wrapper(self, case_data):
+        self.case_data = case_data
+        return func(self, case_data)
+
+    return wrapper
+
+
+class ParametrizedTestCase(unittest.TestCase):
+    """ TestCase classes that want to be parametrized should
+        inherit from this class.
+    """
+
+    def __init__(self, methodname='runtest', query_set=None, case_id=None):
+        super(ParametrizedTestCase, self).__init__(methodname)
+        self.query_set = query_set
+        self.case_id = case_id
+
+    @staticmethod
+    def parametrize(testcase_klass, query_set=None, case_id=None):
+        """ Create a suite containing all tests taken from the given
+            subclass, passing them the parameter 'param'.
+        """
+        testloader = unittest.TestLoader()
+        testnames = testloader.getTestCaseNames(testcase_klass)
+        suite = unittest.TestSuite()
+        for name in testnames:
+            suite.addTest(testcase_klass(name, query_set=query_set, case_id=case_id))
+        return suite
+
+
+class ExecutorTest(unittest.TestCase):
+    pass
+    # case = {}
+    #
+    # def setUp(self) -> None:
+    #     self.case = {self.case["case"]: parse_case(self.query_set, self.case_id)}
+    #     print('用例执行开始')
+    #
+    # def test_run(self, datas):
+    #     for case in datas:
+    #         url = case.url
+    #         method = case.request_method
+    #         bodys = case.body
+    #         headers = case.request_headers
+    #         body_type = case.body_type
+    #         data = Request(url, body=bodys).request(method=method, body_type=body_type, headers=headers, body=bodys)
+    #         assert_list = case.assert_list
+    #         if assert_list:
+    #             actual = JSONPathParser().parse_assert(data, case.assert_list)
+    #             message = Executor().my_assert(actual, True)
+    #             data['asserts'] = message
+    #             self.assertTrue(message)
+    #
+    # def tearDown(self) -> None:
+    #     print('用例执行结束')
+
+
+def tests(case):
+    for i in case:
+        def test(self):
+            print(i)
+
+        setattr(ExecutorTest, f'test_{i}', test)
