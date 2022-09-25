@@ -1,0 +1,286 @@
+2022-09-22 11:32:30.939 | DEBUG    | __main__:<module>:80 - 调试代码
+2022-09-22 11:32:30.939 | INFO     | __main__:<module>:81 - 输出信息
+2022-09-22 11:32:30.940 | SUCCESS  | __main__:<module>:82 - 输出成功
+2022-09-22 11:32:30.940 | WARNING  | __main__:<module>:83 - 错误警告
+2022-09-22 11:32:30.940 | ERROR    | __main__:<module>:84 - 代码错误
+2022-09-22 11:32:30.940 | CRITICAL | __main__:<module>:85 - 崩溃输出
+2022-09-22 11:32:30.940 | INFO     | __main__:<module>:86 - ----原始测试----
+2022-09-22 17:04:02.741 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:88 - GET http://127.0.0.1//getProjectDetail?<QueryDict: {'id': ['41']}>
+2022-09-22 17:05:36.234 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:88 - GET http://127.0.0.1//getProjectDetail?<QueryDict: {'id': ['41']}>
+2022-09-22 17:06:29.157 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:88 - GET <QueryDict: {'id': ['41']}>
+2022-09-22 17:06:47.906 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:88 - GET <WSGIRequest: GET '/getProjectDetail?id=41'>
+2022-09-22 17:08:44.090 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:88 - <  '/getProjectDetail?id=41'>
+2022-09-22 17:10:00.519 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:88 -  http://<  '/getProjectDetail?id=41'>
+2022-09-22 17:10:56.596 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:88 -  http://<  '/getProjectDetail?id=41'>
+2022-09-22 17:11:13.082 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:88 -  <  '/getProjectDetail?id=41'>
+2022-09-22 17:11:39.550 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:88 -    '/getProjectDetail?id=41'
+2022-09-22 17:12:19.384 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:88 -  http://   '/getProjectDetail?id=41'
+2022-09-22 17:14:00.259 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:90 - GET  http http'http/httpghttpehttpthttpPhttprhttpohttpjhttpehttpchttpthttpDhttpehttpthttpahttpihttplhttp?httpihttpdhttp=http4http1http'
+2022-09-22 17:14:16.654 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:90 - GET http  '/getProjectDetail?id=41'
+2022-09-22 17:19:17.825 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:90 - GET http  '/getProjectDetail?id=41'
+2022-09-22 17:20:18.054 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:90 - GET <WSGIRequest: GET '/getProjectDetail?id=41'>
+2022-09-22 17:21:35.028 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - POST http://127.0.0.1/runHttpRequest
+2022-09-22 17:21:35.028 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 请求参数: b'{\r\n "url":"https://api-test.nhf.cn/tongue-sidecar/api/GetTongueFeature",\r\n "request_method":"post",\r\n "request_headers":"[{\\"name\\":\\"token\\",\\"value\\":\\"Bearer eyJhbGciOiJIUzUxMiJ9.eyJwaG9uZSI6IjE3NjIxNTI1Mzg3IiwiZXhwVGltZSI6MjU5MjAwMDAwMCwiYWNjb3VudE5vIjoiR00yMDIyMDUyMDA5NTYyNjAwMDAwMDAzMDUiLCJyb2xlQ29kZSI6IkhXUjAwMDA0MyIsInRlbmFudElkIjpudWxsLCJlbXBsb3llZUlkIjpudWxsLCJwbGF0VHlwZSI6IjciLCJ1c2VyTmFtZSI6IueOi-Wui-aWhyIsImV4cCI6MTY2NTI4MjkyMiwidXNlcklkIjo0Mzd9.cxO_R4OLgvu4IlzSEaQyqZwxCgaYGTf9Q1TmiTEHQeDGExUo5X_zAW49LHOPAseqHm8wfl36mwFNlsb2mvkreA\\",\\"_type\\":\\"String\\",\\"required\\":true,\\"restrict\\":\\"\\",\\"desc\\":\\"token\xe5\x80\xbc\\",\\"status\\":\\"String\\"}]",\r\n "body":"[{\\"name\\":\\"file\\",\\"value\\":\\"\\",\\"_type\\":\\"file\\",\\"required\\":true,\\"restrict\\":\\"\\",\\"description\\":\\"id\xe5\x80\xbc\\"},{\\"name\\":\\"image\\",\\"value\\":\\"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\\",\\"_type\\":\\"text\\",\\"required\\":true,\\"restrict\\":\\"\\",\\"description\\":\\"result\xe5\x80\xbc\\"},{\\"name\\":\\"UserId\\",\\"value\\":\\"114458\\",\\"_type\\":\\"text\\",\\"required\\":true,\\"restrict\\":\\"\\",\\"description\\":\\"result\xe5\x80\xbc\\"}]",\r\n "out_params":"[{\\"param_name\\":\\"response\\",\\"extract_exp\\":\\"$..code\\",\\"extract_obj\\":\\"response_json\\"}]",\r\n "body_type":"form_data",\r\n "assert_list":"[{\\"expected\\":\\"100\\",\\"actually\\":\\"1\\",\\"assert_type\\":\\"int_less_than\\",\\"assert_obj\\":\\"request_time\\"},{\\"expected\\":\\"200\\",\\"actually\\":\\"$..MessageCode\\",\\"assert_type\\":\\"equal\\",\\"assert_obj\\":\\"response_json\\"}]"\r\n}'
+2022-09-22 17:21:35.040 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:95 - 响应信息: {"code":500,"message":"解析参数失败，响应信息或表达式为空","success":false,"data":{}}
+2022-09-22 17:22:25.079 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - POST http://127.0.0.1/runHttpRequest
+2022-09-22 17:22:25.080 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 请求参数: {'url': 'https://api-test.nhf.cn/tongue-sidecar/api/GetTongueFeature', 'request_method': 'post', 'request_headers': '[{"name":"token","value":"Bearer eyJhbGciOiJIUzUxMiJ9.eyJwaG9uZSI6IjE3NjIxNTI1Mzg3IiwiZXhwVGltZSI6MjU5MjAwMDAwMCwiYWNjb3VudE5vIjoiR00yMDIyMDUyMDA5NTYyNjAwMDAwMDAzMDUiLCJyb2xlQ29kZSI6IkhXUjAwMDA0MyIsInRlbmFudElkIjpudWxsLCJlbXBsb3llZUlkIjpudWxsLCJwbGF0VHlwZSI6IjciLCJ1c2VyTmFtZSI6IueOi-Wui-aWhyIsImV4cCI6MTY2NTI4MjkyMiwidXNlcklkIjo0Mzd9.cxO_R4OLgvu4IlzSEaQyqZwxCgaYGTf9Q1TmiTEHQeDGExUo5X_zAW49LHOPAseqHm8wfl36mwFNlsb2mvkreA","_type":"String","required":true,"restrict":"","desc":"token值","status":"String"}]', 'body': '[{"name":"file","value":"","_type":"file","required":true,"restrict":"","description":"id值"},{"name":"image","value":"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","_type":"text","required":true,"restrict":"","description":"result值"},{"name":"UserId","value":"114458","_type":"text","required":true,"restrict":"","description":"result值"}]', 'out_params': '[{"param_name":"response","extract_exp":"$..code","extract_obj":"response_json"}]', 'body_type': 'form_data', 'assert_list': '[{"expected":"100","actually":"1","assert_type":"int_less_than","assert_obj":"request_time"},{"expected":"200","actually":"$..MessageCode","assert_type":"equal","assert_obj":"response_json"}]'}
+2022-09-22 17:22:25.085 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:95 - 响应信息: {"code":500,"message":"解析参数失败，响应信息或表达式为空","success":false,"data":{}}
+2022-09-22 17:32:35.076 | INFO     | __main__:main:13 - hello world
+2022-09-22 17:33:06.877 | INFO     | __main__:main:13 - 
+2022-09-22 17:33:41.935 | INFO     | __main__:main:13 - servers is running 
+2022-09-22 17:34:55.967 | INFO     | __main__:main:13 - servers is running 
+2022-09-22 17:35:20.037 | SUCCESS  | __main__:main:13 - servers is running 
+2022-09-22 17:35:20.795 | SUCCESS  | __main__:main:13 - servers is running 
+2022-09-22 17:35:53.798 | SUCCESS  | __main__:main:20 - servers is running 
+2022-09-22 17:35:59.735 | SUCCESS  | __main__:main:20 - servers is running 
+2022-09-22 17:36:00.674 | SUCCESS  | __main__:main:20 - servers is running 
+2022-09-22 17:36:29.286 | SUCCESS  | __main__:main:20 - server is running 
+2022-09-22 17:36:50.100 | SUCCESS  | __main__:main:20 - server started success.        ✔
+2022-09-22 17:37:26.723 | INFO     | __main__:main:14 - 
+                     __ __                                              
+   ____   _____     |__|  | __ _______ __ __  ____   ____   ___________ 
+  / ___\ /     \    |  |  |/ / \_  __ \  |  \/    \ /    \_/ __ \_  __  / /_/  >  Y Y  \   |  |    <   |  | \/  |  /   |  \   |  \  ___/|  | \/
+ \___  /|__|_|  /\__|  |__|_ \  |__|  |____/|___|  /___|  /\___  >__|   
+/_____/       \/\______|    \/                   \/     \/     \/       
+
+    
+2022-09-22 17:37:26.780 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-09-22 17:39:28.368 | SUCCESS  | __main__:main:14 - 
+                     __ __                                              
+   ____   _____     |__|  | __ _______ __ __  ____   ____   ___________ 
+  / ___\ /     \    |  |  |/ / \_  __ \  |  \/    \ /    \_/ __ \_  __  / /_/  >  Y Y  \   |  |    <   |  | \/  |  /   |  \   |  \  ___/|  | \/
+ \___  /|__|_|  /\__|  |__|_ \  |__|  |____/|___|  /___|  /\___  >__|   
+/_____/       \/\______|    \/                   \/     \/     \/       
+
+    
+2022-09-22 17:39:28.410 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-09-22 17:40:51.324 | SUCCESS  | __main__:main:14 - 
+     ____   _____     |__|  | __ _______ __ __  ____   ____   ___________ 
+  / ___\ /     \    |  |  |/ / \_  __ \  |  \/    \ /    \_/ __ \_  __  / /_/  >  Y Y  \   |  |    <   |  | \/  |  /   |  \   |  \  ___/|  | \/
+ \___  /|__|_|  /\__|  |__|_ \  |__|  |____/|___|  /___|  /\___  >__|   
+/_____/       \/\______|    \/                   \/     \/     \/       
+
+    
+2022-09-22 17:40:51.366 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-09-22 17:41:33.032 | SUCCESS  | __main__:main:14 - 
+  
+                     __ __    
+   ____   _____     |__|  | __
+  / ___\ /     \    |  |  |/ /
+ / /_/  >  Y Y  \   |  |    < 
+ \___  /|__|_|  /\__|  |__|_ /_____/       \/\______|    \/
+
+    
+2022-09-22 17:41:33.084 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-09-22 17:43:16.293 | SUCCESS  | __main__:main:14 - 
+     ________        ___          _________         ___    ___ 
+    |\   __  \      |\  \        |\___   ___\      |\  \  /  /|
+    \ \  \|\  \     \ \  \       \|___ \  \_|      \ \  \/  / /
+     \ \   ____\     \ \  \           \ \  \        \ \    / / 
+      \ \  \___|      \ \  \           \ \  \        \/  /  /  
+       \ \__\          \ \__\           \ \__\     __/  / /    
+        \|__|           \|__|            \|__|    |\___/ /     
+                                                  \|___|/      
+
+    
+2022-09-22 17:43:16.333 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-09-22 17:43:17.053 | SUCCESS  | __main__:main:14 - 
+     ________        ___          _________         ___    ___ 
+    |\   __  \      |\  \        |\___   ___\      |\  \  /  /|
+    \ \  \|\  \     \ \  \       \|___ \  \_|      \ \  \/  / /
+     \ \   ____\     \ \  \           \ \  \        \ \    / / 
+      \ \  \___|      \ \  \           \ \  \        \/  /  /  
+       \ \__\          \ \__\           \ \__\     __/  / /    
+        \|__|           \|__|            \|__|    |\___/ /     
+                                                  \|___|/      
+
+    
+2022-09-22 17:43:17.097 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-09-22 17:44:06.543 | SUCCESS  | __main__:main:14 - 
+     
+                     __ __    
+   ____   _____     |__|  | __
+  / ___\ /     \    |  |  |/ /
+ / /_/  >  Y Y  \   |  |    < 
+ \___  /|__|_|  /\__|  |__|_ /_____/       \/\______|    \/
+
+    
+2022-09-22 17:44:06.587 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-09-22 17:44:26.036 | SUCCESS  | __main__:main:14 - 
+     
+                     __ __    
+   ____   _____     |__|  | __
+  / ___\ /     \    |  |  |/ /
+ / /_/  >  Y Y  \   |  |    < 
+ \___  /|__|_|  /\__|  |__|_ /_____/       \/\______|    \/
+
+
+    
+2022-09-22 17:44:26.078 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-09-22 17:44:45.507 | SUCCESS  | __main__:main:14 - 
+     
+        .__  __          
+______ |__|/  |_ ___.__.
+\____ \|  \   __<   |  |
+|  |_> >  ||  |  \___  |
+|   __/|__||__|  / ____|
+|__|             \/     
+                        
+                        
+                        
+                        
+                        
+                        
+
+    
+2022-09-22 17:44:45.547 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-09-22 17:46:03.664 | SUCCESS  | __main__:main:14 - 
+     
+
+ ________  ___  _________    ___    ___ 
+|\   __  \|\  \|\___   ___\ |\  \  /  /|
+\ \  \|\  \ \  \|___ \  \_| \ \  \/  / /
+ \ \   ____\ \  \   \ \  \   \ \    / / 
+  \ \  \___|\ \  \   \ \  \   \/  /  /  
+   \ \__\    \ \__\   \ \__\__/  / /    
+    \|__|     \|__|    \|__|\___/ /     
+                           \|___|/      
+
+
+    
+2022-09-22 17:46:03.705 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-09-22 17:49:02.892 | SUCCESS  | __main__:main:14 - 
+     
+
+ ________      _____ ______          ___      ___  __       
+|\   ____\    |\   _ \  _   \       |\  \    |\  \|\  \     
+\ \  \___|    \ \  \\__\ \  \      \ \  \   \ \  \/  /|_   
+ \ \  \  ___   \ \  \|__| \  \   __ \ \  \   \ \   ___  \  
+  \ \  \|\  \   \ \  \    \ \  \ |\  \_\  \   \ \  \ \  \ 
+   \ \_______\   \ \__\    \ \__\ \________\   \ \__\ \__    \|_______|    \|__|     \|__| \|________|    \|__| \|__|
+                                                            
+                                                            
+                                                            
+
+
+
+    
+2022-09-22 17:49:02.949 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-09-22 17:49:26.863 | SUCCESS  | __main__:main:14 - 
+     
+
+ 
+                       __  __    
+   ____    _____      |__||  | __
+  / ___\  /     \     |  ||  |/ /
+ / /_/  >|  Y Y  \    |  ||    < 
+ \___  / |__|_|  //\__|  ||__|_ /_____/        \/ \______|     \/
+      
+                                                            
+
+
+
+    
+2022-09-22 17:49:26.903 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-09-22 17:52:05.023 | SUCCESS  | __main__:main:14 - 
+                       __  __    
+   ____    _____      |__||  | __
+  / ___\  /     \     |  ||  |/ /
+ / /_/  >|  Y Y  \    |  ||    < 
+ \___  / |__|_|  //\__|  ||__|_ /_____/        \/ \______|     \/
+    
+2022-09-22 17:52:05.066 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-09-22 17:53:31.339 | SUCCESS  | __main__:main:14 - 
+    ____               __  __     
+  / ___\  _____      |__||  | __ 
+ / /_/  >/     \     |  ||  |/ / 
+ \___  /|  Y Y  \    |  ||    <  
+/_____/ |__|_|  //\__|  ||__|_ \ 
+              \/ \______|     \/ 
+                                 
+    
+2022-09-22 17:53:31.399 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-09-22 17:55:35.222 | SUCCESS  | __main__:main:14 - 
+  ________  _____ ______         ___  ___  __            ________  ___  ___  ________   ________   _______   ________     
+|\   ____\|\   _ \  _   \      |\  \|\  \|\  \         |\   __  \|\  \|\  \|\   ___  \|\   ___  \|\  ___ \ |\   __  \    
+\ \  \___|\ \  \\__\ \  \     \ \  \ \  \/  /|_       \ \  \|\  \ \  \\  \ \  \ \  \ \  \ \  \ \   __/|\ \  \|\  \   
+ \ \  \  __\ \  \|__| \  \  __ \ \  \ \   ___  \       \ \   _  _\ \  \\  \ \  \ \  \ \  \ \  \ \  \_|/_\ \   _  _\  
+  \ \  \|\  \ \  \    \ \  \|\  \_\  \ \  \ \  \       \ \  \  \ \  \\  \ \  \ \  \ \  \ \  \ \  \_|\ \ \  \  \| 
+   \ \_______\ \__\    \ \__\ \________\ \__\ \__\       \ \__\ _\ \_______\ \__\ \__\ \__\ \__\ \_______\ \__\ _\ 
+    \|_______|\|__|     \|__|\|________|\|__| \|__|        \|__|\|__|\|_______|\|__| \|__|\|__| \|__|\|_______|\|__|\|__|
+                                                                                                                         
+                                                                                                                         
+                                                                                                                         
+                                 
+    
+2022-09-22 17:55:35.263 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-09-22 17:56:04.658 | SUCCESS  | __main__:main:14 - 
+  ██████╗ ███╗   ███╗     ██╗██╗  ██╗    ██████╗ ██╗   ██╗███╗   ██╗███╗   ██╗███████╗██████╗ 
+██╔════╝ ████╗ ████║     ██║██║ ██╔╝    ██╔══██╗██║   ██║████╗  ██║████╗  ██║██╔════╝██╔══██╗
+██║  ███╗██╔████╔██║     ██║█████╔╝     ██████╔╝██║   ██║██╔██╗ ██║██╔██╗ ██║█████╗  ██████╔╝
+██║   ██║██║╚██╔╝██║██   ██║██╔═██╗     ██╔══██╗██║   ██║██║╚██╗██║██║╚██╗██║██╔══╝  ██╔══██╗
+╚██████╔╝██║ ╚═╝ ██║╚█████╔╝██║  ██╗    ██║  ██║╚██████╔╝██║ ╚████║██║ ╚████║███████╗██║  ██║
+ ╚═════╝ ╚═╝     ╚═╝ ╚════╝ ╚═╝  ╚═╝    ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝
+                                                                                             
+                                                                                                                         
+                                                                                                                         
+                                                                                                                         
+                                 
+    
+2022-09-22 17:56:04.706 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-09-22 17:56:26.067 | SUCCESS  | __main__:main:14 - 
+  ██████╗ ███╗   ███╗     ██╗██╗  ██╗    ██████╗ ██╗   ██╗███╗   ██╗███╗   ██╗███████╗██████╗ 
+██╔════╝ ████╗ ████║     ██║██║ ██╔╝    ██╔══██╗██║   ██║████╗  ██║████╗  ██║██╔════╝██╔══██╗
+██║  ███╗██╔████╔██║     ██║█████╔╝     ██████╔╝██║   ██║██╔██╗ ██║██╔██╗ ██║█████╗  ██████╔╝
+██║   ██║██║╚██╔╝██║██   ██║██╔═██╗     ██╔══██╗██║   ██║██║╚██╗██║██║╚██╗██║██╔══╝  ██╔══██╗
+╚██████╔╝██║ ╚═╝ ██║╚█████╔╝██║  ██╗    ██║  ██║╚██████╔╝██║ ╚████║██║ ╚████║███████╗██║  ██║
+ ╚═════╝ ╚═╝     ╚═╝ ╚════╝ ╚═╝  ╚═╝    ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝
+                                                                                                                                          
+    
+2022-09-22 17:56:26.115 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-09-22 17:57:22.369 | SUCCESS  | __main__:main:14 - 
+                 _ _                                       
+                (_) |                                      
+  __ _ _ __ ___  _| | __  _ __ _   _ _ __  _ __   ___ _ __ 
+ / _` | '_ ` _ \| | |/ / | '__| | | | '_ \| '_ \ / _ \ '__|
+| (_| | | | | | | |   <  | |  | |_| | | | | | | |  __/ |   
+ \__, |_| |_| |_| |_|\_\ |_|   \__,_|_| |_|_| |_|\___|_|   
+  __/ |        _/ |                                        
+ |___/        |__/                                                                                                                                                                        
+    
+2022-09-22 17:57:22.410 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-09-22 17:57:30.841 | SUCCESS  | __main__:main:14 - 
+  ██████╗ ███╗   ███╗     ██╗██╗  ██╗    ██████╗ ██╗   ██╗███╗   ██╗███╗   ██╗███████╗██████╗ 
+██╔════╝ ████╗ ████║     ██║██║ ██╔╝    ██╔══██╗██║   ██║████╗  ██║████╗  ██║██╔════╝██╔══██╗
+██║  ███╗██╔████╔██║     ██║█████╔╝     ██████╔╝██║   ██║██╔██╗ ██║██╔██╗ ██║█████╗  ██████╔╝
+██║   ██║██║╚██╔╝██║██   ██║██╔═██╗     ██╔══██╗██║   ██║██║╚██╗██║██║╚██╗██║██╔══╝  ██╔══██╗
+╚██████╔╝██║ ╚═╝ ██║╚█████╔╝██║  ██╗    ██║  ██║╚██████╔╝██║ ╚████║██║ ╚████║███████╗██║  ██║
+ ╚═════╝ ╚═╝     ╚═╝ ╚════╝ ╚═╝  ╚═╝    ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝
+                                                                                                                                          
+    
+2022-09-22 17:57:30.881 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-09-22 17:57:53.734 | SUCCESS  | __main__:main:14 - 
+                                ███  █████                                                                      
+                              ░░░  ░░███                                                                       
+  ███████ █████████████       █████ ░███ █████    ████████  █████ ████ ████████   ████████    ██████  ████████ 
+ ███░░███░░███░░███░░███     ░░███  ░███░░███    ░░███░░███░░███ ░███ ░░███░░███ ░░███░░███  ███░░███░░███░░███
+░███ ░███ ░███ ░███ ░███      ░███  ░██████░      ░███ ░░░  ░███ ░███  ░███ ░███  ░███ ░███ ░███████  ░███ ░░░ 
+░███ ░███ ░███ ░███ ░███      ░███  ░███░░███     ░███      ░███ ░███  ░███ ░███  ░███ ░███ ░███░░░   ░███     
+░░███████ █████░███ █████     ░███  ████ █████    █████     ░░████████ ████ █████ ████ █████░░██████  █████    
+ ░░░░░███░░░░░ ░░░ ░░░░░      ░███ ░░░░ ░░░░░    ░░░░░       ░░░░░░░░ ░░░░ ░░░░░ ░░░░ ░░░░░  ░░░░░░  ░░░░░     
+ ███ ░███                 ███ ░███                                                                             
+░░██████                 ░░██████                                                                              
+ ░░░░░░                   ░░░░░░                                                                               
+                                                                                                                                          
+    
+2022-09-22 17:57:53.775 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-09-22 17:58:10.954 | SUCCESS  | __main__:main:14 - 
+  ██████╗ ███╗   ███╗     ██╗██╗  ██╗    ██████╗ ██╗   ██╗███╗   ██╗███╗   ██╗███████╗██████╗ 
+██╔════╝ ████╗ ████║     ██║██║ ██╔╝    ██╔══██╗██║   ██║████╗  ██║████╗  ██║██╔════╝██╔══██╗
+██║  ███╗██╔████╔██║     ██║█████╔╝     ██████╔╝██║   ██║██╔██╗ ██║██╔██╗ ██║█████╗  ██████╔╝
+██║   ██║██║╚██╔╝██║██   ██║██╔═██╗     ██╔══██╗██║   ██║██║╚██╗██║██║╚██╗██║██╔══╝  ██╔══██╗
+╚██████╔╝██║ ╚═╝ ██║╚█████╔╝██║  ██╗    ██║  ██║╚██████╔╝██║ ╚████║██║ ╚████║███████╗██║  ██║
+ ╚═════╝ ╚═╝     ╚═╝ ╚════╝ ╚═╝  ╚═╝    ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝
+                                                                                                                                          
+    
+2022-09-22 17:58:11.020 | SUCCESS  | __main__:main:22 - server started success.        ✔
