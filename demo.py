@@ -1,8 +1,6 @@
 from functools import wraps
 import unittest
 
-from gm_api_automation.core.executor import Data
-
 
 class ParametrizedTestCase(unittest.TestCase):
     """ TestCase classes that want to be parametrized should
@@ -97,17 +95,14 @@ def ddt(cls):
 class ExecutorTest(ParametrizedTestCase):
 
     def setUp(self) -> None:
-        setattr(Data, "case_id", "123456")
+        print(111)
 
     def get_case(self):
         return 1, 2, 3
 
-    @data(*getattr(Data, "case_id"))
     def test_run(self):
         print("这是data", data)
 
 
 if __name__ == '__main__':
-    suite = unittest.TestSuite()
-    suite.addTest(ParametrizedTestCase.parametrize(ExecutorTest, case_id=42))
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    print(dir(ExecutorTest))

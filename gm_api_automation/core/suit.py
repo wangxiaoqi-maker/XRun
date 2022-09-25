@@ -1,17 +1,11 @@
+import json
 import os
 import time
 import unittest
 
-import ddt
 from XTestRunner import HTMLTestRunner
-from django.db.models import QuerySet
 
 from gm_api_automation.core import run_case
-from gm_api_automation.core.executor import Executor
-from gm_api_automation.core.paramters_parse.jsonpath_parser import JSONPathParser
-from gm_api_automation.core.run_case import ParametrizedTestCase, parse_case,ExecutorTest
-from gm_api_automation.middleware.HttpClient import Request
-from gm_api_automation.middleware import ddt_util
 
 
 def unittest_run_case():
@@ -19,7 +13,8 @@ def unittest_run_case():
     使用unittest执行测试用例
     """
     suite = unittest.TestSuite()
-    suite.addTest(ExecutorTest('test'))
+    loader = unittest.TestLoader()
+    suite.addTest(loader.loadTestsFromModule(run_case))
     # 当前时间
     now = time.strftime("%Y%m%d%H%M%S")
     file_name = str(now) + 'report.html'
@@ -37,9 +32,13 @@ def unittest_run_case():
         language='zh-CN',
     )
     # 执行测试套件
-    runner.run(suite)
+    result = runner.run(suite)
     fp.close()
-    return report_name
-
-
-
+    # 获取报告源码
+    with open(report_name, 'rb') as f:
+        report_source = f.readlines()
+        # 将读取到的字符串源码去掉隐号
+        report_source = [i.decode('utf-8').replace('"', '').replace("\n", "").replace(",", "") for i in report_source]
+    message = {'success_count': result.success_count, 'failure_count': result.failure_count,
+               'error_count': result.error_count, 'skip_count': result.skip_count, 'report_source_code': report_source}
+    return message

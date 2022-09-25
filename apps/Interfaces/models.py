@@ -37,4 +37,4 @@ class Interfaces(BaseModels):
         ordering = ['id']
 
     def __str__(self):
-        return f'Interface({self.name})'
+        return f'{self.name}'

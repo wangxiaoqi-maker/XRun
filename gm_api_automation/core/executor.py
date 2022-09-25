@@ -155,11 +155,11 @@ class Executor(object):
         """
         return json.loads(data)
 
-    def extract_out_params(self, data: dict, params_obj: Interfaces.objects, case_id):
+    def extract_out_params(self, data: dict, cases):
         """
         将传入的out_params列表循环拿出，并通过jsonpath提取response中的参数，并更新out_params列表
         """
-        out_params = params_obj.filter(id=case_id).first().out_params
+        out_params = cases.out_params
         if out_params:
             out_params = self.translate(out_params)
             for param in out_params:
@@ -171,13 +171,12 @@ class Executor(object):
             return out_params
         return None
 
-    def replace_params(self, params_obj: Interfaces.objects, case_id):
+    def replace_params(self, cases):
         """
         找出用例中需要替换的变量名 ${}包含的变量,并替换为对应的值
         """
-        params = params_obj.filter(id=case_id).first()
         # 遍历querySet对象中的所有数据
-        fileds = params.__dict__
+        fileds = cases.__dict__
         for k, v in fileds.items():
             var = self.get_el_expression(v)
             if var:
@@ -185,35 +184,26 @@ class Executor(object):
                 if hasattr(Data, var[0]):
                     value = getattr(Data, var[0])
                     value = v.replace("${{mark}}".replace("{mark}", var[0]), value)
-                    setattr(params, k, value)
-                    return params
-        return params
+                    setattr(cases, k, value)
+                    return cases
+        return cases
 
-    def run(self, query_set: QuerySet, case_id: list):
+    def run(self, cases: list):
         """
         运行测试用例
         """
-        for case in case_id:
+        for case in cases:
             url = case.url
             method = case.request_method
             bodys = case.body
             headers = case.request_headers
             body_type = case.body_type
             data = Request(url, body=bodys).request(method=method, body_type=body_type, headers=headers, body=bodys)
-            Executor().extract_out_params(data, query_set, case_id)
-            params_list = Executor().replace_params(query_set, case_id)
+            Executor().extract_out_params(data, cases)
+            params_list = Executor().replace_params(cases)
             actual = JSONPathParser().parse_assert(data, params_list.assert_list)
             message = Executor().my_assert(actual, True)
             return message
-
-    def unittest_run_case(self):
-        """
-        使用unittest执行测试用例
-        """
-        suite = unittest.TestSuite()
-        suite.addTest(Executor('run'))
-        runner = unittest.TextTestRunner()
-        runner.run(suite)
 
     @staticmethod
     def get_el_expression(string: str):

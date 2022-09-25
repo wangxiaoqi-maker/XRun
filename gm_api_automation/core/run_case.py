@@ -5,6 +5,7 @@ import ddt
 from django.db.models import QuerySet
 
 from Interfaces.models import Interfaces
+from gm_api_automation.Utils.loguru_util import logger
 from gm_api_automation.core.executor import Executor
 from gm_api_automation.core.paramters_parse.jsonpath_parser import JSONPathParser
 from gm_api_automation.middleware import ddt_util
@@ -15,7 +16,7 @@ def parse_case(query_set: QuerySet, case_id: list):
     """
     运行测试用例
     """
-    cases = query_set.filter(id__in=case_id)
+    cases = query_set.filter(id__in=case_id, is_delete=False)
     return cases
 
 
@@ -54,34 +55,30 @@ class ParametrizedTestCase(unittest.TestCase):
 
 class ExecutorTest(unittest.TestCase):
     pass
-    # case = {}
-    #
-    # def setUp(self) -> None:
-    #     self.case = {self.case["case"]: parse_case(self.query_set, self.case_id)}
-    #     print('用例执行开始')
-    #
-    # def test_run(self, datas):
-    #     for case in datas:
-    #         url = case.url
-    #         method = case.request_method
-    #         bodys = case.body
-    #         headers = case.request_headers
-    #         body_type = case.body_type
-    #         data = Request(url, body=bodys).request(method=method, body_type=body_type, headers=headers, body=bodys)
-    #         assert_list = case.assert_list
-    #         if assert_list:
-    #             actual = JSONPathParser().parse_assert(data, case.assert_list)
-    #             message = Executor().my_assert(actual, True)
-    #             data['asserts'] = message
-    #             self.assertTrue(message)
-    #
-    # def tearDown(self) -> None:
-    #     print('用例执行结束')
 
 
-def tests(case):
-    for i in case:
-        def test(self):
-            print(i)
-
+def add_cases(cases):
+    for i in cases:
+        def test(self, case=i):
+            executor = Executor()
+            case = executor.replace_params(case)
+            url = case.url
+            method = case.request_method
+            bodys = case.body
+            headers = case.request_headers
+            body_type = case.body_type
+            data = Request(url, body=bodys).request(method=method, body_type=body_type, headers=headers, body=bodys)
+            # 提取参数
+            extract = executor.extract_out_params(data, case)
+            assert_list = case.assert_list
+            params_list = executor.replace_params(case)
+            if assert_list:
+                actual = JSONPathParser().parse_assert(data, params_list.assert_list)
+                message = executor.my_assert(actual, True)
+                # message字典中的status为false时，用例执行失败，并且将message字典中的msg信息返回
+                try:
+                    self.assertEqual(message['status'], True)
+                except AssertionError as e:
+                    logger.info(111)
+                    raise AssertionError(message['msg'])
         setattr(ExecutorTest, f'test_{i}', test)

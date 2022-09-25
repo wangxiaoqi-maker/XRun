@@ -15,6 +15,8 @@ import sys
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
+from gm_api_automation.middleware.LogMiddleware import OpLogs
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # apps绝对路径
@@ -48,7 +50,8 @@ INSTALLED_APPS = [
     'drf_yasg',  # swagger接口文档
     'TestCasesDiretorys',
     'Configs',
-    'Executed'
+    'Executed',
+    'TestSuit'
 ]
 # AUTH_USER_MODEL = 'Users.Users'
 MIDDLEWARE = [
@@ -59,6 +62,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'gm_api_automation.middleware.LogMiddleware.OpLogs'
 ]
 
 ROOT_URLCONF = 'gm_api_automation.urls'

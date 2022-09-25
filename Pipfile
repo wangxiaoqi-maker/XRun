@@ -9,6 +9,8 @@ aiohttp = "*"
 jsonpath = "*"
 ddt = "*"
 parameterized = "*"
+loguru = "*"
+pydantic = "*"
 
 [dev-packages]
 

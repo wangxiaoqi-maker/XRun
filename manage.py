@@ -3,11 +3,15 @@
 import os
 import sys
 
+from gm_api_automation.Utils.Configs import BaseConfig
+from gm_api_automation.Utils.loguru_util import logger
+
 
 def main():
     """Run administrative tasks."""
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'gm_api_automation.settings')
     try:
+        logger.success(BaseConfig().BANNER)
         from django.core.management import execute_from_command_line
     except ImportError as exc:
         raise ImportError(
@@ -15,6 +19,7 @@ def main():
             "available on your PYTHONPATH environment variable? Did you "
             "forget to activate a virtual environment?"
         ) from exc
+    logger.success("server started success.        ✔")
     execute_from_command_line(sys.argv)
 
 
