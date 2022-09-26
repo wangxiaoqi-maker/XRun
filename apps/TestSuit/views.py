@@ -1,5 +1,6 @@
-from django.shortcuts import render
+import datetime
 
+from django.shortcuts import render
 
 # Create your views here.
 from django_filters.rest_framework import DjangoFilterBackend
@@ -66,10 +67,11 @@ class TestSuitView(ModelViewSet):
         :param kwargs:
         :return:
         """
-        instance = self.filter_queryset(self.get_queryset()).filter(id=kwargs.get("pk")).first()
+        instance = self.filter_queryset(self.get_queryset()).filter(id=request.data.get('id'), is_delete=False).first()
         if not instance:
             return Response({'message': '测试套件不存在', 'success': False})
         instance.is_delete = True
+        instance.deleted_time = datetime.datetime.now()
         instance.save()
         return Response({'message': '测试套件删除成功', 'success': True})
 

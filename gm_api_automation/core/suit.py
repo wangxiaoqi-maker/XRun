@@ -18,7 +18,6 @@ def unittest_run_case():
     # 当前时间
     now = time.strftime("%Y%m%d%H%M%S")
     file_name = str(now) + 'report.html'
-    print(file_name)
     basedir = os.path.dirname(os.path.dirname((os.path.abspath(__file__))))
     report_dir = os.path.join(basedir, "report")
     report_name = os.path.join(report_dir, file_name)

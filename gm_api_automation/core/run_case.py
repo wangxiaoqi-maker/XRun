@@ -60,6 +60,7 @@ class ExecutorTest(unittest.TestCase):
 def add_cases(cases):
     for i in cases:
         def test(self, case=i):
+            logger.info(f'正在执行用例：{case.name}')
             executor = Executor()
             case = executor.replace_params(case)
             url = case.url
@@ -68,6 +69,7 @@ def add_cases(cases):
             headers = case.request_headers
             body_type = case.body_type
             data = Request(url, body=bodys).request(method=method, body_type=body_type, headers=headers, body=bodys)
+            Interfaces.objects.filter(id=case.id).update(response=data.get("response"))
             # 提取参数
             extract = executor.extract_out_params(data, case)
             assert_list = case.assert_list
@@ -78,7 +80,13 @@ def add_cases(cases):
                 # message字典中的status为false时，用例执行失败，并且将message字典中的msg信息返回
                 try:
                     self.assertEqual(message['status'], True)
+                    # 更新用例执行结果为成功
+                    Interfaces.objects.filter(id=case.id).update(status="成功")
                 except AssertionError as e:
-                    logger.info(111)
+                    # 更新用例执行结果为失败
+                    Interfaces.objects.filter(id=case.id).update(status="失败")
                     raise AssertionError(message['msg'])
+            else:
+                # 更新用例执行结果为成功
+                Interfaces.objects.filter(id=case.id).update(status="成功")
         setattr(ExecutorTest, f'test_{i}', test)

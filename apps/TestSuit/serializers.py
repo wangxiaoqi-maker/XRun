@@ -13,10 +13,12 @@ class CaseListSerializers(serializers.ModelSerializer):
     request_method = serializers.CharField(label='请求方法', help_text='请求方法', max_length=200, min_length=2, )
     url = serializers.CharField(label='请求地址', help_text='请求地址', max_length=200, min_length=2, )
     is_delete = serializers.BooleanField(label='是否删除', help_text='是否删除')
+    status = serializers.CharField(label='测试结果', help_text='测试结果', max_length=200, min_length=1, )
+    response = serializers.CharField(label='响应结果', help_text='响应结果', max_length=200, min_length=1, )
 
     class Meta:
         model = Interfaces
-        fields = ('id', 'name', 'request_method', 'url', 'is_delete')
+        fields = ('id', 'name', 'request_method', 'url', 'is_delete', 'status', 'response')
 
 
 class TestSuitSerializer(serializers.ModelSerializer):
@@ -28,8 +30,7 @@ class TestSuitSerializer(serializers.ModelSerializer):
                         'project': {'required': True,
                                     'error_messages': {'required': '项目不能为空', 'blank': '项目不能为空', 'null': '项目不能为空'}},
                         'case_list': {'required': False},
-                        'env': {'required': True,
-                                'error_messages': {'required': '环境不能为空', 'blank': '环境不能为空', 'null': '环境不能为空'}},
+                        'env': {'required': False},
                         'priority': {'required': False},
                         'created_time': {'format': '%Y-%m-%d %H:%M:%S'},
                         'updated_time': {'format': '%Y-%m-%d %H:%M:%S'},
@@ -51,28 +52,30 @@ class TestSuitSerializer(serializers.ModelSerializer):
         :param validated_data:
         :return:
         """
-        validated_data['update_user'] = self.context['request'].user
+        validated_data['update_user'] = self.context['request'].user.username
         return super().update(instance, validated_data)
 
     def validate(self, attrs):
         """
-        校验在不同项目下可以创建相同的套件名称
+        1.校验在不同项目下可以创建相同的套件名称
+        2.校验在同一项目下套件名称不能重复
+        3.校验环境是否存在
+        4.当更新时，同一个套件名称可以重复
         """
         project = Projects.objects.filter(id=attrs.get('project').id, is_delete=False).first()
-        env = Config.objects.filter(id=attrs.get('env').id, is_delete=False).first()
-        # case_list = attrs.get('case_list')
-        # if case_list:
-        #     for i in case_list:
-        #         case = Interfaces.objects.filter(id=i.id, is_delete=False).first()
-        #         if not case:
-        #             raise serializers.ValidationError('用例不存在')
+        # env = Config.objects.filter(id=attrs.get('env').id, is_delete=False).first()
         if not project:
             raise serializers.ValidationError('项目不存在')
-        if not env:
-            raise serializers.ValidationError('环境不存在')
+        # if not env:
+        #     raise serializers.ValidationError('环境不存在')
         if attrs.get('name'):
-            if TestSuit.objects.filter(name=attrs['name'], project=attrs['project'].id, is_delete=False).exists():
-                raise serializers.ValidationError('该项目下已存在相同名称的套件')
+            if self.instance:
+                if TestSuit.objects.filter(name=attrs.get('name'), project=project, is_delete=False).exclude(
+                        id=self.instance.id).exists():
+                    raise serializers.ValidationError('套件名称已存在')
+            else:
+                if TestSuit.objects.filter(name=attrs.get('name'), project=project, is_delete=False).exists():
+                    raise serializers.ValidationError('套件名称已存在')
         return attrs
 
     def to_representation(self, instance):

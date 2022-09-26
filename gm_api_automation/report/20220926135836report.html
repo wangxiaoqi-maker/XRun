@@ -497,7 +497,7 @@
                             <div class="flex-1">
                                 <div class="d-flex align-items-center mb-1">开始时间 - 结束时间</div>
                                 <div class="d-flex align-items-center">
-                                    <div class="text-sm text-muted line-clamp-1 me-auto">2022-09-21 14:43:18 - 2022-09-21 14:43:19</div>
+                                    <div class="text-sm text-muted line-clamp-1 me-auto">2022-09-26 13:58:36 - 2022-09-26 13:59:04</div>
                                 </div>
                             </div>
                         </div>
@@ -505,7 +505,7 @@
                             <div class="flex-1">
                                 <div class="d-flex align-items-center mb-1">运行时长</div>
                                 <div class="d-flex align-items-center">
-                                    <div class="text-sm text-muted line-clamp-1 me-auto">0:00:00.868</div>
+                                    <div class="text-sm text-muted line-clamp-1 me-auto">0:00:28.274</div>
                                 </div>
                             </div>
                         </div>
@@ -515,7 +515,7 @@
                                 <div class="d-flex align-items-center">
                                     <div class="text-sm text-muted line-clamp-1 me-auto">
                                         <span class="badge badge-pill bg-soft-success text-success me-2">通过:0</span>
-                                        <span class="badge badge-pill bg-soft-warning text-warning me-2">失败:3</span>
+                                        <span class="badge badge-pill bg-soft-warning text-warning me-2">失败:2</span>
                                         <span class="badge badge-pill bg-soft-danger text-danger me-2">错误:1</span>
                                         <span class="badge badge-pill bg-soft-secondary text-secondary me-2">跳过:0</span>
                                     </div>
@@ -562,19 +562,19 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col"><span class="h6 font-semibold text-muted text-sm d-block mb-2">失败</span>
-                            <span class="h3 font-bold mb-0">3</span></div>
+                            <span class="h3 font-bold mb-0">2</span></div>
                         <div class="col-auto">
                             <div class="icon icon-shape bg-warning text-white text-lg rounded-circle">F</div>
                         </div>
                     </div>
                     <div class="mt-2 mb-0 text-sm">
-                        <span class="badge badge-pill bg-soft-warning text-warning me-2">75.00%</span>
+                        <span class="badge badge-pill bg-soft-warning text-warning me-2">66.67%</span>
                         <span class="text-nowrap text-xs text-muted">失败率</span>
                     </div>
                     <div class="d-flex align-items-center">
                         <div class="progress" style="width:70%; margin-top: 5px;">
                             <div class="progress-bar bg-warning" role="progressbar" aria-valuenow="83" aria-valuemin="0"
-                                aria-valuemax="100" style="width:75.00%"></div>
+                                aria-valuemax="100" style="width:66.67%"></div>
                         </div>
                     </div>
                 </div>
@@ -591,13 +591,13 @@
                         </div>
                     </div>
                     <div class="mt-2 mb-0 text-sm">
-                        <span class="badge badge-pill bg-soft-danger text-danger me-2">25.00%</span>
+                        <span class="badge badge-pill bg-soft-danger text-danger me-2">33.33%</span>
                         <span class="text-nowrap text-xs text-muted">错误率</span>
                     </div>
                     <div class="d-flex align-items-center">
                         <div class="progress" style="width:70%; margin-top: 5px;">
                             <div class="progress-bar bg-danger" role="progressbar" aria-valuenow="83" aria-valuemin="0"
-                                aria-valuemax="100" style="width:25.00%"></div>
+                                aria-valuemax="100" style="width:33.33%"></div>
                         </div>
                     </div>
                 </div>
@@ -664,23 +664,23 @@
     <td>gm_api_automation.core.run_case.ExecutorTest</td>
     <td></td>
     <td></td>
-    <td>4</td>
+    <td>3</td>
     <td>0</td>
-    <td>4</td>
+    <td>3</td>
     <td>0</td>
-    <td><a href="javascript:showClassDetail('c1.1',4)">Detail</a></td>
+    <td><a href="javascript:showClassDetail('c1.1',3)">Detail</a></td>
     <td>&nbsp;</td>
 </tr>
 
 <tr id='et1.1.1' class='none'>
     <td class='errorCase'>
-        <div class='testcase'>test_Interface(专家咨询流程-登录接口4)</div>
+        <div class='testcase'>test_测试断言</div>
     </td>
     <td style="color: #495057">
         <div></div>
     </td>
     <td style="color: #495057">
-        <div>0.00 s</div>
+        <div>10.32 s</div>
     </td>
     <td colspan='5' align='center' class='caseStatistics'>
         <!--css div popup start-->
@@ -690,7 +690,7 @@
                 <div class="modal-content shadow-3">
                     <div class="modal-header">
                         <div>
-                            <h5 class="mb-1">test_Interface(专家咨询流程-登录接口4)</h5>
+                            <h5 class="mb-1">test_测试断言</h5>
                         </div>
                         <div>
                             <h5 class="mb-1">detailed log</h5>
@@ -702,26 +702,22 @@
                     <div class="modal-body">
                         <div>
                             <pre>et1.1.1: Traceback (most recent call last):
-  File "E:\测试平台相关\api_automation_platfrom_v1.0\gm_api_automation\middleware\HttpClient.py", line 41, in get_headers
-    headers = json.loads(headers)
-  File "D:\python3.9.8\lib\json\__init__.py", line 346, in loads
-    return _default_decoder.decode(s)
-  File "D:\python3.9.8\lib\json\decoder.py", line 337, in decode
-    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
-  File "D:\python3.9.8\lib\json\decoder.py", line 355, in raw_decode
-    raise JSONDecodeError("Expecting value", s, err.value) from None
-json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+  File "C:\Users\17621\.virtualenvs\api_automation_platfrom_v1.0-mjY1grIv\lib\site-packages\django\db\models\options.py", line 608, in get_field
+    return self.fields_map[field_name]
+KeyError: 'response'
 
 During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
-  File "E:\测试平台相关\api_automation_platfrom_v1.0\gm_api_automation\core\run_case.py", line 68, in test
-    data = Request(url, body=bodys).request(method=method, body_type=body_type, headers=headers, body=bodys)
-  File "E:\测试平台相关\api_automation_platfrom_v1.0\gm_api_automation\middleware\HttpClient.py", line 100, in request
-    headers = self.get_headers(**kwargs)
-  File "E:\测试平台相关\api_automation_platfrom_v1.0\gm_api_automation\middleware\HttpClient.py", line 43, in get_headers
-    raise Exception("headers格式错误")
-Exception: headers格式错误
+  File "E:\测试平台相关\api_automation_platfrom_v1.0\gm_api_automation\core\run_case.py", line 83, in test
+    except AssertionError as e:
+  File "C:\Users\17621\.virtualenvs\api_automation_platfrom_v1.0-mjY1grIv\lib\site-packages\django\db\models\query.py", line 779, in update
+    query.add_update_values(kwargs)
+  File "C:\Users\17621\.virtualenvs\api_automation_platfrom_v1.0-mjY1grIv\lib\site-packages\django\db\models\sql\subqueries.py", line 85, in add_update_values
+    field = self.get_meta().get_field(name)
+  File "C:\Users\17621\.virtualenvs\api_automation_platfrom_v1.0-mjY1grIv\lib\site-packages\django\db\models\options.py", line 610, in get_field
+    raise FieldDoesNotExist("%s has no field named '%s'" % (self.object_name, field_name))
+django.core.exceptions.FieldDoesNotExist: Interfaces has no field named 'response'
 </pre>
                         </div>
                     </div>
@@ -735,13 +731,13 @@ Exception: headers格式错误
 
 <tr id='ft1.1.2' class='none'>
     <td class='failCase'>
-        <div class='testcase'>test_Interface(测试断言)</div>
+        <div class='testcase'>test_测试断言1</div>
     </td>
     <td style="color: #495057">
         <div></div>
     </td>
     <td style="color: #495057">
-        <div>0.41 s</div>
+        <div>11.36 s</div>
     </td>
     <td colspan='5' align='center' class='caseStatistics'>
         <!--css div popup start-->
@@ -751,7 +747,7 @@ Exception: headers格式错误
                 <div class="modal-content shadow-3">
                     <div class="modal-header">
                         <div>
-                            <h5 class="mb-1">test_Interface(测试断言)</h5>
+                            <h5 class="mb-1">test_测试断言1</h5>
                         </div>
                         <div>
                             <h5 class="mb-1">detailed log</h5>
@@ -763,65 +759,14 @@ Exception: headers格式错误
                     <div class="modal-body">
                         <div>
                             <pre>ft1.1.2: Traceback (most recent call last):
-  File "E:\测试平台相关\api_automation_platfrom_v1.0\gm_api_automation\core\run_case.py", line 76, in test
+  File "E:\测试平台相关\api_automation_platfrom_v1.0\gm_api_automation\core\run_case.py", line 80, in test
     self.assertEqual(message['status'], True)
 AssertionError: False != True
 
 During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
-  File "E:\测试平台相关\api_automation_platfrom_v1.0\gm_api_automation\core\run_case.py", line 78, in test
-    raise AssertionError(message['msg'])
-AssertionError: 预期结果: ${response} 不等于 实际结果: 1000【❌】
-</pre>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!--css div popup end-->
-    </td>
-    <td></td>
-</tr>
-
-<tr id='ft1.1.3' class='none'>
-    <td class='failCase'>
-        <div class='testcase'>test_Interface(测试断言1)</div>
-    </td>
-    <td style="color: #495057">
-        <div></div>
-    </td>
-    <td style="color: #495057">
-        <div>0.28 s</div>
-    </td>
-    <td colspan='5' align='center' class='caseStatistics'>
-        <!--css div popup start-->
-        <a class="popup_link" href="javascript:void(0)" onclick="showLog('div_ft1.1.3')">fail</a>
-        <div id='div_ft1.1.3' class="modal show" style="display: none; background-color: #000000c7;">
-            <div class="modal-dialog modal-dialog-centered log_window">
-                <div class="modal-content shadow-3">
-                    <div class="modal-header">
-                        <div>
-                            <h5 class="mb-1">test_Interface(测试断言1)</h5>
-                        </div>
-                        <div>
-                            <h5 class="mb-1">detailed log</h5>
-                        </div>
-                        <div>
-                            <button type="button" class="btn btn-sm btn-square bg-tertiary bg-opacity-20 bg-opacity-100-hover text-tertiary text-white-hover" data-bs-dismiss="modal" onclick="hideLog('div_ft1.1.3')">X</button>
-                        </div>
-                    </div>
-                    <div class="modal-body">
-                        <div>
-                            <pre>ft1.1.3: Traceback (most recent call last):
-  File "E:\测试平台相关\api_automation_platfrom_v1.0\gm_api_automation\core\run_case.py", line 76, in test
-    self.assertEqual(message['status'], True)
-AssertionError: False != True
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "E:\测试平台相关\api_automation_platfrom_v1.0\gm_api_automation\core\run_case.py", line 78, in test
+  File "E:\测试平台相关\api_automation_platfrom_v1.0\gm_api_automation\core\run_case.py", line 86, in test
     raise AssertionError(message['msg'])
 AssertionError: 预期结果: 3000 不等于 实际结果: 1000【❌】
 </pre>
@@ -835,44 +780,44 @@ AssertionError: 预期结果: 3000 不等于 实际结果: 1000【❌】
     <td></td>
 </tr>
 
-<tr id='ft1.1.4' class='none'>
+<tr id='ft1.1.3' class='none'>
     <td class='failCase'>
-        <div class='testcase'>test_Interface(测试断言2)</div>
+        <div class='testcase'>test_测试断言2</div>
     </td>
     <td style="color: #495057">
         <div></div>
     </td>
     <td style="color: #495057">
-        <div>0.17 s</div>
+        <div>6.59 s</div>
     </td>
     <td colspan='5' align='center' class='caseStatistics'>
         <!--css div popup start-->
-        <a class="popup_link" href="javascript:void(0)" onclick="showLog('div_ft1.1.4')">fail</a>
-        <div id='div_ft1.1.4' class="modal show" style="display: none; background-color: #000000c7;">
+        <a class="popup_link" href="javascript:void(0)" onclick="showLog('div_ft1.1.3')">fail</a>
+        <div id='div_ft1.1.3' class="modal show" style="display: none; background-color: #000000c7;">
             <div class="modal-dialog modal-dialog-centered log_window">
                 <div class="modal-content shadow-3">
                     <div class="modal-header">
                         <div>
-                            <h5 class="mb-1">test_Interface(测试断言2)</h5>
+                            <h5 class="mb-1">test_测试断言2</h5>
                         </div>
                         <div>
                             <h5 class="mb-1">detailed log</h5>
                         </div>
                         <div>
-                            <button type="button" class="btn btn-sm btn-square bg-tertiary bg-opacity-20 bg-opacity-100-hover text-tertiary text-white-hover" data-bs-dismiss="modal" onclick="hideLog('div_ft1.1.4')">X</button>
+                            <button type="button" class="btn btn-sm btn-square bg-tertiary bg-opacity-20 bg-opacity-100-hover text-tertiary text-white-hover" data-bs-dismiss="modal" onclick="hideLog('div_ft1.1.3')">X</button>
                         </div>
                     </div>
                     <div class="modal-body">
                         <div>
-                            <pre>ft1.1.4: Traceback (most recent call last):
-  File "E:\测试平台相关\api_automation_platfrom_v1.0\gm_api_automation\core\run_case.py", line 76, in test
+                            <pre>ft1.1.3: Traceback (most recent call last):
+  File "E:\测试平台相关\api_automation_platfrom_v1.0\gm_api_automation\core\run_case.py", line 80, in test
     self.assertEqual(message['status'], True)
 AssertionError: False != True
 
 During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
-  File "E:\测试平台相关\api_automation_platfrom_v1.0\gm_api_automation\core\run_case.py", line 78, in test
+  File "E:\测试平台相关\api_automation_platfrom_v1.0\gm_api_automation\core\run_case.py", line 86, in test
     raise AssertionError(message['msg'])
 AssertionError: 预期结果: 3000 不等于 实际结果: 1000【❌】
 </pre>
@@ -891,9 +836,9 @@ AssertionError: 预期结果: 3000 不等于 实际结果: 1000【❌】
     </div>
     <div class="card-footer border-0 py-5">
         <span class="text-muted text-sm">用例总数:
-            <button type="button" class="btn btn-sm bg-dark bg-opacity-20 bg-opacity-100-hover text-dark text-white-hover">4</button> =
+            <button type="button" class="btn btn-sm bg-dark bg-opacity-20 bg-opacity-100-hover text-dark text-white-hover">3</button> =
             <button type="button" class="btn btn-sm bg-success bg-opacity-20 bg-opacity-100-hover text-success text-white-hover">0</button> +
-            <button type="button" class="btn btn-sm bg-warning bg-opacity-20 bg-opacity-100-hover text-warning text-white-hover">3</button> +
+            <button type="button" class="btn btn-sm bg-warning bg-opacity-20 bg-opacity-100-hover text-warning text-white-hover">2</button> +
             <button type="button" class="btn btn-sm bg-danger bg-opacity-20 bg-opacity-100-hover text-danger text-white-hover">1</button> +
             <button type="button" class="btn btn-sm bg-secondary bg-opacity-20 bg-opacity-100-hover text-secondary text-white-hover">0</button>
         </span>

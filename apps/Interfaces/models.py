@@ -24,6 +24,7 @@ class Interfaces(BaseModels):
     priority = models.CharField(verbose_name='优先级', help_text='优先级', null=True, blank=True, default='', max_length=10)
     case_type = models.CharField(max_length=10, verbose_name='用例类型', help_text='用例类型', null=True, blank=True,
                                  default='')
+    response = models.TextField(verbose_name='响应结果', help_text='响应结果', null=True, blank=True, default='')
     developer = models.CharField(max_length=10, verbose_name='开发人员', help_text='开发人员', null=True, blank=True,
                                  default='')
     state = models.CharField(max_length=10, verbose_name='状态', help_text='状态', null=True, blank=True, default='')
