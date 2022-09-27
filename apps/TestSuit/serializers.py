@@ -30,7 +30,6 @@ class TestSuitSerializer(serializers.ModelSerializer):
                         'project': {'required': True,
                                     'error_messages': {'required': '项目不能为空', 'blank': '项目不能为空', 'null': '项目不能为空'}},
                         'case_list': {'required': False},
-                        'env': {'required': False},
                         'priority': {'required': False},
                         'created_time': {'format': '%Y-%m-%d %H:%M:%S'},
                         'updated_time': {'format': '%Y-%m-%d %H:%M:%S'},

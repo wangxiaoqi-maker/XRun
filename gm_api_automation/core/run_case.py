@@ -57,13 +57,24 @@ class ExecutorTest(unittest.TestCase):
     pass
 
 
-def add_cases(cases):
+def url_handle(new_url: str, env_url: str):
+    """
+    根据环境变量替换url
+    """
+    if new_url.startswith('http') or new_url.startswith('https'):
+        return new_url
+    else:
+        return env_url + new_url
+
+
+def add_cases(cases, envs):
     for i in cases:
-        def test(self, case=i):
+        def test(self, case=i, env=envs):
             logger.info(f'正在执行用例：{case.name}')
             executor = Executor()
             case = executor.replace_params(case)
             url = case.url
+            url_handle(url, env)
             method = case.request_method
             bodys = case.body
             headers = case.request_headers

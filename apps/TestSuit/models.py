@@ -13,8 +13,6 @@ class TestSuit(BaseModels):
                                 help_text='所属项目', db_constraint=False)
     cron = models.CharField(verbose_name='定时任务', max_length=100, null=True, blank=True, help_text='定时任务')
     priority = models.CharField(verbose_name='优先级', max_length=50, help_text='优先级', default='P0', null=True, blank=True)
-    env = models.ForeignKey('Configs.Config', on_delete=models.CASCADE, related_name='testsuit_env', help_text='所属环境',
-                            db_constraint=False,null=True, blank=True)
     case_list = models.ManyToManyField('Interfaces.Interfaces', related_name='testsuit_interfaces', help_text='用例列表',
                                        db_constraint=False)
     state = models.CharField(verbose_name='状态', max_length=50, help_text='状态',

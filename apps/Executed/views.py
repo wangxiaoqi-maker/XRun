@@ -37,9 +37,10 @@ class SendHttpRequestView(ModelViewSet):
         serializer = RunCaseSeralizer(data=request.data)
         serializer.is_valid(raise_exception=True)
         case_id = request.data.get('case_id')
+        env = request.data.get('env')
         if case_id is None or case_id == []:
             return Response({'message': '用例id不能为空', 'success': False})
         cases = parse_case(self.queryset, case_id)
-        add_cases(cases)
+        add_cases(cases, env)
         message = unittest_run_case()
         return Response(message)
