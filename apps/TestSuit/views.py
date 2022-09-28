@@ -19,7 +19,7 @@ class TestSuitView(ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     queryset = TestSuit.objects.all()
     serializer_class = TestSuitSerializer
-    filterset_fields = ('name', 'project', 'priority', 'state')
+    filterset_fields = ('id', 'name', 'project', 'priority', 'state')
 
     def list(self, request, *args, **kwargs):
         response = super().list(request, *args, **kwargs)

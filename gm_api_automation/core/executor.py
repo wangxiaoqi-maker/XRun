@@ -11,6 +11,7 @@ import jsonpath
 from django.db.models import QuerySet
 
 from Interfaces.models import Interfaces
+from gm_api_automation.Utils.loguru_util import logger
 from gm_api_automation.core.paramters_parse.jsonpath_parser import JSONPathParser
 from gm_api_automation.middleware.HttpClient import Request
 
@@ -163,12 +164,27 @@ class Executor(object):
         if out_params:
             out_params = self.translate(out_params)
             for param in out_params:
-                try:
-                    value = JSONPathParser().parse(data, param.get('extract_exp'))
-                    setattr(Data, param.get('param_name'), value)
-                except Exception as e:
-                    print(f"提取参数失败: {e}")
-            return out_params
+                if param.get('extract_obj') == 'response_json':
+                    try:
+                        value = JSONPathParser().parse(data, param.get('extract_exp'))
+                        setattr(Data, param.get('param_name'), value)
+                    except Exception as e:
+                        logger.info(f"提取参数失败: {e}")
+                elif param.get('extract_obj') == 'response_text':
+                    try:
+                        value = str(data)
+                        setattr(Data, param.get('param_name'), value)
+                    except Exception as e:
+                        logger.info(f"提取参数失败: {e}")
+                elif param.get('extract_obj') == 'response_headers':
+                    try:
+                        value = JSONPathParser().header_parse(data, param.get('extract_exp'))
+                        setattr(Data, param.get('param_name'), value)
+                    except Exception as e:
+                        logger.info(f"提取参数失败: {e}")
+                else:
+                    logger.info(f"不支持的提取对象: {param.get('extract_obj')}")
+                return out_params
         return None
 
     def replace_params(self, cases):
