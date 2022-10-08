@@ -38,6 +38,7 @@ def unittest_run_case():
         report_source = f.readlines()
         # 将读取到的字符串源码去掉隐号
         report_source = [i.decode('utf-8').replace('"', '').replace("\n", "").replace(",", "") for i in report_source]
+
     message = {'success_count': result.success_count, 'failure_count': result.failure_count,
                'error_count': result.error_count, 'skip_count': result.skip_count, 'report_source_code': report_source}
     return message
