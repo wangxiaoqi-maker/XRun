@@ -93,10 +93,10 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         # 'NAME': BASE_DIR / 'db.sqlite3',
         'NAME': 'api_automation',
-        'USER': 'qcj_init',
-        'PASSWORD': 'w1234567',
-        'PORT': '10236',
-        'HOST': 'cdb-fganhebq.bj.tencentcdb.com'
+        'USER': 'admin',
+        'PASSWORD': 'Wangsongwen2580.',
+        'PORT': '3306',
+        'HOST': '101.43.117.184'
     }
 }
 
