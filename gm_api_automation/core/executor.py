@@ -167,18 +167,21 @@ class Executor(object):
                 if param.get('extract_obj') == 'response_json':
                     try:
                         value = JSONPathParser().parse(data, param.get('extract_exp'))
+                        logger.info("出参类型为response_json，提取成功，提取表达式为：{}，提取结果为：{}".format(param.get('extract_exp'), value))
                         setattr(Data, param.get('param_name'), value)
                     except Exception as e:
                         logger.info(f"提取参数失败: {e}")
                 elif param.get('extract_obj') == 'response_text':
                     try:
                         value = str(data)
+                        logger.info("出参类型为response_text，提取成功，提取表达式为：{}，提取结果为：{}".format(param.get('extract_exp'), value))
                         setattr(Data, param.get('param_name'), value)
                     except Exception as e:
                         logger.info(f"提取参数失败: {e}")
                 elif param.get('extract_obj') == 'response_headers':
                     try:
                         value = JSONPathParser().header_parse(data, param.get('extract_exp'))
+                        logger.info("出参类型为response_headers，提取成功，提取表达式为：{}，提取结果为：{}".format(param.get('extract_exp'), value))
                         setattr(Data, param.get('param_name'), value)
                     except Exception as e:
                         logger.info(f"提取参数失败: {e}")
@@ -198,8 +201,10 @@ class Executor(object):
             if var:
                 # 如果变量在Data类中存在，则替换，否则不替换
                 if hasattr(Data, var[0]):
+                    logger.info(f"匹配到需要替换的变量: {var[0]}")
                     value = getattr(Data, var[0])
                     value = v.replace("${{mark}}".replace("{mark}", var[0]), value)
+                    logger.info(f"变量替换成功，替换后的值为: {value}")
                     setattr(cases, k, value)
                     return cases
         return cases
