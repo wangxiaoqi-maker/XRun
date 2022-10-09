@@ -42,6 +42,6 @@ class SendHttpRequestView(ModelViewSet):
         if case_id is None or case_id == []:
             return Response({'message': '用例id不能为空', 'success': False})
         cases = parse_case(self.queryset, case_id)
-        add_cases(cases, env, suite_id)
+        add_cases(cases, env, suite_id, case_id)
         message = unittest_run_case(suite_id)
         return Response(message)

@@ -93,4 +93,6 @@ class TestSuitSerializer(serializers.ModelSerializer):
         ret = super().to_representation(instance)
         ret['case_list'] = CaseListSerializers(instance.case_list.filter(is_delete=False), many=True).data
         ret['case_id'] = [case['id'] for case in ret['case_list']]
+        if instance.status:
+            ret['status'] = eval(instance.status)
         return ret

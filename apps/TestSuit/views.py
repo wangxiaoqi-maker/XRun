@@ -19,7 +19,7 @@ class TestSuitView(ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     queryset = TestSuit.objects.all()
     serializer_class = TestSuitSerializer
-    filterset_fields = ('id', 'name', 'project', 'priority', 'state')
+    filterset_fields = ('id', 'name', 'project', 'priority', 'state', 'updated_time')
 
     def list(self, request, *args, **kwargs):
         response = super().list(request, *args, **kwargs)
@@ -75,7 +75,7 @@ class TestSuitView(ModelViewSet):
         instance.save()
         return Response({'message': '测试套件删除成功', 'success': True})
 
-    def names(self, request, *args, **kwargs):
+    def reports(self, request, *args, **kwargs):
         """
         返回所有测试套件名称
         :param request:
@@ -83,9 +83,8 @@ class TestSuitView(ModelViewSet):
         :param kwargs:
         :return:
         """
-        queryset = self.filter_queryset(self.get_queryset())
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        response = super().list(request, *args, **kwargs)
+        return response
 
     def retrieve(self, request, *args, **kwargs):
         """
