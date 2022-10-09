@@ -110,6 +110,6 @@ def add_cases(cases, envs, suite_id, case_id):
                 Interfaces.objects.filter(id=case.id).update(status="成功")
                 status = {"id": case.id, "status": "成功"}
                 result.append(status)
-            TestSuit.objects.filter(id=suite_id).update(status=str(result), state="已完成")
+            TestSuit.objects.filter(id=suite_id).update(status=str(result), state="已完成", total_count=len(case_id))
 
         setattr(ExecutorTest, f'test_{i}', test)
