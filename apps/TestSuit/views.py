@@ -89,14 +89,6 @@ class TestSuitView(ModelViewSet):
         :return:
         """
         response = super().list(request, *args, **kwargs)
-        # 只返回state为已完成的测试套件
-        # response.data = [item for item in response.data['results'] if item['state'] == '已完成']
-
-        for item in response.data['results']:
-            if item['state'] == '已完成':
-                response.data['results'] = item
-            else:
-                response.data['results'] = []
         return response
 
     def retrieve(self, request, *args, **kwargs):
