@@ -33,7 +33,7 @@ class CaseListSerializers(serializers.ModelSerializer):
 class TestSuitSerializer(serializers.ModelSerializer):
     class Meta:
         model = TestSuit
-        exclude = ('is_delete', "create_user", "update_user", "deleted_time", "report_source_code")
+        exclude = ('is_delete', "create_user",  "deleted_time", "report_source_code")
         extra_kwargs = {'name': {'required': True,
                                  'error_messages': {'required': '套件名称不能为空', 'blank': '套件名称不能为空', 'null': '套件名称不能为空'}},
                         'project': {'required': True,
