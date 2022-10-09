@@ -23,7 +23,7 @@ class TestSuit(BaseModels):
     total_count = models.CharField(verbose_name='总用例数', max_length=50, help_text='总用例数', null=True, blank=True)
     report_source_code = models.TextField(verbose_name='报告源码', max_length=1000, null=True, blank=True, help_text='报告源码')
     state = models.CharField(verbose_name='状态', max_length=50, help_text='状态',
-                             default='未执行', blank=True, null=True)  # 默认值是当该字段为空时才会有默认值，如果该字段为空字符串或null，那么默认值就不会生效
+                             default='未完成', blank=True, null=True)  # 默认值是当该字段为空时才会有默认值，如果该字段为空字符串或null，那么默认值就不会生效
     desc = models.TextField(verbose_name='简要描述', help_text='简要描述', blank=True, null=True)
 
     class Meta:

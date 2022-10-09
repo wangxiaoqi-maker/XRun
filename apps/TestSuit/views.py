@@ -30,9 +30,14 @@ class TestSuitView(ModelViewSet):
         过滤已删除的测试套件
         :return:
         """
-        if self.request.user.is_superuser:
-            return self.queryset.filter(is_delete=False)
-        return self.queryset.filter(user=self.request.user)
+        start_time = self.request.query_params.get('start_time')
+        end_time = self.request.query_params.get('end_time')
+        if start_time and end_time:
+            return self.queryset.filter(is_delete=False, updated_time__range=(start_time, end_time))
+        return self.queryset.filter(is_delete=False)
+        # if self.request.user.is_superuser:
+        #     return self.queryset.filter(is_delete=False)
+        # return self.queryset.filter(user=self.request.user)
 
     def create(self, request, *args, **kwargs):
         """
@@ -84,6 +89,14 @@ class TestSuitView(ModelViewSet):
         :return:
         """
         response = super().list(request, *args, **kwargs)
+        # 只返回state为已完成的测试套件
+        # response.data = [item for item in response.data['results'] if item['state'] == '已完成']
+
+        for item in response.data['results']:
+            if item['state'] == '已完成':
+                response.data['results'] = item
+            else:
+                response.data['results'] = []
         return response
 
     def retrieve(self, request, *args, **kwargs):
