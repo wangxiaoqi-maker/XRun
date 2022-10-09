@@ -23,13 +23,14 @@ class SendHttpRequestSeralizer(serializers.ModelSerializer):
     # 接口的响应结果
     response = serializers.JSONField(label='接口响应结果', help_text='接口响应结果', read_only=True)
     # 断言列表
-    assert_list = serializers.CharField(max_length=10000, label='断言列表', help_text='断言列表', required=False)
+    assert_list = serializers.CharField(max_length=10000, label='断言列表', help_text='断言列表', required=False,
+                                        allow_null=True, allow_blank=True)
 
     class Meta:
         model = Interfaces
         fields = ('url', 'request_method', 'request_headers', 'body', 'body_type', 'response', 'assert_list')
         extra_kwargs = {'response': {'read_only': True},
-                        'headers': {'required': False},
+                        'headers': {'required': False}
                         }
 
 
