@@ -42,7 +42,9 @@ class RunCaseSeralizer(serializers.ModelSerializer):
                                          child=serializers.IntegerField(), error_messages={'required': '用例id不能为空'})
     env = serializers.CharField(max_length=100, label='环境', help_text='环境', required=True,
                                 error_messages={'required': '环境不能为空', 'blank': '环境不能为空', 'null': '环境不能为空'})
+    suite_id = serializers.CharField(max_length=100, label='测试套件', help_text='测试套件', required=True,
+                                     error_messages={'required': '测试套件不能为空', 'blank': '测试套件不能为空', 'null': '测试套件不能为空'})
 
     class Meta:
         model = Interfaces
-        fields = ('case_id', 'env')
+        fields = ('case_id', 'env', 'suite_id')

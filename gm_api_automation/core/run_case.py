@@ -1,3 +1,4 @@
+import json
 import unittest
 from functools import wraps
 
@@ -5,6 +6,7 @@ import ddt
 from django.db.models import QuerySet
 
 from Interfaces.models import Interfaces
+from TestSuit.models import TestSuit
 from gm_api_automation.Utils.loguru_util import logger
 from gm_api_automation.core.executor import Executor
 from gm_api_automation.core.paramters_parse.jsonpath_parser import JSONPathParser
@@ -67,7 +69,7 @@ def url_handle(new_url: str, env_url: str):
         return env_url + new_url
 
 
-def add_cases(cases, envs):
+def add_cases(cases, envs, suite_id):
     for i in cases:
         def test(self, case=i, env=envs):
             logger.info(f'正在执行用例：{case.name}')
@@ -85,6 +87,7 @@ def add_cases(cases, envs):
             extract = executor.extract_out_params(data, case)
             assert_list = case.assert_list
             params_list = executor.replace_params(case)
+            result = []
             if assert_list:
                 actual = JSONPathParser().parse_assert(data, params_list.assert_list)
                 message = executor.my_assert(actual, True)
@@ -93,11 +96,21 @@ def add_cases(cases, envs):
                     self.assertEqual(message['status'], True)
                     # 更新用例执行结果为成功
                     Interfaces.objects.filter(id=case.id).update(status="成功")
+                    status = {"id": case.id, "status": "成功"}
+                    result.append(status)
+                    TestSuit.objects.filter(id=suite_id).update(status=str(result))
                 except AssertionError as e:
                     # 更新用例执行结果为失败
+                    status = {"id": case.id, "status": "失败"}
+                    result.append(status)
                     Interfaces.objects.filter(id=case.id).update(status="失败")
+                    TestSuit.objects.filter(id=suite_id).update(status=str(result))
                     raise AssertionError(message['msg'])
             else:
                 # 更新用例执行结果为成功
                 Interfaces.objects.filter(id=case.id).update(status="成功")
+                status = {"id": case.id, "status": "成功"}
+                result.append(status)
+                TestSuit.objects.filter(id=suite_id).update(status=str(result))
+
         setattr(ExecutorTest, f'test_{i}', test)

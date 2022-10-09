@@ -5,10 +5,11 @@ import unittest
 
 from XTestRunner import HTMLTestRunner
 
+from TestSuit.models import TestSuit
 from gm_api_automation.core import run_case
 
 
-def unittest_run_case():
+def unittest_run_case(suite_id):
     """
     使用unittest执行测试用例
     """
@@ -38,7 +39,12 @@ def unittest_run_case():
         report_source = f.readlines()
         # 将读取到的字符串源码去掉隐号
         report_source = [i.decode('utf-8').replace('"', '').replace("\n", "").replace(",", "") for i in report_source]
-
-    message = {'success_count': result.success_count, 'failure_count': result.failure_count,
-               'error_count': result.error_count, 'skip_count': result.skip_count, 'report_source_code': report_source}
+    TestSuit.objects.filter(id=suite_id).update(report_source_code=report_source, success_count=result.success_count,
+                                                failure_count=result.failure_count, error_count=result.error_count,
+                                                skip_count=result.skip_count)
+    suite_data = TestSuit.objects.filter(id=suite_id).first()
+    status = suite_data.status
+    message = {"success_count": suite_data.success_count, "failure_count": suite_data.failure_count,
+               "error_count": suite_data.error_count, "skip_count": suite_data.skip_count, "status": status,
+               "report_source_code": suite_data.report_source_code}
     return message

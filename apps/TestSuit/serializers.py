@@ -15,16 +15,25 @@ class CaseListSerializers(serializers.ModelSerializer):
     is_delete = serializers.BooleanField(label='是否删除', help_text='是否删除')
     status = serializers.CharField(label='测试结果', help_text='测试结果', max_length=200, min_length=1, )
     response = serializers.CharField(label='响应结果', help_text='响应结果', max_length=200, min_length=1, )
+    request_type = serializers.CharField(label='请求类型', help_text='请求类型', max_length=200, min_length=1, )
+    request_headers = serializers.CharField(label='请求头', help_text='请求头', max_length=200, min_length=1, )
+    body = serializers.CharField(label='请求体', help_text='请求体', max_length=100000, min_length=1, )
+    body_type = serializers.CharField(label='请求体类型', help_text='请求体类型', max_length=200, min_length=1, )
+    assert_list = serializers.CharField(label='断言', help_text='断言', max_length=200, min_length=1, )
+    out_params = serializers.CharField(label='提取参数', help_text='提取参数', max_length=200, min_length=1, )
+    case_type = serializers.CharField(label='用例类型', help_text='用例类型', max_length=200, min_length=1, )
 
     class Meta:
         model = Interfaces
-        fields = ('id', 'name', 'request_method', 'url', 'is_delete', 'status', 'response')
+        fields = (
+            'id', 'name', 'request_method', 'url', 'is_delete', 'status', 'response', 'request_type', 'request_headers',
+            'body', 'body_type', 'assert_list', 'out_params', 'case_type')
 
 
 class TestSuitSerializer(serializers.ModelSerializer):
     class Meta:
         model = TestSuit
-        exclude = ('is_delete', "create_user", "update_user", "deleted_time")
+        exclude = ('is_delete', "create_user", "update_user", "deleted_time", "report_source_code")
         extra_kwargs = {'name': {'required': True,
                                  'error_messages': {'required': '套件名称不能为空', 'blank': '套件名称不能为空', 'null': '套件名称不能为空'}},
                         'project': {'required': True,
