@@ -1,4 +1,5 @@
 import json
+import time
 import unittest
 from functools import wraps
 
@@ -110,6 +111,8 @@ def add_cases(cases, envs, suite_id, case_id):
                 Interfaces.objects.filter(id=case.id).update(status="成功")
                 status = {"id": case.id, "status": "成功"}
                 result.append(status)
-            TestSuit.objects.filter(id=suite_id).update(status=str(result), state="已完成", total_count=len(case_id))
+            TestSuit.objects.filter(id=suite_id).update(status=str(result), state="已完成", total_count=len(case_id),
+                                                        updated_time=time.strftime("%Y-%m-%d %H:%M:%S",
+                                                                                   time.localtime()))
 
         setattr(ExecutorTest, f'test_{i}', test)

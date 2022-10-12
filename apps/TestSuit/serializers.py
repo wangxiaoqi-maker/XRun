@@ -28,6 +28,7 @@ class CaseListSerializers(serializers.ModelSerializer):
         fields = (
             'id', 'name', 'request_method', 'url', 'is_delete', 'status', 'response', 'request_type', 'request_headers',
             'body', 'body_type', 'assert_list', 'out_params', 'case_type')
+        extra_kwargs = {"updated_time": {'format': '%Y-%m-%d %H:%M:%S'}}
 
 
 class TestSuitSerializer(serializers.ModelSerializer):
