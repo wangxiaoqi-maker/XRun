@@ -49,7 +49,8 @@ def unittest_run_case(suite_id):
     message = {"success_count": suite_data.success_count, "failure_count": suite_data.failure_count,
                "error_count": suite_data.error_count, "skip_count": suite_data.skip_count,
                "total_count": suite_data.total_count, "status": status,
-               "update_time": suite_data.updated_time.strftime("%Y-%m-%d %H:%M:%S"), "name": suite_data.name, "id": suite_data.id,
+               "update_time": suite_data.updated_time.strftime("%Y-%m-%d %H:%M:%S"), "name": suite_data.name,
+               "id": suite_data.id,
                "update_user": suite_data.update_user, "report_name": suite_data.report_name,
                }
     return message

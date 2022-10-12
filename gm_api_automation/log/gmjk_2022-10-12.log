@@ -252,3 +252,32 @@
 2022-10-12 16:26:11.607 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
 2022-10-12 16:26:11.608 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'suite_id': '1', 'case_id': [1, 2, 3, 4], 'env': 'https://www.baidu.com'}
 2022-10-12 16:26:11.608 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"3","failure_count":"0","error_count":"0","skip_count":"0","total_count":"4","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"}],"update_time":"2022-10-12 16:26:11","name":"test11","id":1,"update_user":"admin","report_name":"20221012162611report.html"}}
+2022-10-12 16:55:29.276 | SUCCESS  | __main__:main:14 - 
+  ██████╗ ███╗   ███╗     ██╗██╗  ██╗    ██████╗ ██╗   ██╗███╗   ██╗███╗   ██╗███████╗██████╗ 
+██╔════╝ ████╗ ████║     ██║██║ ██╔╝    ██╔══██╗██║   ██║████╗  ██║████╗  ██║██╔════╝██╔══██╗
+██║  ███╗██╔████╔██║     ██║█████╔╝     ██████╔╝██║   ██║██╔██╗ ██║██╔██╗ ██║█████╗  ██████╔╝
+██║   ██║██║╚██╔╝██║██   ██║██╔═██╗     ██╔══██╗██║   ██║██║╚██╗██║██║╚██╗██║██╔══╝  ██╔══██╗
+╚██████╔╝██║ ╚═╝ ██║╚█████╔╝██║  ██╗    ██║  ██║╚██████╔╝██║ ╚████║██║ ╚████║███████╗██║  ██║
+ ╚═════╝ ╚═╝     ╚═╝ ╚════╝ ╚═╝  ╚═╝    ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝
+                                                                                                                                          
+    
+2022-10-12 16:55:29.361 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-10-12 16:55:30.873 | SUCCESS  | __main__:main:14 - 
+  ██████╗ ███╗   ███╗     ██╗██╗  ██╗    ██████╗ ██╗   ██╗███╗   ██╗███╗   ██╗███████╗██████╗ 
+██╔════╝ ████╗ ████║     ██║██║ ██╔╝    ██╔══██╗██║   ██║████╗  ██║████╗  ██║██╔════╝██╔══██╗
+██║  ███╗██╔████╔██║     ██║█████╔╝     ██████╔╝██║   ██║██╔██╗ ██║██╔██╗ ██║█████╗  ██████╔╝
+██║   ██║██║╚██╔╝██║██   ██║██╔═██╗     ██╔══██╗██║   ██║██║╚██╗██║██║╚██╗██║██╔══╝  ██╔══██╗
+╚██████╔╝██║ ╚═╝ ██║╚█████╔╝██║  ██╗    ██║  ██║╚██████╔╝██║ ╚████║██║ ╚████║███████╗██║  ██║
+ ╚═════╝ ╚═╝     ╚═╝ ╚════╝ ╚═╝  ╚═╝    ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝
+                                                                                                                                          
+    
+2022-10-12 16:55:30.950 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-10-12 16:55:45.143 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 16:57:08.441 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:84 - 耗时大于6秒的日志：{'time': '2022-10-12 16:55:44', 'url': '/runCase', 'method': 'POST', 'ip': '127.0.0.1', 'body': {'suite_id': '1', 'case_id': [1], 'env': 'https://www.baidu.com'}, 'user': <User: admin>, 'protocol': 'http', 'response': '{"code":200,"message":"操作成功","success":true,"data":{"success_count":"1","failure_count":"0","error_count":"0","skip_count":"0","total_count":"1","status":[{"id":1,"status":"成功"}],"update_time":"2022-10-12 16:55:45","name":"test11","id":1,"update_user":"admin","report_name":"20221012165545report.html"}}', 'access_time': 83467}
+2022-10-12 16:57:08.442 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 16:57:08.442 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'suite_id': '1', 'case_id': [1], 'env': 'https://www.baidu.com'}
+2022-10-12 16:57:08.443 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"1","failure_count":"0","error_count":"0","skip_count":"0","total_count":"1","status":[{"id":1,"status":"成功"}],"update_time":"2022-10-12 16:55:45","name":"test11","id":1,"update_user":"admin","report_name":"20221012165545report.html"}}
+2022-10-12 16:58:44.927 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 16:58:49.322 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 16:58:49.322 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'suite_id': '6', 'case_id': [1], 'env': 'https://www.baidu.com'}
+2022-10-12 16:58:49.323 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"1","failure_count":"0","error_count":"0","skip_count":"0","total_count":"1","status":[{"id":1,"status":"成功"}],"update_time":"2022-10-12 16:58:44","name":"test22","id":6,"update_user":"root","report_name":"20221012165844report.html"}}
