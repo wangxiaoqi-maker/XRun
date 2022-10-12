@@ -21,7 +21,7 @@ class TestSuit(BaseModels):
     error_count = models.CharField(verbose_name='错误用例数', max_length=50, help_text='错误用例数', null=True, blank=True)
     skip_count = models.CharField(verbose_name='跳过用例数', max_length=50, help_text='跳过用例数', null=True, blank=True)
     total_count = models.CharField(verbose_name='总用例数', max_length=50, help_text='总用例数', null=True, blank=True)
-    report_source_code = models.TextField(verbose_name='报告源码', max_length=1000, null=True, blank=True, help_text='报告源码')
+    report_name = models.TextField(verbose_name='报告名', max_length=1000, null=True, blank=True, help_text='报告名')
     state = models.CharField(verbose_name='状态', max_length=50, help_text='状态',
                              default='未完成', blank=True, null=True)  # 默认值是当该字段为空时才会有默认值，如果该字段为空字符串或null，那么默认值就不会生效
     desc = models.TextField(verbose_name='简要描述', help_text='简要描述', blank=True, null=True, default='')

@@ -39,7 +39,7 @@ def unittest_run_case(suite_id):
         report_source = f.readlines()
         # 将读取到的字符串源码去掉隐号
         report_source = [i.decode('utf-8').replace('"', '').replace("\n", "").replace(",", "") for i in report_source]
-    TestSuit.objects.filter(id=suite_id).update(report_source_code=report_source, success_count=result.success_count,
+    TestSuit.objects.filter(id=suite_id).update(report_name=file_name, success_count=result.success_count,
                                                 failure_count=result.failure_count, error_count=result.error_count,
                                                 skip_count=result.skip_count)
     suite_data = TestSuit.objects.filter(id=suite_id).first()
@@ -50,6 +50,6 @@ def unittest_run_case(suite_id):
                "error_count": suite_data.error_count, "skip_count": suite_data.skip_count,
                "total_count": suite_data.total_count, "status": status,
                "update_time": suite_data.updated_time, "name": suite_data.name, "id": suite_data.id,
-               "update_user": suite_data.update_user, "report_source_code": suite_data.report_source_code,
+               "update_user": suite_data.update_user, "report_name": suite_data.report_name,
                }
     return message
