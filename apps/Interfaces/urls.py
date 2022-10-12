@@ -9,4 +9,5 @@ urlpatterns = [
     path('getApiDetail', views.InterfacesView.as_view({'get': 'retrieve'})),
     path('updateApi', views.InterfacesView.as_view({'post': 'update'})),
     path('delApi', views.InterfacesView.as_view({'post': 'destroy'})),
+    path('getApiTotal', views.InterfacesView.as_view({'get': 'interface_total'})),
 ]

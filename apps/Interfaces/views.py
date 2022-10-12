@@ -102,3 +102,17 @@ class InterfacesView(ModelViewSet):
             return Response({'message': '接口不存在', 'success': False})
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
+
+    def interface_total(self, request, *args, **kwargs):
+        """
+        统计接口的日增、往期、总数
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        total = self.queryset.filter(is_delete=False).count()
+        before_today_total = self.queryset.filter(is_delete=False, created_time__lt=datetime.now().date()).count()
+        today = datetime.now().date()
+        today_total = self.queryset.filter(created_time__contains=today, is_delete=False).count()
+        return Response({'total': total, 'previous': before_today_total, 'today_total': today_total, 'success': True})

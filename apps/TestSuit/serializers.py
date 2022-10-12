@@ -33,7 +33,7 @@ class CaseListSerializers(serializers.ModelSerializer):
 class TestSuitSerializer(serializers.ModelSerializer):
     class Meta:
         model = TestSuit
-        exclude = ('is_delete', "create_user",  "deleted_time", "report_source_code")
+        exclude = ('is_delete', "create_user", "deleted_time")
         extra_kwargs = {'name': {'required': True,
                                  'error_messages': {'required': '套件名称不能为空', 'blank': '套件名称不能为空', 'null': '套件名称不能为空'}},
                         'project': {'required': True,
@@ -42,6 +42,8 @@ class TestSuitSerializer(serializers.ModelSerializer):
                         'priority': {'required': False},
                         'created_time': {'format': '%Y-%m-%d %H:%M:%S'},
                         'updated_time': {'format': '%Y-%m-%d %H:%M:%S'},
+                        'update_user': {'required': False},
+                        'case_tag': {'required': True},
                         }
 
     def create(self, validated_data):

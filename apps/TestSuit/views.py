@@ -100,3 +100,20 @@ class TestSuitView(ModelViewSet):
             return Response({'message': '测试套件不存在', 'success': False})
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
+
+    def get_case_total(self, request, *args, **kwargs):
+        """
+        返回所有测试套件下的用例总数，包含往期、日增、总用例数
+        """
+        response = super().list(request, *args, **kwargs)
+        # 获取套件下的用例总数
+        case_total = 0
+        for item in response.data['results']:
+            case_total += len(item.get('case_id'))
+        # 获取往期用例总数
+        past_case_total = 0
+        for item in response.data['results']:
+            for i in item.get('case_id'):
+                pass
+
+        pass

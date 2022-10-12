@@ -10,4 +10,5 @@ urlpatterns = [
     path('updateTestSuits', views.TestSuitView.as_view({'post': 'update'})),
     path('delTestSuits', views.TestSuitView.as_view({'post': 'destroy'})),
     path('getReports', views.TestSuitView.as_view({'get': 'reports'})),
+    path('getCaseTotal', views.TestSuitView.as_view({'get': 'get_case_total'})),
 ]
