@@ -72,6 +72,11 @@ def url_handle(new_url: str, env_url: str):
 
 def add_cases(cases, envs, suite_id, case_id):
     result = []
+    # 获取测试类中存储的所有用例名称
+    test_list = [test for test in ExecutorTest.__dict__ if 'test' in test]
+    for test_case in test_list:
+        # 删除测试类中的用例
+        delattr(ExecutorTest, test_case)
     for i in cases:
 
         def test(self, case=i, env=envs):

@@ -281,3 +281,371 @@
 2022-10-12 16:58:49.322 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
 2022-10-12 16:58:49.322 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'suite_id': '6', 'case_id': [1], 'env': 'https://www.baidu.com'}
 2022-10-12 16:58:49.323 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"1","failure_count":"0","error_count":"0","skip_count":"0","total_count":"1","status":[{"id":1,"status":"成功"}],"update_time":"2022-10-12 16:58:44","name":"test22","id":6,"update_user":"root","report_name":"20221012165844report.html"}}
+2022-10-12 17:02:37.658 | SUCCESS  | __main__:main:14 - 
+  ██████╗ ███╗   ███╗     ██╗██╗  ██╗    ██████╗ ██╗   ██╗███╗   ██╗███╗   ██╗███████╗██████╗ 
+██╔════╝ ████╗ ████║     ██║██║ ██╔╝    ██╔══██╗██║   ██║████╗  ██║████╗  ██║██╔════╝██╔══██╗
+██║  ███╗██╔████╔██║     ██║█████╔╝     ██████╔╝██║   ██║██╔██╗ ██║██╔██╗ ██║█████╗  ██████╔╝
+██║   ██║██║╚██╔╝██║██   ██║██╔═██╗     ██╔══██╗██║   ██║██║╚██╗██║██║╚██╗██║██╔══╝  ██╔══██╗
+╚██████╔╝██║ ╚═╝ ██║╚█████╔╝██║  ██╗    ██║  ██║╚██████╔╝██║ ╚████║██║ ╚████║███████╗██║  ██║
+ ╚═════╝ ╚═╝     ╚═╝ ╚════╝ ╚═╝  ╚═╝    ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝
+                                                                                                                                          
+    
+2022-10-12 17:02:37.700 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-10-12 17:02:38.429 | SUCCESS  | __main__:main:14 - 
+  ██████╗ ███╗   ███╗     ██╗██╗  ██╗    ██████╗ ██╗   ██╗███╗   ██╗███╗   ██╗███████╗██████╗ 
+██╔════╝ ████╗ ████║     ██║██║ ██╔╝    ██╔══██╗██║   ██║████╗  ██║████╗  ██║██╔════╝██╔══██╗
+██║  ███╗██╔████╔██║     ██║█████╔╝     ██████╔╝██║   ██║██╔██╗ ██║██╔██╗ ██║█████╗  ██████╔╝
+██║   ██║██║╚██╔╝██║██   ██║██╔═██╗     ██╔══██╗██║   ██║██║╚██╗██║██║╚██╗██║██╔══╝  ██╔══██╗
+╚██████╔╝██║ ╚═╝ ██║╚█████╔╝██║  ██╗    ██║  ██║╚██████╔╝██║ ╚████║██║ ╚████║███████╗██║  ██║
+ ╚═════╝ ╚═╝     ╚═╝ ╚════╝ ╚═╝  ╚═╝    ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝
+                                                                                                                                          
+    
+2022-10-12 17:02:38.471 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-10-12 17:02:43.330 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:02:43.403 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:02:43.404 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'suite_id': '6', 'case_id': [2], 'env': 'https://www.baidu.com'}
+2022-10-12 17:02:43.404 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"1","failure_count":"0","error_count":"0","skip_count":"0","total_count":"1","status":[{"id":2,"status":"成功"}],"update_time":"2022-10-12 17:02:43","name":"test22","id":6,"update_user":"root","report_name":"20221012170243report.html"}}
+2022-10-12 17:03:21.539 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:03:21.596 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:03:21.597 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [2], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:03:21.598 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"1","failure_count":"0","error_count":"0","skip_count":"0","total_count":"1","status":[{"id":2,"status":"成功"}],"update_time":"2022-10-12 17:03:21","name":"test33","id":7,"update_user":"root","report_name":"20221012170321report.html"}}
+2022-10-12 17:04:09.198 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:04:09.279 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:04:09.279 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [2], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:04:09.279 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"1","failure_count":"0","error_count":"0","skip_count":"0","total_count":"1","status":[{"id":2,"status":"成功"}],"update_time":"2022-10-12 17:04:09","name":"test33","id":7,"update_user":"root","report_name":"20221012170409report.html"}}
+2022-10-12 17:10:41.433 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:10:41.480 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：登录接口
+2022-10-12 17:10:41.526 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：测试断言15
+2022-10-12 17:10:41.591 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:10:41.592 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [2, 3, 4, 5], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:10:41.592 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"2","failure_count":"0","error_count":"1","skip_count":"0","total_count":"4","status":[{"id":2,"status":"成功"},{"id":3,"status":"成功"}],"update_time":"2022-10-12 17:10:41","name":"test33","id":7,"update_user":"root","report_name":"20221012171041report.html"}}
+2022-10-12 17:11:12.200 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:11:12.247 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:11:12.295 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：登录接口
+2022-10-12 17:11:12.352 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：测试断言15
+2022-10-12 17:11:12.407 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:11:12.407 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:11:12.407 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"3","failure_count":"0","error_count":"1","skip_count":"0","total_count":"4","status":[{"id":2,"status":"成功"},{"id":3,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"}],"update_time":"2022-10-12 17:11:12","name":"test33","id":7,"update_user":"root","report_name":"20221012171112report.html"}}
+2022-10-12 17:11:31.482 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:11:31.482 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:11:31.482 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":500,"message":"(2002, \"Can't connect to server on '101.43.117.184' (10053)\")","success":false,"data":{}}
+2022-10-12 17:11:56.523 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:11:56.572 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:11:56.626 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：登录接口
+2022-10-12 17:11:56.680 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：测试断言15
+2022-10-12 17:11:56.757 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:11:56.757 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:11:56.758 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"3","failure_count":"0","error_count":"1","skip_count":"0","total_count":"4","status":[{"id":2,"status":"成功"},{"id":3,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"}],"update_time":"2022-10-12 17:11:56","name":"test33","id":7,"update_user":"root","report_name":"20221012171156report.html"}}
+2022-10-12 17:12:11.587 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:12:11.628 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:12:11.665 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：登录接口
+2022-10-12 17:12:12.039 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：测试断言15
+2022-10-12 17:12:12.108 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:12:12.109 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:12:12.110 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"3","failure_count":"0","error_count":"1","skip_count":"0","total_count":"4","status":[{"id":2,"status":"成功"},{"id":3,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"}],"update_time":"2022-10-12 17:12:11","name":"test33","id":7,"update_user":"root","report_name":"20221012171211report.html"}}
+2022-10-12 17:13:27.986 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:13:28.026 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:13:28.066 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：登录接口
+2022-10-12 17:13:28.111 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：测试断言15
+2022-10-12 17:13:28.167 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:13:28.167 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1, 2], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:13:28.167 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"3","failure_count":"0","error_count":"1","skip_count":"0","total_count":"4","status":[{"id":2,"status":"成功"},{"id":3,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"}],"update_time":"2022-10-12 17:13:28","name":"test33","id":7,"update_user":"root","report_name":"20221012171327report.html"}}
+2022-10-12 17:14:17.195 | SUCCESS  | __main__:main:14 - 
+  ██████╗ ███╗   ███╗     ██╗██╗  ██╗    ██████╗ ██╗   ██╗███╗   ██╗███╗   ██╗███████╗██████╗ 
+██╔════╝ ████╗ ████║     ██║██║ ██╔╝    ██╔══██╗██║   ██║████╗  ██║████╗  ██║██╔════╝██╔══██╗
+██║  ███╗██╔████╔██║     ██║█████╔╝     ██████╔╝██║   ██║██╔██╗ ██║██╔██╗ ██║█████╗  ██████╔╝
+██║   ██║██║╚██╔╝██║██   ██║██╔═██╗     ██╔══██╗██║   ██║██║╚██╗██║██║╚██╗██║██╔══╝  ██╔══██╗
+╚██████╔╝██║ ╚═╝ ██║╚█████╔╝██║  ██╗    ██║  ██║╚██████╔╝██║ ╚████║██║ ╚████║███████╗██║  ██║
+ ╚═════╝ ╚═╝     ╚═╝ ╚════╝ ╚═╝  ╚═╝    ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝
+                                                                                                                                          
+    
+2022-10-12 17:14:17.280 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-10-12 17:14:18.921 | SUCCESS  | __main__:main:14 - 
+  ██████╗ ███╗   ███╗     ██╗██╗  ██╗    ██████╗ ██╗   ██╗███╗   ██╗███╗   ██╗███████╗██████╗ 
+██╔════╝ ████╗ ████║     ██║██║ ██╔╝    ██╔══██╗██║   ██║████╗  ██║████╗  ██║██╔════╝██╔══██╗
+██║  ███╗██╔████╔██║     ██║█████╔╝     ██████╔╝██║   ██║██╔██╗ ██║██╔██╗ ██║█████╗  ██████╔╝
+██║   ██║██║╚██╔╝██║██   ██║██╔═██╗     ██╔══██╗██║   ██║██║╚██╗██║██║╚██╗██║██╔══╝  ██╔══██╗
+╚██████╔╝██║ ╚═╝ ██║╚█████╔╝██║  ██╗    ██║  ██║╚██████╔╝██║ ╚████║██║ ╚████║███████╗██║  ██║
+ ╚═════╝ ╚═╝     ╚═╝ ╚════╝ ╚═╝  ╚═╝    ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝
+                                                                                                                                          
+    
+2022-10-12 17:14:19.012 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-10-12 17:14:33.944 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:14:34.055 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:16:03.276 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:84 - 耗时大于6秒的日志：{'time': '2022-10-12 17:14:33', 'url': '/runCase', 'method': 'POST', 'ip': '127.0.0.1', 'body': {'case_id': [1, 2], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}, 'user': <User: admin>, 'protocol': 'http', 'response': '{"code":200,"message":"操作成功","success":true,"data":{"success_count":"2","failure_count":"0","error_count":"0","skip_count":"0","total_count":"2","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"}],"update_time":"2022-10-12 17:14:34","name":"test33","id":7,"update_user":"root","report_name":"20221012171433report.html"}}', 'access_time': 89453}
+2022-10-12 17:16:03.276 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:16:03.277 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1, 2], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:16:03.277 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"2","failure_count":"0","error_count":"0","skip_count":"0","total_count":"2","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"}],"update_time":"2022-10-12 17:14:34","name":"test33","id":7,"update_user":"root","report_name":"20221012171433report.html"}}
+2022-10-12 17:16:22.893 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:16:22.935 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:16:26.908 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:16:26.909 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1, 2], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:16:26.909 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"2","failure_count":"0","error_count":"0","skip_count":"0","total_count":"2","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"}],"update_time":"2022-10-12 17:16:22","name":"test33","id":7,"update_user":"root","report_name":"20221012171622report.html"}}
+2022-10-12 17:16:34.409 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:16:34.613 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:16:34.888 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:16:34.889 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:16:34.889 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"2","failure_count":"0","error_count":"0","skip_count":"0","total_count":"2","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"},{"id":2,"status":"成功"}],"update_time":"2022-10-12 17:16:34","name":"test33","id":7,"update_user":"root","report_name":"20221012171634report.html"}}
+2022-10-12 17:16:36.252 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:16:36.315 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:16:36.473 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:16:36.473 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:16:36.474 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"2","failure_count":"0","error_count":"0","skip_count":"0","total_count":"2","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"},{"id":2,"status":"成功"},{"id":2,"status":"成功"}],"update_time":"2022-10-12 17:16:36","name":"test33","id":7,"update_user":"root","report_name":"20221012171636report.html"}}
+2022-10-12 17:18:12.687 | SUCCESS  | __main__:main:14 - 
+  ██████╗ ███╗   ███╗     ██╗██╗  ██╗    ██████╗ ██╗   ██╗███╗   ██╗███╗   ██╗███████╗██████╗ 
+██╔════╝ ████╗ ████║     ██║██║ ██╔╝    ██╔══██╗██║   ██║████╗  ██║████╗  ██║██╔════╝██╔══██╗
+██║  ███╗██╔████╔██║     ██║█████╔╝     ██████╔╝██║   ██║██╔██╗ ██║██╔██╗ ██║█████╗  ██████╔╝
+██║   ██║██║╚██╔╝██║██   ██║██╔═██╗     ██╔══██╗██║   ██║██║╚██╗██║██║╚██╗██║██╔══╝  ██╔══██╗
+╚██████╔╝██║ ╚═╝ ██║╚█████╔╝██║  ██╗    ██║  ██║╚██████╔╝██║ ╚████║██║ ╚████║███████╗██║  ██║
+ ╚═════╝ ╚═╝     ╚═╝ ╚════╝ ╚═╝  ╚═╝    ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝
+                                                                                                                                          
+    
+2022-10-12 17:18:12.738 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-10-12 17:18:13.789 | SUCCESS  | __main__:main:14 - 
+  ██████╗ ███╗   ███╗     ██╗██╗  ██╗    ██████╗ ██╗   ██╗███╗   ██╗███╗   ██╗███████╗██████╗ 
+██╔════╝ ████╗ ████║     ██║██║ ██╔╝    ██╔══██╗██║   ██║████╗  ██║████╗  ██║██╔════╝██╔══██╗
+██║  ███╗██╔████╔██║     ██║█████╔╝     ██████╔╝██║   ██║██╔██╗ ██║██╔██╗ ██║█████╗  ██████╔╝
+██║   ██║██║╚██╔╝██║██   ██║██╔═██╗     ██╔══██╗██║   ██║██║╚██╗██║██║╚██╗██║██╔══╝  ██╔══██╗
+╚██████╔╝██║ ╚═╝ ██║╚█████╔╝██║  ██╗    ██║  ██║╚██████╔╝██║ ╚████║██║ ╚████║███████╗██║  ██║
+ ╚═════╝ ╚═╝     ╚═╝ ╚════╝ ╚═╝  ╚═╝    ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝
+                                                                                                                                          
+    
+2022-10-12 17:18:13.853 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-10-12 17:18:17.665 | SUCCESS  | __main__:main:14 - 
+  ██████╗ ███╗   ███╗     ██╗██╗  ██╗    ██████╗ ██╗   ██╗███╗   ██╗███╗   ██╗███████╗██████╗ 
+██╔════╝ ████╗ ████║     ██║██║ ██╔╝    ██╔══██╗██║   ██║████╗  ██║████╗  ██║██╔════╝██╔══██╗
+██║  ███╗██╔████╔██║     ██║█████╔╝     ██████╔╝██║   ██║██╔██╗ ██║██╔██╗ ██║█████╗  ██████╔╝
+██║   ██║██║╚██╔╝██║██   ██║██╔═██╗     ██╔══██╗██║   ██║██║╚██╗██║██║╚██╗██║██╔══╝  ██╔══██╗
+╚██████╔╝██║ ╚═╝ ██║╚█████╔╝██║  ██╗    ██║  ██║╚██████╔╝██║ ╚████║██║ ╚████║███████╗██║  ██║
+ ╚═════╝ ╚═╝     ╚═╝ ╚════╝ ╚═╝  ╚═╝    ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝
+                                                                                                                                          
+    
+2022-10-12 17:18:17.748 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-10-12 17:18:21.829 | SUCCESS  | __main__:main:14 - 
+  ██████╗ ███╗   ███╗     ██╗██╗  ██╗    ██████╗ ██╗   ██╗███╗   ██╗███╗   ██╗███████╗██████╗ 
+██╔════╝ ████╗ ████║     ██║██║ ██╔╝    ██╔══██╗██║   ██║████╗  ██║████╗  ██║██╔════╝██╔══██╗
+██║  ███╗██╔████╔██║     ██║█████╔╝     ██████╔╝██║   ██║██╔██╗ ██║██╔██╗ ██║█████╗  ██████╔╝
+██║   ██║██║╚██╔╝██║██   ██║██╔═██╗     ██╔══██╗██║   ██║██║╚██╗██║██║╚██╗██║██╔══╝  ██╔══██╗
+╚██████╔╝██║ ╚═╝ ██║╚█████╔╝██║  ██╗    ██║  ██║╚██████╔╝██║ ╚████║██║ ╚████║███████╗██║  ██║
+ ╚═════╝ ╚═╝     ╚═╝ ╚════╝ ╚═╝  ╚═╝    ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝
+                                                                                                                                          
+    
+2022-10-12 17:18:21.894 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-10-12 17:18:36.497 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:18:36.583 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:18:36.583 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:18:36.584 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"1","failure_count":"0","error_count":"0","skip_count":"0","total_count":"1","status":[{"id":1,"status":"成功"}],"update_time":"2022-10-12 17:18:36","name":"test33","id":7,"update_user":"root","report_name":"20221012171836report.html"}}
+2022-10-12 17:18:51.319 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:18:51.365 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:18:51.478 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:18:51.478 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1, 2], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:18:51.478 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"2","failure_count":"0","error_count":"0","skip_count":"0","total_count":"2","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"}],"update_time":"2022-10-12 17:18:51","name":"test33","id":7,"update_user":"root","report_name":"20221012171851report.html"}}
+2022-10-12 17:18:56.368 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:18:56.538 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:18:56.658 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：登录接口
+2022-10-12 17:18:56.738 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:18:56.738 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1, 2, 3], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:18:56.738 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"3","failure_count":"0","error_count":"0","skip_count":"0","total_count":"3","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"}],"update_time":"2022-10-12 17:18:56","name":"test33","id":7,"update_user":"root","report_name":"20221012171856report.html"}}
+2022-10-12 17:19:02.352 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:19:02.415 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:19:02.459 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：登录接口
+2022-10-12 17:19:02.544 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:19:02.544 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1, 2, 3, 4], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:19:02.544 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"3","failure_count":"0","error_count":"0","skip_count":"0","total_count":"4","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"}],"update_time":"2022-10-12 17:19:02","name":"test33","id":7,"update_user":"root","report_name":"20221012171902report.html"}}
+2022-10-12 17:19:23.595 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:19:23.638 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:19:23.675 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：登录接口
+2022-10-12 17:19:23.742 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:19:23.742 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1, 2, 3, 4], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:19:23.743 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"3","failure_count":"0","error_count":"0","skip_count":"0","total_count":"4","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"}],"update_time":"2022-10-12 17:19:23","name":"test33","id":7,"update_user":"root","report_name":"20221012171923report.html"}}
+2022-10-12 17:19:30.897 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:19:30.946 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:19:30.990 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：登录接口
+2022-10-12 17:19:31.077 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:19:31.077 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1, 2, 3], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:19:31.077 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"3","failure_count":"0","error_count":"0","skip_count":"0","total_count":"3","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"}],"update_time":"2022-10-12 17:19:31","name":"test33","id":7,"update_user":"root","report_name":"20221012171930report.html"}}
+2022-10-12 17:19:32.606 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:19:32.649 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:19:32.692 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：登录接口
+2022-10-12 17:19:32.765 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:19:32.765 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1, 2, 3], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:19:32.766 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"3","failure_count":"0","error_count":"0","skip_count":"0","total_count":"3","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"}],"update_time":"2022-10-12 17:19:32","name":"test33","id":7,"update_user":"root","report_name":"20221012171932report.html"}}
+2022-10-12 17:19:37.580 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:19:37.614 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:19:37.653 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：登录接口
+2022-10-12 17:19:37.721 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:19:37.722 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1, 2], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:19:37.722 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"3","failure_count":"0","error_count":"0","skip_count":"0","total_count":"3","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"}],"update_time":"2022-10-12 17:19:37","name":"test33","id":7,"update_user":"root","report_name":"20221012171937report.html"}}
+2022-10-12 17:19:41.165 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:19:41.389 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:19:41.629 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：登录接口
+2022-10-12 17:19:41.948 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:19:41.948 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1, 2], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:19:41.949 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"3","failure_count":"0","error_count":"0","skip_count":"0","total_count":"3","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"}],"update_time":"2022-10-12 17:19:41","name":"test33","id":7,"update_user":"root","report_name":"20221012171941report.html"}}
+2022-10-12 17:19:42.853 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:19:42.999 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:19:43.173 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：登录接口
+2022-10-12 17:19:43.366 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:19:43.366 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1, 2], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:19:43.366 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"3","failure_count":"0","error_count":"0","skip_count":"0","total_count":"3","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"}],"update_time":"2022-10-12 17:19:43","name":"test33","id":7,"update_user":"root","report_name":"20221012171942report.html"}}
+2022-10-12 17:20:16.619 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:20:16.656 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:20:16.692 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：登录接口
+2022-10-12 17:20:16.758 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:20:16.759 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1, 2], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:20:16.759 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"3","failure_count":"0","error_count":"0","skip_count":"0","total_count":"3","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"}],"update_time":"2022-10-12 17:20:16","name":"test33","id":7,"update_user":"root","report_name":"20221012172016report.html"}}
+2022-10-12 17:22:06.538 | SUCCESS  | __main__:main:14 - 
+  ██████╗ ███╗   ███╗     ██╗██╗  ██╗    ██████╗ ██╗   ██╗███╗   ██╗███╗   ██╗███████╗██████╗ 
+██╔════╝ ████╗ ████║     ██║██║ ██╔╝    ██╔══██╗██║   ██║████╗  ██║████╗  ██║██╔════╝██╔══██╗
+██║  ███╗██╔████╔██║     ██║█████╔╝     ██████╔╝██║   ██║██╔██╗ ██║██╔██╗ ██║█████╗  ██████╔╝
+██║   ██║██║╚██╔╝██║██   ██║██╔═██╗     ██╔══██╗██║   ██║██║╚██╗██║██║╚██╗██║██╔══╝  ██╔══██╗
+╚██████╔╝██║ ╚═╝ ██║╚█████╔╝██║  ██╗    ██║  ██║╚██████╔╝██║ ╚████║██║ ╚████║███████╗██║  ██║
+ ╚═════╝ ╚═╝     ╚═╝ ╚════╝ ╚═╝  ╚═╝    ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝
+                                                                                                                                          
+    
+2022-10-12 17:22:06.619 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-10-12 17:22:08.674 | SUCCESS  | __main__:main:14 - 
+  ██████╗ ███╗   ███╗     ██╗██╗  ██╗    ██████╗ ██╗   ██╗███╗   ██╗███╗   ██╗███████╗██████╗ 
+██╔════╝ ████╗ ████║     ██║██║ ██╔╝    ██╔══██╗██║   ██║████╗  ██║████╗  ██║██╔════╝██╔══██╗
+██║  ███╗██╔████╔██║     ██║█████╔╝     ██████╔╝██║   ██║██╔██╗ ██║██╔██╗ ██║█████╗  ██████╔╝
+██║   ██║██║╚██╔╝██║██   ██║██╔═██╗     ██╔══██╗██║   ██║██║╚██╗██║██║╚██╗██║██╔══╝  ██╔══██╗
+╚██████╔╝██║ ╚═╝ ██║╚█████╔╝██║  ██╗    ██║  ██║╚██████╔╝██║ ╚████║██║ ╚████║███████╗██║  ██║
+ ╚═════╝ ╚═╝     ╚═╝ ╚════╝ ╚═╝  ╚═╝    ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝
+                                                                                                                                          
+    
+2022-10-12 17:22:08.790 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-10-12 17:22:18.568 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:22:25.907 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:22:57.641 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:84 - 耗时大于6秒的日志：{'time': '2022-10-12 17:22:18', 'url': '/runCase', 'method': 'POST', 'ip': '127.0.0.1', 'body': {'case_id': [1, 2], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}, 'user': <User: admin>, 'protocol': 'http', 'response': '{"code":200,"message":"操作成功","success":true,"data":{"success_count":"2","failure_count":"0","error_count":"0","skip_count":"0","total_count":"2","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"}],"update_time":"2022-10-12 17:22:28","name":"test33","id":7,"update_user":"root","report_name":"20221012172218report.html"}}', 'access_time': 39219}
+2022-10-12 17:22:57.642 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:22:57.642 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1, 2], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:22:57.643 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"2","failure_count":"0","error_count":"0","skip_count":"0","total_count":"2","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"}],"update_time":"2022-10-12 17:22:28","name":"test33","id":7,"update_user":"root","report_name":"20221012172218report.html"}}
+2022-10-12 17:23:58.367 | SUCCESS  | __main__:main:14 - 
+  ██████╗ ███╗   ███╗     ██╗██╗  ██╗    ██████╗ ██╗   ██╗███╗   ██╗███╗   ██╗███████╗██████╗ 
+██╔════╝ ████╗ ████║     ██║██║ ██╔╝    ██╔══██╗██║   ██║████╗  ██║████╗  ██║██╔════╝██╔══██╗
+██║  ███╗██╔████╔██║     ██║█████╔╝     ██████╔╝██║   ██║██╔██╗ ██║██╔██╗ ██║█████╗  ██████╔╝
+██║   ██║██║╚██╔╝██║██   ██║██╔═██╗     ██╔══██╗██║   ██║██║╚██╗██║██║╚██╗██║██╔══╝  ██╔══██╗
+╚██████╔╝██║ ╚═╝ ██║╚█████╔╝██║  ██╗    ██║  ██║╚██████╔╝██║ ╚████║██║ ╚████║███████╗██║  ██║
+ ╚═════╝ ╚═╝     ╚═╝ ╚════╝ ╚═╝  ╚═╝    ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝
+                                                                                                                                          
+    
+2022-10-12 17:23:58.424 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-10-12 17:23:59.407 | SUCCESS  | __main__:main:14 - 
+  ██████╗ ███╗   ███╗     ██╗██╗  ██╗    ██████╗ ██╗   ██╗███╗   ██╗███╗   ██╗███████╗██████╗ 
+██╔════╝ ████╗ ████║     ██║██║ ██╔╝    ██╔══██╗██║   ██║████╗  ██║████╗  ██║██╔════╝██╔══██╗
+██║  ███╗██╔████╔██║     ██║█████╔╝     ██████╔╝██║   ██║██╔██╗ ██║██╔██╗ ██║█████╗  ██████╔╝
+██║   ██║██║╚██╔╝██║██   ██║██╔═██╗     ██╔══██╗██║   ██║██║╚██╗██║██║╚██╗██║██╔══╝  ██╔══██╗
+╚██████╔╝██║ ╚═╝ ██║╚█████╔╝██║  ██╗    ██║  ██║╚██████╔╝██║ ╚████║██║ ╚████║███████╗██║  ██║
+ ╚═════╝ ╚═╝     ╚═╝ ╚════╝ ╚═╝  ╚═╝    ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝
+                                                                                                                                          
+    
+2022-10-12 17:23:59.465 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-10-12 17:24:05.732 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:24:05.811 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:24:05.812 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:24:05.812 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"1","failure_count":"0","error_count":"0","skip_count":"0","total_count":"1","status":[{"id":1,"status":"成功"}],"update_time":"2022-10-12 17:24:05","name":"test33","id":7,"update_user":"root","report_name":"20221012172405report.html"}}
+2022-10-12 17:24:17.709 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:24:17.769 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:24:17.854 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:24:17.855 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1, 2], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:24:17.855 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"2","failure_count":"0","error_count":"0","skip_count":"0","total_count":"2","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"}],"update_time":"2022-10-12 17:24:17","name":"test33","id":7,"update_user":"root","report_name":"20221012172417report.html"}}
+2022-10-12 17:24:23.751 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:24:23.789 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:24:23.831 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：登录接口
+2022-10-12 17:24:23.892 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:24:23.892 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1, 2, 3], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:24:23.892 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"3","failure_count":"0","error_count":"0","skip_count":"0","total_count":"3","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"}],"update_time":"2022-10-12 17:24:23","name":"test33","id":7,"update_user":"root","report_name":"20221012172423report.html"}}
+2022-10-12 17:24:30.454 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:24:30.501 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:24:30.546 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：登录接口
+2022-10-12 17:24:30.618 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:24:30.618 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1, 2, 3, 4], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:24:30.619 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"3","failure_count":"0","error_count":"0","skip_count":"0","total_count":"4","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"}],"update_time":"2022-10-12 17:24:30","name":"test33","id":7,"update_user":"root","report_name":"20221012172430report.html"}}
+2022-10-12 17:24:39.465 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:24:39.521 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:24:39.568 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：登录接口
+2022-10-12 17:24:39.753 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:24:39.754 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1, 2, 3], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:24:39.754 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"3","failure_count":"0","error_count":"0","skip_count":"0","total_count":"3","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"}],"update_time":"2022-10-12 17:24:39","name":"test33","id":7,"update_user":"root","report_name":"20221012172439report.html"}}
+2022-10-12 17:24:46.552 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:24:46.592 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:24:46.632 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：登录接口
+2022-10-12 17:24:46.700 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:24:46.700 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1, 2], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:24:46.700 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"3","failure_count":"0","error_count":"0","skip_count":"0","total_count":"3","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"}],"update_time":"2022-10-12 17:24:46","name":"test33","id":7,"update_user":"root","report_name":"20221012172446report.html"}}
+2022-10-12 17:24:50.004 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:24:50.071 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:24:50.121 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：登录接口
+2022-10-12 17:24:50.239 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:24:50.239 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1, 2], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:24:50.239 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"3","failure_count":"0","error_count":"0","skip_count":"0","total_count":"3","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"}],"update_time":"2022-10-12 17:24:50","name":"test33","id":7,"update_user":"root","report_name":"20221012172450report.html"}}
+2022-10-12 17:24:59.330 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:24:59.369 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:24:59.407 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：登录接口
+2022-10-12 17:24:59.482 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:24:59.483 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1, 2], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:24:59.483 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"3","failure_count":"0","error_count":"0","skip_count":"0","total_count":"3","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"}],"update_time":"2022-10-12 17:24:59","name":"test33","id":7,"update_user":"root","report_name":"20221012172459report.html"}}
+2022-10-12 17:25:05.312 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:25:05.365 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:25:05.431 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：登录接口
+2022-10-12 17:25:05.496 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:25:05.497 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:25:05.497 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"3","failure_count":"0","error_count":"0","skip_count":"0","total_count":"3","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"}],"update_time":"2022-10-12 17:25:05","name":"test33","id":7,"update_user":"root","report_name":"20221012172505report.html"}}
+2022-10-12 17:25:11.973 | SUCCESS  | __main__:main:14 - 
+  ██████╗ ███╗   ███╗     ██╗██╗  ██╗    ██████╗ ██╗   ██╗███╗   ██╗███╗   ██╗███████╗██████╗ 
+██╔════╝ ████╗ ████║     ██║██║ ██╔╝    ██╔══██╗██║   ██║████╗  ██║████╗  ██║██╔════╝██╔══██╗
+██║  ███╗██╔████╔██║     ██║█████╔╝     ██████╔╝██║   ██║██╔██╗ ██║██╔██╗ ██║█████╗  ██████╔╝
+██║   ██║██║╚██╔╝██║██   ██║██╔═██╗     ██╔══██╗██║   ██║██║╚██╗██║██║╚██╗██║██╔══╝  ██╔══██╗
+╚██████╔╝██║ ╚═╝ ██║╚█████╔╝██║  ██╗    ██║  ██║╚██████╔╝██║ ╚████║██║ ╚████║███████╗██║  ██║
+ ╚═════╝ ╚═╝     ╚═╝ ╚════╝ ╚═╝  ╚═╝    ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝
+                                                                                                                                          
+    
+2022-10-12 17:25:12.141 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-10-12 17:25:14.512 | SUCCESS  | __main__:main:14 - 
+  ██████╗ ███╗   ███╗     ██╗██╗  ██╗    ██████╗ ██╗   ██╗███╗   ██╗███╗   ██╗███████╗██████╗ 
+██╔════╝ ████╗ ████║     ██║██║ ██╔╝    ██╔══██╗██║   ██║████╗  ██║████╗  ██║██╔════╝██╔══██╗
+██║  ███╗██╔████╔██║     ██║█████╔╝     ██████╔╝██║   ██║██╔██╗ ██║██╔██╗ ██║█████╗  ██████╔╝
+██║   ██║██║╚██╔╝██║██   ██║██╔═██╗     ██╔══██╗██║   ██║██║╚██╗██║██║╚██╗██║██╔══╝  ██╔══██╗
+╚██████╔╝██║ ╚═╝ ██║╚█████╔╝██║  ██╗    ██║  ██║╚██████╔╝██║ ╚████║██║ ╚████║███████╗██║  ██║
+ ╚═════╝ ╚═╝     ╚═╝ ╚════╝ ╚═╝  ╚═╝    ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝
+                                                                                                                                          
+    
+2022-10-12 17:25:14.616 | SUCCESS  | __main__:main:22 - server started success.        ✔
+2022-10-12 17:25:22.412 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:25:27.752 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:25:27.752 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:25:27.753 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"1","failure_count":"0","error_count":"0","skip_count":"0","total_count":"1","status":[{"id":1,"status":"成功"}],"update_time":"2022-10-12 17:25:24","name":"test33","id":7,"update_user":"root","report_name":"20221012172522report.html"}}
+2022-10-12 17:26:39.897 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:26:43.467 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:26:44.378 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：登录接口
+2022-10-12 17:26:46.496 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:84 - 耗时大于6秒的日志：{'time': '2022-10-12 17:26:39', 'url': '/runCase', 'method': 'POST', 'ip': '127.0.0.1', 'body': {'case_id': [1, 2, 3, 4], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}, 'user': <User: admin>, 'protocol': 'http', 'response': '{"code":200,"message":"操作成功","success":true,"data":{"success_count":"3","failure_count":"0","error_count":"0","skip_count":"0","total_count":"4","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"}],"update_time":"2022-10-12 17:26:44","name":"test33","id":7,"update_user":"root","report_name":"20221012172639report.html"}}', 'access_time': 6709}
+2022-10-12 17:26:46.496 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:26:46.496 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1, 2, 3, 4], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:26:46.497 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"3","failure_count":"0","error_count":"0","skip_count":"0","total_count":"4","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"}],"update_time":"2022-10-12 17:26:44","name":"test33","id":7,"update_user":"root","report_name":"20221012172639report.html"}}
+2022-10-12 17:26:57.017 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:26:59.870 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:27:00.562 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：登录接口
+2022-10-12 17:27:02.651 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:27:02.651 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1, 2], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:27:02.652 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"3","failure_count":"0","error_count":"0","skip_count":"0","total_count":"4","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"}],"update_time":"2022-10-12 17:27:01","name":"test33","id":7,"update_user":"root","report_name":"20221012172657report.html"}}
+2022-10-12 17:27:07.770 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:27:13.262 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:27:17.660 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：登录接口
+2022-10-12 17:29:00.446 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:84 - 耗时大于6秒的日志：{'time': '2022-10-12 17:27:07', 'url': '/runCase', 'method': 'POST', 'ip': '127.0.0.1', 'body': {'case_id': [1, 2], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}, 'user': <User: admin>, 'protocol': 'http', 'response': '{"code":200,"message":"操作成功","success":true,"data":{"success_count":"3","failure_count":"0","error_count":"0","skip_count":"0","total_count":"4","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"}],"update_time":"2022-10-12 17:27:19","name":"test33","id":7,"update_user":"root","report_name":"20221012172707report.html"}}', 'access_time': 112761}
+2022-10-12 17:29:00.446 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:29:00.447 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1, 2], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:29:00.447 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"3","failure_count":"0","error_count":"0","skip_count":"0","total_count":"4","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"}],"update_time":"2022-10-12 17:27:19","name":"test33","id":7,"update_user":"root","report_name":"20221012172707report.html"}}
+2022-10-12 17:29:07.894 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 17:29:24.447 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 17:29:33.159 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：登录接口
+2022-10-12 17:30:12.801 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:84 - 耗时大于6秒的日志：{'time': '2022-10-12 17:29:07', 'url': '/runCase', 'method': 'POST', 'ip': '127.0.0.1', 'body': {'case_id': [1, 2], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}, 'user': <User: admin>, 'protocol': 'http', 'response': '{"code":200,"message":"操作成功","success":true,"data":{"success_count":"3","failure_count":"0","error_count":"0","skip_count":"0","total_count":"4","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"}],"update_time":"2022-10-12 17:30:09","name":"test33","id":7,"update_user":"root","report_name":"20221012172907report.html"}}', 'access_time': 65023}
+2022-10-12 17:30:12.801 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 17:30:12.802 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1, 2], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 17:30:12.802 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"3","failure_count":"0","error_count":"0","skip_count":"0","total_count":"4","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"}],"update_time":"2022-10-12 17:30:09","name":"test33","id":7,"update_user":"root","report_name":"20221012172907report.html"}}
+2022-10-12 18:01:52.379 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：获取项目列表
+2022-10-12 18:01:55.444 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：更新项目
+2022-10-12 18:02:04.809 | INFO     | gm_api_automation.core.run_case:test:78 - 正在执行用例：登录接口
+2022-10-12 18:04:02.121 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:84 - 耗时大于6秒的日志：{'time': '2022-10-12 18:01:35', 'url': '/runCase', 'method': 'POST', 'ip': '127.0.0.1', 'body': {'case_id': [1, 2], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}, 'user': <User: admin>, 'protocol': 'http', 'response': '{"code":200,"message":"操作成功","success":true,"data":{"success_count":"3","failure_count":"0","error_count":"0","skip_count":"0","total_count":"4","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"}],"update_time":"2022-10-12 18:03:55","name":"test33","id":7,"update_user":"root","report_name":"20221012180152report.html"}}', 'access_time': 146451}
+2022-10-12 18:04:02.122 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:92 - POST http://127.0.0.1/runCase
+2022-10-12 18:04:02.122 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:93 - 请求参数: {'case_id': [1, 2], 'env': 'http://119.3.49.202:8000', 'suite_id': '7'}
+2022-10-12 18:04:02.123 | INFO     | gm_api_automation.middleware.LogMiddleware:process_response:94 - 响应信息: {"code":200,"message":"操作成功","success":true,"data":{"success_count":"3","failure_count":"0","error_count":"0","skip_count":"0","total_count":"4","status":[{"id":1,"status":"成功"},{"id":2,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"},{"id":3,"status":"成功"}],"update_time":"2022-10-12 18:03:55","name":"test33","id":7,"update_user":"root","report_name":"20221012180152report.html"}}
