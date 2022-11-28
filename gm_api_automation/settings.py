@@ -88,15 +88,27 @@ WSGI_APPLICATION = 'gm_api_automation.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         # 'NAME': BASE_DIR / 'db.sqlite3',
+#         'NAME': 'api_automation',
+#         'USER': 'root',
+#         'PASSWORD': 'GM0901#mypa!2020',
+#         'PORT': '3306',
+#         'HOST': '192.168.1.162'
+#     }
+# }
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         # 'NAME': BASE_DIR / 'db.sqlite3',
         'NAME': 'api_automation',
-        'USER': 'root',
-        'PASSWORD': 'GM0901#mypa!2020',
+        'USER': 'admin',
+        'PASSWORD': 'Wangsongwen2580.',
         'PORT': '3306',
-        'HOST': '192.168.1.162'
+        'HOST': '101.43.117.184'
     }
 }
 
