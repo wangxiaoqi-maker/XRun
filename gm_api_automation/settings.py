@@ -93,10 +93,10 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         # 'NAME': BASE_DIR / 'db.sqlite3',
         'NAME': 'api_automation',
-        'USER': 'admin',
-        'PASSWORD': 'Wangsongwen2580.',
+        'USER': 'root',
+        'PASSWORD': 'GM0901#mypa!2020',
         'PORT': '3306',
-        'HOST': '101.43.117.184'
+        'HOST': '192.168.1.162'
     }
 }
 

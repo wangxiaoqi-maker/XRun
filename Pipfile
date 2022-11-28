@@ -11,6 +11,8 @@ ddt = "*"
 parameterized = "*"
 loguru = "*"
 pydantic = "*"
+xmindparser = "*"
+xmind = "*"
 
 [dev-packages]
 
