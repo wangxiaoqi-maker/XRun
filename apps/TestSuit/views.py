@@ -116,4 +116,3 @@ class TestSuitView(ModelViewSet):
             for i in item.get('case_id'):
                 pass
 
-        pass
