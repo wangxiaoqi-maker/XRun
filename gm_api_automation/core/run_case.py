@@ -84,7 +84,7 @@ def add_cases(cases, envs, suite_id, case_id):
             executor = Executor()
             case = executor.replace_params(case)
             url = case.url
-            url_handle(url, env)
+            url = url_handle(url, env)
             method = case.request_method
             bodys = case.body
             headers = case.request_headers
