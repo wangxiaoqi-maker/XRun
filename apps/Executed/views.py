@@ -5,9 +5,9 @@ from rest_framework.viewsets import ModelViewSet
 
 from Executed.serializers import SendHttpRequestSeralizer, RunCaseSeralizer
 from Interfaces.models import Interfaces
-from gm_api_automation.core.executor import Executor, Data
+from gm_api_automation.core.executor import Executor, Data, ExecutorTest
 from gm_api_automation.core.paramters_parse.jsonpath_parser import JSONPathParser
-from gm_api_automation.core.run_case import parse_case, ParametrizedTestCase, ExecutorTest, add_cases
+from gm_api_automation.core.run_case import parse_case, ParametrizedTestCase
 from gm_api_automation.core.suit import unittest_run_case
 from gm_api_automation.middleware.HttpClient import Request
 
@@ -42,6 +42,6 @@ class SendHttpRequestView(ModelViewSet):
         if case_id is None or case_id == []:
             return Response({'message': '用例id不能为空', 'success': False})
         cases = parse_case(self.queryset, case_id)
-        add_cases(cases, env, suite_id, case_id)
+        Executor().add_cases(cases, env, suite_id, case_id)
         message = unittest_run_case(suite_id)
         return Response(message)

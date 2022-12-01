@@ -15,7 +15,7 @@ class TestSuit(BaseModels):
     priority = models.CharField(verbose_name='优先级', max_length=50, help_text='优先级', default='P0', null=True, blank=True)
     case_list = models.ManyToManyField('Interfaces.Interfaces', related_name='testsuit_interfaces', help_text='用例列表',
                                        db_constraint=False)
-    status = models.CharField(verbose_name='执行结果', max_length=500, help_text='执行结果', null=True, blank=True)
+    status = models.TextField(verbose_name='执行结果', null=True, blank=True, help_text='执行结果')
     success_count = models.CharField(verbose_name='成功用例数', max_length=50, help_text='成功用例数', null=True, blank=True)
     failure_count = models.CharField(verbose_name='失败用例数', max_length=50, help_text='失败用例数', null=True, blank=True)
     error_count = models.CharField(verbose_name='错误用例数', max_length=50, help_text='错误用例数', null=True, blank=True)

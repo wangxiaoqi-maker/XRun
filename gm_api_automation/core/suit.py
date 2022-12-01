@@ -6,7 +6,7 @@ import unittest
 from XTestRunner import HTMLTestRunner
 
 from TestSuit.models import TestSuit
-from gm_api_automation.core import run_case
+from gm_api_automation.core import run_case, executor
 
 
 def unittest_run_case(suite_id):
@@ -15,7 +15,7 @@ def unittest_run_case(suite_id):
     """
     suite = unittest.TestSuite()
     loader = unittest.TestLoader()
-    suite.addTest(loader.loadTestsFromModule(run_case))
+    suite.addTest(loader.loadTestsFromModule(executor))
     # 当前时间
     now = time.strftime("%Y%m%d%H%M%S")
     file_name = str(now) + 'report.html'
@@ -38,7 +38,7 @@ def unittest_run_case(suite_id):
     with open(report_name, 'rb') as f:
         report_source = f.readlines()
         # 将读取到的字符串源码去掉隐号
-        report_source = [i.decode('utf-8').replace('"', '').replace("\n", "").replace(",", "") for i in report_source]
+        # report_source = [i.decode('utf-8').replace('"', '').replace("\n", "").replace(",", "") for i in report_source]
     TestSuit.objects.filter(id=suite_id).update(report_name=file_name, success_count=result.success_count,
                                                 failure_count=result.failure_count, error_count=result.error_count,
                                                 skip_count=result.skip_count)

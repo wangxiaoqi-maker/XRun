@@ -11,9 +11,15 @@ import jsonpath
 from django.db.models import QuerySet
 
 from Interfaces.models import Interfaces
+from TestSuit.models import TestSuit
+from gm_api_automation.Utils.case_log import CaseLog
 from gm_api_automation.Utils.loguru_util import logger
 from gm_api_automation.core.paramters_parse.jsonpath_parser import JSONPathParser
 from gm_api_automation.middleware.HttpClient import Request
+
+
+class ExecutorTest(unittest.TestCase):
+    pass
 
 
 class Data(object):
@@ -24,6 +30,24 @@ class Executor(object):
     el_exp = r"\$\{(.+?)\}"
     pattern = re.compile(el_exp)
 
+    def __init__(self, log: CaseLog = None):
+        if log is None:
+            self._logger = CaseLog()
+            self._main = True
+        else:
+            self._logger = log
+            self._main = False
+
+    @property
+    def logger(self):
+        return self._logger
+
+    def append(self, content, end=False):
+        if end:
+            self.logger.append(content, end)
+        else:
+            self.logger.append(content, end)
+
     def my_assert(self, asserts: List, json_format: bool) -> [str, bool]:
         """
         断言验证
@@ -31,19 +55,27 @@ class Executor(object):
         result = dict()
         ok = True
         if len(asserts) == 0:
+            self.append("断言列表为空，用例执行完成", True)
             return json.dumps(result, ensure_ascii=False), ok  # 未设置断言, 用例结束
-        for item in asserts:  # 遍历断言
+        for index, item in enumerate(asserts):  # 遍历断言
             try:
                 # 解析预期/实际结果
                 expected = item.get('expected')  # 循环拿出预期结果
+                self.append("预期结果: {}".format(expected))
                 # 判断请求返回是否是json格式，如果不是则不进行loads操作
                 actually = item.get('actually')  # 循环拿出实际结果
+                self.append("实际结果: {}".format(actually))
+                self.append("断言类型: {}".format(item.get('assert_type')))
                 status, err = self.ops(item.get('assert_type'), expected, actually)  # 判断预期结果和实际结果
-                result = {"status": status, "msg": err}  # 将断言结果存入result字典中
+                result[index + 1] = {"status": status, "msg": err}  # 将断言结果存入result字典中
+                self.append("断言结果: {}".format(result))
+                result[index + 1]["logs"] = self.logger.join()
             except Exception as e:
                 if ok is True:
                     ok = False
                 result = {"status": False, "msg": f"断言取值失败, 请检查断言语句: {e}"}  # 将断言结果存入result字典中
+                self.append(f"断言取值失败, 请检查断言语句: {e}")
+        self.append("断言执行完成", True)
         return result  # 返回断言结果
 
     def ops(self, assert_type: str, exp, act) -> (bool, str):
@@ -167,26 +199,38 @@ class Executor(object):
                 if param.get('extract_obj') == 'response_json':
                     try:
                         value = JSONPathParser().parse(data, param.get('extract_exp'))
-                        logger.info("出参类型为response_json，提取成功，提取表达式为：{}，提取结果为：{}".format(param.get('extract_exp'), value))
+                        logger.info(
+                            "出参类型为response_json，提取成功，提取表达式为：{}，提取结果为：{}".format(param.get('extract_exp'), value))
+                        self.append(f"出参类型为response_json，提取成功，提取表达式为：{param.get('extract_exp')}，提取结果为：{value}")
+
                         setattr(Data, param.get('param_name'), value)
                     except Exception as e:
                         logger.info(f"提取参数失败: {e}")
+                        self.append(f"提取参数失败: {e}")
                 elif param.get('extract_obj') == 'response_text':
                     try:
                         value = str(data)
-                        logger.info("出参类型为response_text，提取成功，提取表达式为：{}，提取结果为：{}".format(param.get('extract_exp'), value))
+                        logger.info(
+                            "出参类型为response_text，提取成功，提取表达式为：{}，提取结果为：{}".format(param.get('extract_exp'), value))
+                        self.append(f"出参类型为response_text，提取成功，提取表达式为：{param.get('extract_exp')}，提取结果为：{value}")
                         setattr(Data, param.get('param_name'), value)
                     except Exception as e:
                         logger.info(f"提取参数失败: {e}")
+                        self.append(f"提取参数失败: {e}")
                 elif param.get('extract_obj') == 'response_headers':
                     try:
                         value = JSONPathParser().header_parse(data, param.get('extract_exp'))
-                        logger.info("出参类型为response_headers，提取成功，提取表达式为：{}，提取结果为：{}".format(param.get('extract_exp'), value))
+                        logger.info(
+                            "出参类型为response_headers，提取成功，提取表达式为：{}，提取结果为：{}".format(param.get('extract_exp'), value))
+                        self.append(f"出参类型为response_headers，提取成功，提取表达式为：{param.get('extract_exp')}，提取结果为：{value}")
                         setattr(Data, param.get('param_name'), value)
                     except Exception as e:
                         logger.info(f"提取参数失败: {e}")
+                        self.append(f"提取参数失败: {e}")
                 else:
                     logger.info(f"不支持的提取对象: {param.get('extract_obj')}")
+                    self.append(f"不支持的提取对象: {param.get('extract_obj')}", True)
+                self.append('所有出参提取完成', True)
                 return out_params
         return None
 
@@ -202,29 +246,94 @@ class Executor(object):
                 # 如果变量在Data类中存在，则替换，否则不替换
                 if hasattr(Data, var[0]):
                     logger.info(f"匹配到需要替换的变量: {var[0]}")
+                    self.append('匹配到需要替换的变量: {}'.format(var[0]))
                     value = getattr(Data, var[0])
-                    value = v.replace("${{mark}}".replace("{mark}", var[0]), value)
+                    value = v.replace("${{mark}}".replace("{mark}", var[0]), str(value))
                     logger.info(f"变量替换成功，替换后的值为: {value}")
+                    self.append('变量替换成功，替换后的值为: {}'.format(value))
                     setattr(cases, k, value)
                     return cases
         return cases
 
-    def run(self, cases: list):
+    @staticmethod
+    def url_handle(new_url: str, env_url: str):
         """
-        运行测试用例
+        根据环境变量替换url
         """
-        for case in cases:
-            url = case.url
-            method = case.request_method
-            bodys = case.body
-            headers = case.request_headers
-            body_type = case.body_type
-            data = Request(url, body=bodys).request(method=method, body_type=body_type, headers=headers, body=bodys)
-            Executor().extract_out_params(data, cases)
-            params_list = Executor().replace_params(cases)
-            actual = JSONPathParser().parse_assert(data, params_list.assert_list)
-            message = Executor().my_assert(actual, True)
-            return message
+        if new_url.startswith('http') or new_url.startswith('https'):
+            return new_url
+        else:
+            return env_url + new_url
+
+    def add_cases(self, cases, envs, suite_id, case_id):
+        result = []
+        # 获取测试类中存储的所有用例名称
+        test_list = [test for test in ExecutorTest.__dict__ if 'test' in test]
+        for test_case in test_list:
+            # 删除测试类中的用例
+            delattr(ExecutorTest, test_case)
+        for i in cases:
+
+            def test(selfs, case=i, env=envs):
+                self.append('开始执行用例: {}'.format(case.name))
+                logger.info(f'正在执行用例：{case.name}')
+                case = self.replace_params(case)
+                url = case.url
+                url = self.url_handle(url, env)
+                method = case.request_method
+                bodys = case.body
+                headers = case.request_headers
+                body_type = case.body_type
+                data = Request(url, body=bodys).request(method=method, body_type=body_type, headers=headers, body=bodys)
+                Interfaces.objects.filter(id=case.id).update(response=data.get("response"))
+                self.append(f"http请求过程\n\nRequest Method: {method}\n\n"
+                            f"Request Headers:\n{headers}\n\nUrl: {url}"
+                            f"\n\nBody:\n{bodys}\n\nResponse:\n{data.get('response', '未获取到返回值')}")
+                # 提取参数
+                extract = self.extract_out_params(data, case)
+                assert_list = case.assert_list
+                params_list = self.replace_params(case)
+                if assert_list:
+                    actual = JSONPathParser().parse_assert(data, params_list.assert_list)
+                    message = self.my_assert(actual, True)
+                    # message字典中的status为false时，用例执行失败，并且将message字典中的msg信息返回
+                    for mes in message:
+                        if message[mes].get('status'):
+                            self.append(f"断言成功，断言表达式为：{mes}，断言结果为：{message[mes].get('msg')}")
+                            logger.info(f"断言成功，断言表达式为：{mes}，断言结果为：{message[mes].get('msg')}")
+                            Interfaces.objects.filter(id=case.id).update(status="成功")
+                            status = {"id": case.id, "status": "成功", "message": message}
+                            result.append(status)
+                        else:
+                            self.append(f"断言失败，断言表达式为：{mes}，断言结果为：{message[mes].get('msg')}", True)
+                            logger.info(f"断言失败，断言表达式为：{mes}，断言结果为：{message[mes].get('msg')}")
+                            Interfaces.objects.filter(id=case.id).update(status="失败")
+                            status = {"id": case.id, "status": "失败", "message": message}
+                            result.append(status)
+                            self.append('用例执行完成: {}'.format(case.name), True)
+                            Interfaces.objects.filter(id=case.id).update(desc=self.logger.join())
+                            self.logger.log.clear()
+                            TestSuit.objects.filter(id=suite_id).update(status=str(result), state="已完成",
+                                                                        total_count=len(case_id),
+                                                                        updated_time=time.strftime("%Y-%m-%d %H:%M:%S",
+                                                                                                   time.localtime()))
+                            raise AssertionError(message)
+                else:
+                    # 更新用例执行结果为成功
+                    Interfaces.objects.filter(id=case.id).update(status="成功")
+                    status = {"id": case.id, "status": "成功"}
+                    result.append(status)
+                self.append('用例执行完成: {}'.format(case.name), True)
+                Interfaces.objects.filter(id=case.id).update(desc=self.logger.join())
+                self.logger.log.clear()
+                TestSuit.objects.filter(id=suite_id).update(status=str(result), state="已完成", total_count=len(case_id),
+                                                            updated_time=time.strftime("%Y-%m-%d %H:%M:%S",
+                                                                                       time.localtime()))
+
+            setattr(ExecutorTest, f'test_{i}', test)
+
+    def get_case_execute_log(self):
+        return self.logger.join()
 
     @staticmethod
     def get_el_expression(string: str):
