@@ -13,8 +13,8 @@ class TestSuit(BaseModels):
                                 help_text='所属项目', db_constraint=False)
     cron = models.CharField(verbose_name='定时任务', max_length=100, null=True, blank=True, help_text='定时任务')
     priority = models.CharField(verbose_name='优先级', max_length=50, help_text='优先级', default='P0', null=True, blank=True)
-    case_list = models.ManyToManyField('Interfaces.Interfaces', related_name='testsuit_interfaces', help_text='用例列表',
-                                       db_constraint=False)
+    # case_list = models.ManyToManyField('Interfaces.Interfaces', related_name='testsuit_interfaces', help_text='用例列表',
+    #                                    db_constraint=False)
     status = models.TextField(verbose_name='执行结果', null=True, blank=True, help_text='执行结果')
     success_count = models.CharField(verbose_name='成功用例数', max_length=50, help_text='成功用例数', null=True, blank=True)
     failure_count = models.CharField(verbose_name='失败用例数', max_length=50, help_text='失败用例数', null=True, blank=True)
@@ -35,3 +35,21 @@ class TestSuit(BaseModels):
     def __str__(self):
         return self.name
 
+
+class TestCaseStep(BaseModels):
+    """
+    测试用例步骤表
+    """
+    testsuit = models.ForeignKey('TestSuit', on_delete=models.CASCADE, related_name='testsuit_step', help_text='所属套件',
+                                 db_constraint=False)
+    interface = models.ForeignKey('Interfaces.Interfaces', on_delete=models.CASCADE, related_name='interface_step',
+                                  help_text='所属接口', db_constraint=False)
+    execution_order = models.IntegerField(verbose_name='执行顺序', help_text='执行顺序', default=1)
+    status = models.TextField(verbose_name='执行结果', null=True, blank=True, help_text='执行结果')
+    desc = models.TextField(verbose_name='简要描述', help_text='简要描述', blank=True, null=True, default='')
+
+    class Meta:
+        db_table = 'gm_testcase_step'
+        verbose_name = '测试用例步骤'
+        verbose_name_plural = verbose_name
+        ordering = ['id']

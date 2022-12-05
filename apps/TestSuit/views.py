@@ -8,8 +8,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from TestSuit.models import TestSuit
-from TestSuit.serializers import TestSuitSerializer
+from TestSuit.models import TestSuit, TestCaseStep
+from TestSuit.serializers import TestSuitSerializer, TestCaseStepSerializer
 from gm_api_automation.Utils.page_number_pagination import PageNumberPagination
 
 
@@ -116,3 +116,65 @@ class TestSuitView(ModelViewSet):
             for i in item.get('case_id'):
                 pass
 
+
+class TestCaseStepView(ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    pagination_class = PageNumberPagination
+    filter_backends = [DjangoFilterBackend]
+    queryset = TestCaseStep.objects.all()
+    serializer_class = TestCaseStepSerializer
+    filterset_fields = ('id', 'testsuit', 'interface')
+
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        return response
+
+    def get_queryset(self):
+        """
+        过滤已删除的测试套件
+        :return:
+        """
+        if self.request.user.is_superuser:
+            return self.queryset.filter(is_delete=False)
+        return self.queryset.filter(user=self.request.user, is_delete=False)
+
+    def create(self, request, *args, **kwargs):
+        """
+        创建测试套件
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        super().create(request, *args, **kwargs)
+        return Response({'message': '添加步骤成功', 'success': True})
+
+    def update(self, request, *args, **kwargs):
+        """
+        使用body传参的方式更新数据，不使用pk值
+        """
+        if request.data.get('id') is None or request.data.get('id') == '':
+            return Response({'message': '测试步骤id不能为空', 'success': False})
+        instance = self.filter_queryset(self.get_queryset()).filter(id=request.data.get("id")).first()
+        if not instance:
+            return Response({'message': '测试步骤不存在', 'success': False})
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        """
+        删除测试套件
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        instance = self.filter_queryset(self.get_queryset()).filter(id=request.data.get('id'), is_delete=False).first()
+        if not instance:
+            return Response({'message': '测试步骤不存在', 'success': False})
+        instance.is_delete = True
+        instance.deleted_time = datetime.datetime.now()
+        instance.save()
+        return Response({'message': '测试步骤删除成功', 'success': True})

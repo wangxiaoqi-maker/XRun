@@ -4,7 +4,7 @@ from Configs.models import Config
 from Interfaces.models import Interfaces
 from Interfaces.serializers import InterfaceSeralizers
 from Projects.models import Projects
-from TestSuit.models import TestSuit
+from TestSuit.models import TestSuit, TestCaseStep
 
 
 class CaseListSerializers(serializers.ModelSerializer):
@@ -39,7 +39,6 @@ class TestSuitSerializer(serializers.ModelSerializer):
                                  'error_messages': {'required': '套件名称不能为空', 'blank': '套件名称不能为空', 'null': '套件名称不能为空'}},
                         'project': {'required': True,
                                     'error_messages': {'required': '项目不能为空', 'blank': '项目不能为空', 'null': '项目不能为空'}},
-                        'case_list': {'required': False},
                         'priority': {'required': False},
                         'created_time': {'format': '%Y-%m-%d %H:%M:%S'},
                         'updated_time': {'format': '%Y-%m-%d %H:%M:%S'},
@@ -91,11 +90,81 @@ class TestSuitSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         """
-        过滤case_list中已被删除的用例
+        重写to_representation方法，实现返回某个套件下的所有步骤
         """
         ret = super().to_representation(instance)
-        ret['case_list'] = CaseListSerializers(instance.case_list.filter(is_delete=False), many=True).data
-        ret['case_id'] = [case['id'] for case in ret['case_list']]
-        if instance.status:
-            ret['status'] = eval(instance.status)
+        ret['case_list'] = TestCaseStepSerializer(TestCaseStep.objects.filter(testsuit_id=instance.id), many=True).data
+        return ret
+
+
+class TestCaseStepSerializer(serializers.ModelSerializer):
+    """
+    用例步骤序列化器
+    """
+    case_list = serializers.ListSerializer(child=serializers.IntegerField(), required=True, allow_null=True,
+                                           write_only=True)
+
+    class Meta:
+        model = TestCaseStep
+        exclude = ('is_delete', "create_user", "deleted_time")
+        extra_kwargs = {
+            'update_user': {'required': False},
+            'updated_time': {'format': '%Y-%m-%d %H:%M:%S'},
+            'created_time': {'format': '%Y-%m-%d %H:%M:%S'},
+            "interface": {'required': False},
+        }
+
+    def create(self, validated_data):
+        """
+        重写create方法，实现套件创建时自动添加创建人
+        :param validated_data:
+        :return:
+        """
+        validated_data['create_user'] = self.context['request'].user
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        """
+        重写update方法，实现套件更新时自动添加更新人
+        :param instance:
+        :param validated_data:
+        :return:
+        """
+        validated_data['update_user'] = self.context['request'].user.username
+        return super().update(instance, validated_data)
+
+    def validate(self, attrs):
+        """
+        1. 判断case_id的用例是否存在且不能为空
+        2. 循环拿出case_id的用例，插入到TestSuitStep中
+        """
+        case_list = attrs.get('case_list')
+        if case_list:
+            for case_id in case_list:
+                case = Interfaces.objects.filter(id=case_id, is_delete=False).first()
+                if not case:
+                    raise serializers.ValidationError('用例不存在')
+                else:
+                    # 判断是否是最后一个case_id
+                    if case_list.index(case_id) == len(case_list) - 1:
+                        attrs['interface'] = case
+                        attrs.pop('case_list')
+                        return attrs
+                    else:
+                        TestCaseStep.objects.create(testsuit=attrs.get("testsuit").id,
+                                                    interface=case,
+                                                    execution_order=attrs.get("execution_order"),
+                                                    create_user=self.context['request'].user)
+        return attrs
+
+    def to_representation(self, instance):
+        """
+        将用一个套件下的所有用例组装到一个列表中返回
+        """
+        ret = super().to_representation(instance)
+        # 已删除的用例不返回
+        if instance.interface.is_delete:
+            ret['case_step'] = []
+        else:
+            ret['case_step'] = CaseListSerializers(instance.interface).data
         return ret
