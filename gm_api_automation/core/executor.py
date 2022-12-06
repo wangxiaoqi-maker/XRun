@@ -299,14 +299,14 @@ class Executor(object):
                     # message字典中的status为false时，用例执行失败，并且将message字典中的msg信息返回
                     for mes in message:
                         if message[mes].get('status'):
-                            self.append(f"断言成功，断言表达式为：{mes}，断言结果为：{message[mes].get('msg')}")
-                            logger.info(f"断言成功，断言表达式为：{mes}，断言结果为：{message[mes].get('msg')}")
+                            self.append(f"断言成功，断言结果为：{message[mes].get('msg')}")
+                            logger.info(f"断言成功，断言结果为：{message[mes].get('msg')}")
                             Interfaces.objects.filter(id=case.id).update(status="成功")
                             status = {"id": case.id, "status": "成功", "message": message}
                             result.append(status)
                         else:
-                            self.append(f"断言失败，断言表达式为：{mes}，断言结果为：{message[mes].get('msg')}", True)
-                            logger.info(f"断言失败，断言表达式为：{mes}，断言结果为：{message[mes].get('msg')}")
+                            self.append(f"断言失败，断言结果为：{message[mes].get('msg')}", True)
+                            logger.info(f"断言失败，断言结果为：{message[mes].get('msg')}")
                             Interfaces.objects.filter(id=case.id).update(status="失败")
                             status = {"id": case.id, "status": "失败", "message": message}
                             result.append(status)

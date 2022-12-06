@@ -143,7 +143,7 @@ class TestCaseStepSerializer(serializers.ModelSerializer):
             for case_id in case_list:
                 case = Interfaces.objects.filter(id=case_id, is_delete=False).first()
                 if not case:
-                    raise serializers.ValidationError('用例不存在')
+                    raise serializers.ValidationError(f'用例id-{case_id} 不存在')
                 else:
                     # 判断是否是最后一个case_id
                     if case_list.index(case_id) == len(case_list) - 1:
@@ -151,7 +151,8 @@ class TestCaseStepSerializer(serializers.ModelSerializer):
                         attrs.pop('case_list')
                         return attrs
                     else:
-                        TestCaseStep.objects.create(testsuit=attrs.get("testsuit").id,
+                        testsuit_id = TestSuit.objects.filter(id=attrs.get('testsuit').id, is_delete=False).first()
+                        TestCaseStep.objects.create(testsuit=testsuit_id,
                                                     interface=case,
                                                     execution_order=attrs.get("execution_order"),
                                                     create_user=self.context['request'].user)
