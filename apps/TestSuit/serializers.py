@@ -112,6 +112,7 @@ class TestCaseStepSerializer(serializers.ModelSerializer):
             'updated_time': {'format': '%Y-%m-%d %H:%M:%S'},
             'created_time': {'format': '%Y-%m-%d %H:%M:%S'},
             "interface": {'required': False},
+            "execution_order": {'required': False},
         }
 
     def create(self, validated_data):

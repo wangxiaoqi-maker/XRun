@@ -44,7 +44,7 @@ class TestCaseStep(BaseModels):
                                  db_constraint=False)
     interface = models.ForeignKey('Interfaces.Interfaces', on_delete=models.CASCADE, related_name='interface_step',
                                   help_text='所属接口', db_constraint=False)
-    execution_order = models.IntegerField(verbose_name='执行顺序', help_text='执行顺序', default=1)
+    execution_order = models.CharField(verbose_name='执行顺序', max_length=20, help_text='执行顺序', null=True, blank=True)
     status = models.TextField(verbose_name='执行结果', null=True, blank=True, help_text='执行结果')
     desc = models.TextField(verbose_name='简要描述', help_text='简要描述', blank=True, null=True, default='')
 
