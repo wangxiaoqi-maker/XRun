@@ -27,6 +27,9 @@ class SendHttpRequestView(ModelViewSet):
         body_type = request.data.get('body_type')
         data = Request(url, body=bodys).request(method=method, body_type=body_type, headers=headers, body=bodys)
         assert_list = request.data.get('assert_list')
+        out_params = request.data.get('out_params')
+        if out_params is not None:
+            data['extract'] = Executor().extract_out_params(data, out_params)
         if assert_list:
             actual = JSONPathParser().parse_assert(data, request.data.get('assert_list'))
             message = Executor().my_assert(actual, True)

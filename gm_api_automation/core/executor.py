@@ -67,9 +67,12 @@ class Executor(object):
                 self.append("实际结果: {}".format(actually))
                 self.append("断言类型: {}".format(item.get('assert_type')))
                 status, err = self.ops(item.get('assert_type'), expected, actually)  # 判断预期结果和实际结果
-                result[index + 1] = {"status": status, "msg": err}  # 将断言结果存入result字典中
+                assert_name = item.get('assert_name')
+                if assert_name is None:
+                    assert_name = f"断言{index + 1}"
+                result[assert_name] = {"status": status, "msg": err}  # 将断言结果存入result字典中
                 self.append("断言结果: {}".format(result))
-                result[index + 1]["logs"] = self.logger.join()
+                result[assert_name]["logs"] = self.logger.join()
             except Exception as e:
                 if ok is True:
                     ok = False
@@ -188,11 +191,11 @@ class Executor(object):
         """
         return json.loads(data)
 
-    def extract_out_params(self, data: dict, cases):
+    def extract_out_params(self, data: dict, out_params):
         """
         将传入的out_params列表循环拿出，并通过jsonpath提取response中的参数，并更新out_params列表
         """
-        out_params = cases.out_params
+        out_params_list = []
         if out_params:
             out_params = self.translate(out_params)
             for param in out_params:
@@ -202,7 +205,7 @@ class Executor(object):
                         logger.info(
                             "出参类型为response_json，提取成功，提取表达式为：{}，提取结果为：{}".format(param.get('extract_exp'), value))
                         self.append(f"出参类型为response_json，提取成功，提取表达式为：{param.get('extract_exp')}，提取结果为：{value}")
-
+                        out_params_list.append({param.get('param_name'): value})
                         setattr(Data, param.get('param_name'), value)
                     except Exception as e:
                         logger.info(f"提取参数失败: {e}")
@@ -213,6 +216,7 @@ class Executor(object):
                         logger.info(
                             "出参类型为response_text，提取成功，提取表达式为：{}，提取结果为：{}".format(param.get('extract_exp'), value))
                         self.append(f"出参类型为response_text，提取成功，提取表达式为：{param.get('extract_exp')}，提取结果为：{value}")
+                        out_params_list.append({param.get('extract_name'): value})
                         setattr(Data, param.get('param_name'), value)
                     except Exception as e:
                         logger.info(f"提取参数失败: {e}")
@@ -223,6 +227,7 @@ class Executor(object):
                         logger.info(
                             "出参类型为response_headers，提取成功，提取表达式为：{}，提取结果为：{}".format(param.get('extract_exp'), value))
                         self.append(f"出参类型为response_headers，提取成功，提取表达式为：{param.get('extract_exp')}，提取结果为：{value}")
+                        out_params_list.append({param.get('extract_name'): value})
                         setattr(Data, param.get('param_name'), value)
                     except Exception as e:
                         logger.info(f"提取参数失败: {e}")
@@ -230,8 +235,8 @@ class Executor(object):
                 else:
                     logger.info(f"不支持的提取对象: {param.get('extract_obj')}")
                     self.append(f"不支持的提取对象: {param.get('extract_obj')}", True)
-                self.append('所有出参提取完成', True)
-                return out_params
+            self.append('所有出参提取完成', True)
+            return out_params_list
         return None
 
     def replace_params(self, cases):
@@ -290,7 +295,8 @@ class Executor(object):
                             f"Request Headers:\n{headers}\n\nUrl: {url}"
                             f"\n\nBody:\n{bodys}\n\nResponse:\n{data.get('response', '未获取到返回值')}")
                 # 提取参数
-                extract = self.extract_out_params(data, case)
+                out_params = case.out_params
+                extract = self.extract_out_params(data, out_params)
                 assert_list = case.assert_list
                 params_list = self.replace_params(case)
                 if assert_list:
