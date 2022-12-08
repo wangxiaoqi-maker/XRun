@@ -4,7 +4,8 @@ import time
 import unittest
 
 from XTestRunner import HTMLTestRunner
-
+from django.http import HttpRequest
+from Reports.views import ReportsView
 from TestSuit.models import TestSuit
 from gm_api_automation.core import run_case, executor
 
@@ -37,20 +38,9 @@ def unittest_run_case(suite_id):
     # 获取报告源码
     with open(report_name, 'rb') as f:
         report_source = f.readlines()
-        # 将读取到的字符串源码去掉隐号
-        # report_source = [i.decode('utf-8').replace('"', '').replace("\n", "").replace(",", "") for i in report_source]
-    TestSuit.objects.filter(id=suite_id).update(report_name=file_name, success_count=result.success_count,
-                                                failure_count=result.failure_count, error_count=result.error_count,
-                                                skip_count=result.skip_count)
     suite_data = TestSuit.objects.filter(id=suite_id).first()
     status = suite_data.status
     if status:
         status = eval(status)
-    message = {"success_count": suite_data.success_count, "failure_count": suite_data.failure_count,
-               "error_count": suite_data.error_count, "skip_count": suite_data.skip_count,
-               "total_count": suite_data.total_count, "status": status,
-               "update_time": suite_data.updated_time.strftime("%Y-%m-%d %H:%M:%S"), "name": suite_data.name,
-               "id": suite_data.id,
-               "update_user": suite_data.update_user, "report_name": suite_data.report_name,
-               }
+    message = {"result": result, "report_name": file_name, "report_source": report_source, "status": status}
     return message

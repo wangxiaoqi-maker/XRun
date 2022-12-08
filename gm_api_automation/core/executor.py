@@ -6,6 +6,7 @@ import unittest
 from collections import defaultdict
 from datetime import datetime
 from typing import List, Any
+from requests import request as requests_request
 
 import jsonpath
 from django.db.models import QuerySet
@@ -330,7 +331,6 @@ class Executor(object):
                     status = {"id": case.id, "status": "成功"}
                     result.append(status)
                 self.append('用例执行完成: {}'.format(case.name), True)
-                Interfaces.objects.filter(id=case.id).update(desc=self.logger.join())
                 self.logger.log.clear()
                 TestSuit.objects.filter(id=suite_id).update(status=str(result), state="已完成", total_count=len(case_id),
                                                             updated_time=time.strftime("%Y-%m-%d %H:%M:%S",
@@ -348,6 +348,35 @@ class Executor(object):
         if string is None or not isinstance(string, str):
             return []
         return re.findall(Executor.pattern, string)
+
+    @staticmethod
+    def create_report(request, message, suite_id):
+        """生成测试报告
+        """
+        now_time = time.strftime("%Y%m%d%H%M%S", time.localtime())
+        suite_data = TestSuit.objects.filter(id=suite_id).first()
+        result = message.get('result')
+        report_name = message.get('report_name')
+        # 获取当前用户token，并添加到requests请求头中
+        token = request.META.get('HTTP_AUTHORIZATION')
+        body = {
+            "name": f"{suite_data.name}_{now_time}",
+            "testsuit": suite_id,
+            "success_count": result.success_count,
+            "failure_count": result.failure_count,
+            "error_count": result.error_count,
+            "skipped_count": result.skip_count,
+            "total_count": result.success_count + result.failure_count + result.error_count + result.skip_count,
+            "status": suite_data.status,
+            "report_name": report_name,
+            "project": suite_data.project_id,
+        }
+        # 获取当前的ip和端口
+        ip = request.META.get('HTTP_HOST')
+        requests_request('POST', 'http://' + ip + '/CreateReport', json=body,
+                         headers={'Authorization': token})  # noqa
+        body["status"] = eval(suite_data.status)
+        return body
 
 
 if __name__ == '__main__':

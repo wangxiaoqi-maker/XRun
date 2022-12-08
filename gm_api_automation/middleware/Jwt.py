@@ -8,8 +8,8 @@ EXPIRED_HOUR = 48
 
 
 class UserToken(object):
-    key = 'pityToken'
-    salt = 'pity'
+    key = 'Token'
+    salt = ''
 
     @staticmethod
     def get_token(data):

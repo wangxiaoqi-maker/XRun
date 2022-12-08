@@ -1,5 +1,4 @@
-import datetime
-
+from datetime import datetime
 from django.shortcuts import render
 
 # Create your views here.
@@ -30,14 +29,14 @@ class TestSuitView(ModelViewSet):
         过滤已删除的测试套件
         :return:
         """
-        start_time = self.request.query_params.get('start_time')
-        end_time = self.request.query_params.get('end_time')
-        if start_time and end_time:
-            return self.queryset.filter(is_delete=False, updated_time__range=(start_time, end_time))
-        return self.queryset.filter(is_delete=False)
-        # if self.request.user.is_superuser:
-        #     return self.queryset.filter(is_delete=False)
-        # return self.queryset.filter(user=self.request.user)
+        # start_time = self.request.query_params.get('start_time')
+        # end_time = self.request.query_params.get('end_time')
+        # if start_time and end_time:
+        #     return self.queryset.filter(is_delete=False, updated_time__range=(start_time, end_time))
+        # return self.queryset.filter(is_delete=False)
+        if self.request.user.is_superuser:
+            return self.queryset.filter(is_delete=False)
+        return self.queryset.filter(user=self.request.user)
 
     def create(self, request, *args, **kwargs):
         """
@@ -76,7 +75,7 @@ class TestSuitView(ModelViewSet):
         if not instance:
             return Response({'message': '测试套件不存在', 'success': False})
         instance.is_delete = True
-        instance.deleted_time = datetime.datetime.now()
+        instance.deleted_time = datetime.now()
         instance.save()
         return Response({'message': '测试套件删除成功', 'success': True})
 
@@ -103,18 +102,15 @@ class TestSuitView(ModelViewSet):
 
     def get_case_total(self, request, *args, **kwargs):
         """
-        返回所有测试套件下的用例总数，包含往期、日增、总用例数
+        获取所有套件的总数，并按照项目分组
         """
-        response = super().list(request, *args, **kwargs)
-        # 获取套件下的用例总数
-        case_total = 0
-        for item in response.data['results']:
-            case_total += len(item.get('case_id'))
-        # 获取往期用例总数
-        past_case_total = 0
-        for item in response.data['results']:
-            for i in item.get('case_id'):
-                pass
+        project_id = request.query_params.get('project_id')
+        total = self.queryset.filter(is_delete=False, project=project_id).count()
+        before_today_total = self.queryset.filter(is_delete=False, project=project_id,
+                                                  created_time__lt=datetime.now().date()).count()
+        today = datetime.now().date()
+        today_total = self.queryset.filter(created_time__contains=today, project=project_id, is_delete=False).count()
+        return Response({'total': total, 'previous': before_today_total, 'today_total': today_total, 'success': True})
 
 
 class TestCaseStepView(ModelViewSet):
@@ -175,6 +171,6 @@ class TestCaseStepView(ModelViewSet):
         if not instance:
             return Response({'message': '测试步骤不存在', 'success': False})
         instance.is_delete = True
-        instance.deleted_time = datetime.datetime.now()
+        instance.deleted_time = datetime.now()
         instance.save()
         return Response({'message': '测试步骤删除成功', 'success': True})

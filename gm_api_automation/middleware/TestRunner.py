@@ -12,7 +12,7 @@ from XTestRunner._email import SMTP
 from XTestRunner._dingtalk import DingTalk
 
 # default tile
-DEFAULT_TITLE = 'XTestRunner Test Report'
+DEFAULT_TITLE = 'XTestRunner Test Reports'
 
 # ---------------------------
 # Define the HTML template directory

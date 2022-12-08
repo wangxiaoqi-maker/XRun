@@ -51,7 +51,8 @@ INSTALLED_APPS = [
     'TestCasesDiretorys',
     'Configs',
     'Executed',
-    'TestSuit'
+    'TestSuit',
+    'Reports',
 ]
 # AUTH_USER_MODEL = 'Users.Users'
 MIDDLEWARE = [

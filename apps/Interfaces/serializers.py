@@ -2,6 +2,7 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
 from Interfaces.models import Interfaces
+from Projects.models import Projects
 from TestCasesDiretorys.models import TestcaseDirectory
 
 
@@ -29,7 +30,9 @@ class InterfaceSeralizers(serializers.ModelSerializer):
                           'error_messages': {'required': '请求体类型不能为空', 'blank': '请求体类型不能为空', 'null': '请求体类型不能为空'}},
             'directory': {'error_messages': {'required': '接口所属目录不能为空', 'blank': '接口所属目录不能为空', 'null': '接口所属目录不能为空'}},
             'status': {'required': False},
-            'tag': {'required': False}
+            'tag': {'required': False},
+            'project': {'required': True,
+                        'error_messages': {'required': '所属项目不能为空', 'blank': '所属项目不能为空', 'null': '所属项目不能为空'}},
 
         }
 
@@ -51,6 +54,9 @@ class InterfaceSeralizers(serializers.ModelSerializer):
     def validate(self, attrs):
         duplicate_directory = TestcaseDirectory.objects.filter(id=attrs.get('directory').id,
                                                                is_delete=False).exists()
+        project = Projects.objects.filter(id=attrs.get('project').id, is_delete=False).exists()
+        if not project:
+            raise serializers.ValidationError({"code": "400", "message": "所属项目不存在", "success": False})
         if not duplicate_directory:
             # 判断目录是否存在
             raise serializers.ValidationError({"code": "400", "message": "目录不存在", "success": False})

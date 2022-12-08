@@ -111,8 +111,10 @@ class InterfacesView(ModelViewSet):
         :param kwargs:
         :return:
         """
-        total = self.queryset.filter(is_delete=False).count()
-        before_today_total = self.queryset.filter(is_delete=False, created_time__lt=datetime.now().date()).count()
+        project_id = request.query_params.get('project_id')
+        total = self.queryset.filter(is_delete=False, project=project_id).count()
+        before_today_total = self.queryset.filter(is_delete=False, project=project_id,
+                                                  created_time__lt=datetime.now().date()).count()
         today = datetime.now().date()
-        today_total = self.queryset.filter(created_time__contains=today, is_delete=False).count()
+        today_total = self.queryset.filter(created_time__contains=today, project=project_id, is_delete=False).count()
         return Response({'total': total, 'previous': before_today_total, 'today_total': today_total, 'success': True})

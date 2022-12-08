@@ -1,3 +1,6 @@
+import json
+
+from django.http import HttpRequest
 from django.shortcuts import render
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -5,6 +8,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from Executed.serializers import SendHttpRequestSeralizer, RunCaseSeralizer
 from Interfaces.models import Interfaces
+from Reports.views import ReportsView
 from gm_api_automation.core.executor import Executor, Data, ExecutorTest
 from gm_api_automation.core.paramters_parse.jsonpath_parser import JSONPathParser
 from gm_api_automation.core.run_case import parse_case, ParametrizedTestCase
@@ -46,5 +50,7 @@ class SendHttpRequestView(ModelViewSet):
             return Response({'message': '用例id不能为空', 'success': False})
         cases = parse_case(self.queryset, case_id)
         Executor().add_cases(cases, env, suite_id, case_id)
+        # 调用内部接口，将测试报告保存到数据库
         message = unittest_run_case(suite_id)
-        return Response(message)
+        mes = Executor().create_report(request, message, suite_id)
+        return Response(mes)
