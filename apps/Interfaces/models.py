@@ -7,7 +7,7 @@ from gm_api_automation.Utils.base_model import BaseModels
 
 class Interfaces(BaseModels):
     host = models.CharField(max_length=100, verbose_name='接口地址', help_text='接口地址', null=True, blank=True, default='')
-    name = models.CharField(max_length=20, verbose_name='接口名称', help_text='接口名称')
+    name = models.CharField(max_length=50, verbose_name='接口名称', help_text='接口名称')
     request_type = models.CharField(max_length=10, verbose_name='请求类型', help_text='请求类型', default='https')
     url = models.CharField(max_length=100, verbose_name='请求url', help_text='请求url')
     request_method = models.CharField(max_length=10, verbose_name='请求方式', help_text='请求方式', default='POST')

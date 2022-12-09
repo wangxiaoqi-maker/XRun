@@ -14,6 +14,7 @@ def unittest_run_case(suite_id):
     """
     使用unittest执行测试用例
     """
+    start_time = time.time()
     suite = unittest.TestSuite()
     loader = unittest.TestLoader()
     suite.addTest(loader.loadTestsFromModule(executor))
@@ -35,10 +36,14 @@ def unittest_run_case(suite_id):
     # 执行测试套件
     result = runner.run(suite)
     fp.close()
+    end_time = time.time()
     # 获取报告源码
     with open(report_name, 'rb') as f:
         report_source = f.readlines()
     suite_data = TestSuit.objects.filter(id=suite_id).first()
+    # 用例运行时间保留俩位小数
+    run_time = round(end_time - start_time, 2)
+    TestSuit.objects.filter(id=suite_id).update(run_duration=run_time)
     status = suite_data.status
     if status:
         status = eval(status)

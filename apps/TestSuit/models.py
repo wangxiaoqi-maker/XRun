@@ -18,7 +18,7 @@ class TestSuit(BaseModels):
     status = models.TextField(verbose_name='执行结果', null=True, blank=True, help_text='执行结果')
     state = models.CharField(verbose_name='状态', max_length=50, help_text='状态',
                              default='未完成', blank=True, null=True)  # 默认值是当该字段为空时才会有默认值，如果该字段为空字符串或null，那么默认值就不会生效
-    run_duration = models.CharField(verbose_name='运行时长', max_length=50, help_text='运行时长', null=True, blank=True)
+    run_duration = models.FloatField(verbose_name='运行时长', default=0, help_text='运行时长', blank=True, null=True)
     desc = models.TextField(verbose_name='简要描述', help_text='简要描述', blank=True, null=True, default='')
 
     class Meta:
