@@ -9,4 +9,5 @@ urlpatterns = [
     path('DelReport', views.ReportsView.as_view({'post': 'destroy'})),
     path('GetReportList', views.ReportsView.as_view({'get': 'list'})),
     path('GetReportDetail', views.ReportsView.as_view({'get': 'retrieve'})),
+    path('getWeeklyTestCaseResultTrend', views.ReportsView.as_view({'get': 'get_weekly_test_case_result_trend'})),
 ]

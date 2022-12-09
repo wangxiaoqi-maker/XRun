@@ -1,5 +1,6 @@
 import datetime
 
+from django.db.models import Count, Q
 from django.shortcuts import render
 
 # Create your views here.
@@ -100,3 +101,35 @@ class ReportsView(ModelViewSet):
             return Response({'message': '测试报告不存在', 'success': False})
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
+
+    def get_weekly_test_case_result_trend(self, request, *args, **kwargs):
+        """
+        获取某项目最近一周每天的测试套件运行结果，按照日期分组
+        """
+        project_id = request.query_params.get('project_id')
+        # 获取最近一周的日期
+        today = datetime.datetime.now().date()
+        week_ago = today - datetime.timedelta(days=7)
+        # 获取最近一周每天的测试套件运行结果
+        case_weekly_result = self.queryset.filter(is_delete=False, project=project_id,
+                                                  created_time__range=(week_ago, today)).values(
+            'created_time').annotate(
+            pass_count=Count('success_count', filter=Q(success_count__gt=0)),
+            fail_count=Count('failure_count', filter=Q(failure_count__gt=0)),
+            error_count=Count('error_count', filter=Q(error_count__gt=0)),
+            skip_count=Count('skip_count', filter=Q(skip_count__gt=0)),
+        )
+        # 某个日期没有测试套件运行结果时，返回0
+        date_list = []
+        for i in range(7):
+            date_list.append((today - datetime.timedelta(days=i + 1)).strftime('%Y-%m-%d'))
+        case_weekly_result_dict = {}
+        for item in case_weekly_result:
+            case_weekly_result_dict[item['created_time'].strftime('%Y-%m-%d')] = {'pass_count': item['pass_count'],
+                                                                                  'fail_count': item['fail_count'],
+                                                                                  'error_count': item['error_count'],
+                                                                                  'skip_count': item['skip_count']}
+        for date in date_list:
+            if date not in case_weekly_result_dict.keys():
+                case_weekly_result_dict[date] = {'pass_count': 0, 'fail_count': 0, 'error_count': 0, 'skip_count': 0}
+        return Response(case_weekly_result_dict)

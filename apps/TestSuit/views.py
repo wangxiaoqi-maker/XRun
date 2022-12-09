@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.shortcuts import render
 
 # Create your views here.
@@ -154,7 +154,7 @@ class TestSuitView(ModelViewSet):
         # 某个日期没有新增接口或套件时，返回0
         date_list = []
         for i in range(7):
-            date_list.append((today - timedelta(days=i+1)).strftime('%Y-%m-%d'))
+            date_list.append((today - timedelta(days=i + 1)).strftime('%Y-%m-%d'))
         api_weekly_new_dict = {}
         for item in api_weekly_new:
             api_weekly_new_dict[item['created_time'].strftime('%Y-%m-%d')] = item['count']
