@@ -1,6 +1,6 @@
 import datetime
 
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Sum
 from django.shortcuts import render
 
 # Create your views here.
@@ -113,23 +113,24 @@ class ReportsView(ModelViewSet):
         # 获取最近一周每天的测试套件运行结果
         case_weekly_result = self.queryset.filter(is_delete=False, project=project_id,
                                                   created_time__range=(week_ago, today)).values(
-            'created_time').annotate(
-            pass_count=Count('success_count', filter=Q(success_count__gt=0)),
-            fail_count=Count('failure_count', filter=Q(failure_count__gt=0)),
-            error_count=Count('error_count', filter=Q(error_count__gt=0)),
-            skip_count=Count('skip_count', filter=Q(skip_count__gt=0)),
-        )
+            'created_time__date').annotate(pass_count=Sum('success_count'), fail_count=Sum('failure_count'),
+                                           error_count=Sum('error_count'), skip_count=Sum('skip_count')).order_by(
+            "created_time__date")
         # 某个日期没有测试套件运行结果时，返回0
         date_list = []
         for i in range(7):
             date_list.append((today - datetime.timedelta(days=i + 1)).strftime('%Y-%m-%d'))
         case_weekly_result_dict = {}
         for item in case_weekly_result:
-            case_weekly_result_dict[item['created_time'].strftime('%Y-%m-%d')] = {'pass_count': item['pass_count'],
-                                                                                  'fail_count': item['fail_count'],
-                                                                                  'error_count': item['error_count'],
-                                                                                  'skip_count': item['skip_count']}
+            case_weekly_result_dict[item['created_time__date'].strftime('%Y-%m-%d')] = {
+                'pass_count': item['pass_count'],
+                'fail_count': item['fail_count'],
+                'error_count': item['error_count'],
+                'skip_count': item['skip_count']}
         for date in date_list:
             if date not in case_weekly_result_dict.keys():
                 case_weekly_result_dict[date] = {'pass_count': 0, 'fail_count': 0, 'error_count': 0, 'skip_count': 0}
-        return Response(case_weekly_result_dict)
+        return Response({
+            'success': True,
+            'result': case_weekly_result_dict
+        })

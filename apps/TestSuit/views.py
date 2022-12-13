@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Avg
 from django.shortcuts import render
 
 # Create your views here.
@@ -130,9 +130,13 @@ class TestSuitView(ModelViewSet):
                                                run_duration__lt=600).count()
         # 大于10分钟总数
         more_than_ten_min = self.queryset.filter(is_delete=False, project=project_id, run_duration__gte=600).count()
+        # 平均运行时间
+        avg_run_time = self.queryset.filter(is_delete=False, project=project_id).aggregate(Avg('run_duration'))
+        # 删除avg_run_time中的键
+        avg_time = round(avg_run_time.popitem()[1], 2)
         return Response({'less_than_one_min': less_than_one_min, 'one_to_five_min': one_to_five_min,
                          'five_to_ten_min': five_to_ten_min, 'more_than_ten_min': more_than_ten_min,
-                         'success': True})
+                         'avg_run_time': avg_time, 'success': True})
 
     def get_weekly_new_api_and_case_trend(self, request, *args, **kwargs):
         """
@@ -237,3 +241,17 @@ class TestCaseStepView(ModelViewSet):
         instance.deleted_time = datetime.now()
         instance.save()
         return Response({'message': '测试步骤删除成功', 'success': True})
+
+    def get_interface_case_coverage(self, request, *args, **kwargs):
+        """
+        获取接口表中的接口没有加入到测试步骤中的接口，并返回已加入步骤的数量、未加入步骤的数量、加入的比例是多少
+        """
+        project_id = request.query_params.get('project_id')
+        interface = Interfaces.objects.filter(is_delete=False, project_id=project_id)
+        interface_count = interface.count()
+        step_count = self.get_queryset().filter(is_delete=False, interface__in=interface).values(
+            'interface').distinct().count()
+        player_joined = round(step_count / interface_count, 2)
+        not_joined = interface_count - step_count
+        joined_rate = str(player_joined * 100) + '%'
+        return Response({'joined_rate': joined_rate, 'not_joined': not_joined, 'joined': step_count, 'success': True})

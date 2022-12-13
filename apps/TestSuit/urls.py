@@ -18,5 +18,6 @@ urlpatterns = [
     path('delTestCaseStep', views.TestCaseStepView.as_view({'post': 'destroy'})),
     path('getCaseRunTime', views.TestSuitView.as_view({'get': 'get_case_run_time'})),
     path('getWeekNewApiAndCaseTrend', views.TestSuitView.as_view({'get': 'get_weekly_new_api_and_case_trend'})),
+    path('getInterfaceCaseCoverage', views.TestCaseStepView.as_view({'get': 'get_interface_case_coverage'})),
 
 ]
