@@ -321,7 +321,6 @@ class Executor(object):
                             Interfaces.objects.filter(id=case.id).update(desc=self.logger.join())
                             self.logger.log.clear()
                             TestSuit.objects.filter(id=suite_id).update(status=str(result), state="已完成",
-                                                                        total_count=len(case_id),
                                                                         updated_time=time.strftime("%Y-%m-%d %H:%M:%S",
                                                                                                    time.localtime()))
                             raise AssertionError(message)
@@ -332,7 +331,7 @@ class Executor(object):
                     result.append(status)
                 self.append('用例执行完成: {}'.format(case.name), True)
                 self.logger.log.clear()
-                TestSuit.objects.filter(id=suite_id).update(status=str(result), state="已完成", total_count=len(case_id),
+                TestSuit.objects.filter(id=suite_id).update(status=str(result), state="已完成",
                                                             updated_time=time.strftime("%Y-%m-%d %H:%M:%S",
                                                                                        time.localtime()))
 
