@@ -377,6 +377,60 @@ class Executor(object):
         body["status"] = eval(suite_data.status)
         return body
 
+    def parse_list_and_replacre(self, cases: list = None, data: dict =None):
+        """
+        解析用例中的列表和替换用例中的参数
+        cases为空时，解析data中的字典并替换
+        """
+        if cases:
+            for case in cases:
+                for k, v in case.items():
+                    var = self.get_el_expression(v)
+                    if var:
+                        # 如果变量在Data类中存在，则替换，否则不替换
+                        if hasattr(Data, var[0]):
+                            logger.info(f"匹配到需要替换的变量: {var[0]}")
+                            self.append('匹配到需要替换的变量: {}'.format(var[0]))
+                            value = getattr(Data, var[0])
+                            case[k] = v.replace(f'${{{var[0]}}}', value)
+                            logger.info(f"变量替换成功，替换后的值为: {value}")
+                            self.append('变量替换成功，替换后的值为: {}'.format(value))
+                        else:
+                            logger.info(f"匹配到需要替换的变量: {var[0]}，但是变量不存在")
+                            self.append('匹配到需要替换的变量: {}，但是变量不存在'.format(var[0]))
+            return cases
+        else:
+            for k, v in data.items():
+                var = self.get_el_expression(v)
+                if var:
+                    # 如果变量在Data类中存在，则替换，否则不替换
+                    if hasattr(Data, var[0]):
+                        logger.info(f"匹配到需要替换的变量: {var[0]}")
+                        self.append('匹配到需要替换的变量: {}'.format(var[0]))
+                        value = getattr(Data, var[0])
+                        data[k] = v.replace(f'${{{var[0]}}}', value)
+                        logger.info(f"变量替换成功，替换后的值为: {value}")
+                        self.append('变量替换成功，替换后的值为: {}'.format(value))
+                    else:
+                        logger.info(f"匹配到需要替换的变量: {var[0]}，但是变量不存在")
+                        self.append('匹配到需要替换的变量: {}，但是变量不存在'.format(var[0]))
+            return data
+
+    def replace_single_interface_params(self, cases):
+        """
+        用例结构为：{'request_method': 'POST', 'url': 'https://gmjk-hcm-test.nhf.cn/wjj-longhua-project/organization/getOrganizationPageList', 'request_headers': '[{"name":"Authorization","value":"${token}","_type":"String","required":true,"restrict":"","desc":""}]', 'out_params': '[{"param_name":"","extract_obj":"response_json","extract_exp":""}]', 'assert_list': '[{"expected":"","assert_obj":"response_text","assert_type":"in","actually":""}]', 'body_type': 'json', 'body': '{"pageNo":2,"pageSize":10}'}
+        遍历用例中的数据，将用例中带有${}中的变量 并替换
+        """
+        request_headers = self.translate(cases.get('request_headers'))
+        out_params = self.translate(cases.get('out_params'))
+        assert_list = self.translate(cases.get('assert_list'))
+        body = self.translate(cases.get('body'))
+        cases['request_headers'] = json.dumps(self.parse_list_and_replacre(request_headers))
+        cases['out_params'] = json.dumps(self.parse_list_and_replacre(out_params))
+        cases['assert_list'] = json.dumps(self.parse_list_and_replacre(assert_list))
+        cases['body'] = json.dumps(self.parse_list_and_replacre(data=body))
+        return cases
+
 
 if __name__ == '__main__':
     exp = 1.05

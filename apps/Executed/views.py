@@ -24,18 +24,20 @@ class SendHttpRequestView(ModelViewSet):
     def run_http_request(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        url = request.data.get('url')
-        method = request.data.get('request_method')
-        bodys = request.data.get('body')
-        headers = request.data.get('request_headers')
-        body_type = request.data.get('body_type')
+        cases = Executor().replace_single_interface_params(request.data)
+        url = cases.get('url')
+        method = cases.get('request_method')
+        bodys = cases.get('body')
+        headers = cases.get('request_headers')
+        body_type = cases.get('body_type')
         data = Request(url, body=bodys).request(method=method, body_type=body_type, headers=headers, body=bodys)
-        assert_list = request.data.get('assert_list')
-        out_params = request.data.get('out_params')
+        assert_list = cases.get('assert_list')
+        out_params = cases.get('out_params')
+        Executor().replace_single_interface_params(request.data)
         if out_params is not None:
             data['extract'] = Executor().extract_out_params(data, out_params)
         if assert_list:
-            actual = JSONPathParser().parse_assert(data, request.data.get('assert_list'))
+            actual = JSONPathParser().parse_assert(data, cases.get('assert_list'))
             message = Executor().my_assert(actual, True)
             data['asserts'] = message
         return Response(data)
