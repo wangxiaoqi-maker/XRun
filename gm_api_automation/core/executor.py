@@ -217,7 +217,7 @@ class Executor(object):
                         logger.info(
                             "出参类型为response_text，提取成功，提取表达式为：{}，提取结果为：{}".format(param.get('extract_exp'), value))
                         self.append(f"出参类型为response_text，提取成功，提取表达式为：{param.get('extract_exp')}，提取结果为：{value}")
-                        out_params_list.append({param.get('extract_name'): value})
+                        out_params_list.append({param.get('param_name'): value})
                         setattr(Data, param.get('param_name'), value)
                     except Exception as e:
                         logger.info(f"提取参数失败: {e}")
@@ -228,7 +228,7 @@ class Executor(object):
                         logger.info(
                             "出参类型为response_headers，提取成功，提取表达式为：{}，提取结果为：{}".format(param.get('extract_exp'), value))
                         self.append(f"出参类型为response_headers，提取成功，提取表达式为：{param.get('extract_exp')}，提取结果为：{value}")
-                        out_params_list.append({param.get('extract_name'): value})
+                        out_params_list.append({param.get('param_name'): value})
                         setattr(Data, param.get('param_name'), value)
                     except Exception as e:
                         logger.info(f"提取参数失败: {e}")
