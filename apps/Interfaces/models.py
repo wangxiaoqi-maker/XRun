@@ -40,4 +40,4 @@ class Interfaces(BaseModels):
         ordering = ['id']
 
     def __str__(self):
-        return f'{self.id}_{self.name}'
+        return f'{self.name}'

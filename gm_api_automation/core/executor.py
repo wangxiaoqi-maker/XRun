@@ -271,16 +271,16 @@ class Executor(object):
         else:
             return env_url + new_url
 
-    def add_cases(self, cases, envs, suite_id, case_id):
+    def add_cases(self, cases, envs, suite_id):
         result = []
         # 获取测试类中存储的所有用例名称
         test_list = [test for test in ExecutorTest.__dict__ if 'test' in test]
         for test_case in test_list:
             # 删除测试类中的用例
             delattr(ExecutorTest, test_case)
-        for i in cases:
+        for index, _case in enumerate(cases):
 
-            def test(selfs, case=i, env=envs):
+            def test(selfs, case=_case, env=envs):
                 self.append('开始执行用例: {}'.format(case.name))
                 logger.info(f'正在执行用例：{case.name}')
                 case = self.replace_params(case)
@@ -335,7 +335,7 @@ class Executor(object):
                                                             updated_time=time.strftime("%Y-%m-%d %H:%M:%S",
                                                                                        time.localtime()))
 
-            setattr(ExecutorTest, f'test_{i}', test)
+            setattr(ExecutorTest, f'test_{index+1}_{_case}', test)
 
     def get_case_execute_log(self):
         return self.logger.join()
@@ -377,7 +377,7 @@ class Executor(object):
         body["status"] = eval(suite_data.status)
         return body
 
-    def parse_list_and_replacre(self, cases: list = None, data: dict =None):
+    def parse_list_and_replacre(self, cases: list = None, data: dict = None):
         """
         解析用例中的列表和替换用例中的参数
         cases为空时，解析data中的字典并替换

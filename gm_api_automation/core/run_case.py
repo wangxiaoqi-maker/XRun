@@ -15,12 +15,16 @@ from gm_api_automation.middleware import ddt_util
 from gm_api_automation.middleware.HttpClient import Request
 
 
-def parse_case(query_set: QuerySet, case_id: list):
+def parse_case(step_query_set: QuerySet, interface_query_set: QuerySet, step_id: list):
     """
     运行测试用例
     """
-    cases = query_set.filter(id__in=case_id, is_delete=False)
-    return cases
+    interface = [step.interface_id for step in step_query_set.filter(id__in=step_id, is_delete=False)]
+    # 获取接口信息，如果接口id重复，则将多个接口信息返回
+    interface_info = []
+    for i in interface:
+        interface_info.extend(interface_query_set.filter(id=i, is_delete=False))
+    return interface_info
 
 
 # 编写获取测试类中变量的装饰器
@@ -54,7 +58,6 @@ class ParametrizedTestCase(unittest.TestCase):
         for name in testnames:
             suite.addTest(testcase_klass(name, query_set=query_set, case_id=case_id))
         return suite
-
 
 # class ExecutorTest(unittest.TestCase):
 #     pass
