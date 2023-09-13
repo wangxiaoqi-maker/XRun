@@ -17,6 +17,10 @@ from gm_api_automation.middleware.HttpClient import Request
 
 def parse_case(step_query_set: QuerySet, interface_query_set: QuerySet, step_id: list):
     """
+    根据用例id获取用例信息，
+    :param step_query_set: 用例步骤查询集
+    :param interface_query_set: 接口查询集
+    :param step_id: 用例id
     运行测试用例
     """
     interface = [step.interface_id for step in step_query_set.filter(id__in=step_id, is_delete=False)]
@@ -29,6 +33,10 @@ def parse_case(step_query_set: QuerySet, interface_query_set: QuerySet, step_id:
 
 # 编写获取测试类中变量的装饰器
 def get_test_data(func):
+    """
+    获取测试类中变量的装饰器
+    :param func: 测试方法
+    """
     @wraps(func)
     def wrapper(self, case_data):
         self.case_data = case_data

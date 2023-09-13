@@ -32,8 +32,34 @@ SECRET_KEY = 'django-insecure-g22g73=wpb+m!eil2m(vj6t1czk=6-edeyyujo9n4_tyrd#&5&
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
+CORS_ALLOW_CREDENTIALS = True
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ORIGIN_WHITELIST = ()
 
 # Application definition
+CORS_ALLOW_METHODS = (
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+    'VIEW',
+)
+
+CORS_ALLOW_HEADERS = (
+    'XMLHttpRequest',
+    'X_FILENAME',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'Pragma',
+)
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -54,11 +80,13 @@ INSTALLED_APPS = [
     'Executed',
     'TestSuit',
     'Reports',
+    'corsheaders',
 ]
 # AUTH_USER_MODEL = 'Users.Users'
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     # 'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -90,29 +118,29 @@ WSGI_APPLICATION = 'gm_api_automation.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        # 'NAME': BASE_DIR / 'db.sqlite3',
-        'NAME': 'api_automation',
-        'USER': 'root',
-        'PASSWORD': 'GM0901#mypa!2020',
-        'PORT': '3306',
-        'HOST': '192.168.1.162'
-    }
-}
-
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.mysql',
 #         # 'NAME': BASE_DIR / 'db.sqlite3',
 #         'NAME': 'api_automation',
-#         'USER': 'admin',
-#         'PASSWORD': 'Wangsongwen2580.',
+#         'USER': 'root',
+#         'PASSWORD': 'GM0901#mypa!2020',
 #         'PORT': '3306',
-#         'HOST': '101.43.117.184'
+#         'HOST': '192.168.1.162'
 #     }
 # }
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        # 'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': 'api_automation',
+        'USER': 'admin',
+        'PASSWORD': 'Wangsongwen2580.',
+        'PORT': '3306',
+        'HOST': '101.43.117.184'
+    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators

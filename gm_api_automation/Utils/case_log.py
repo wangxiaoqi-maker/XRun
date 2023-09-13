@@ -22,3 +22,7 @@ class CaseLog(object):
 
     def join(self):
         return "\n".join(self.log)
+
+
+
+
