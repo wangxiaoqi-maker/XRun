@@ -7,8 +7,13 @@ class CaseLog(object):
         self.log = list()
 
     def append(self, content, end=True):
+        """
+        :param content: 内容
+        
+        """
         if end:
             self.log.append("[{}]: 步骤结束 -> {}".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), content))
+            self.log.append("\n")
         else:
             self.log.append("[{}]: 步骤开始 -> {}".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), content))
 

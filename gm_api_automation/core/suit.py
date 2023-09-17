@@ -32,6 +32,7 @@ def unittest_run_case(suite_id):
         description='接口自动化测试报告详细信息',  # 定义测试报告的副标题
         verbosity=2,
         language='zh-CN',
+        tester='pyrunner'
     )
     # 执行测试套件
     result = runner.run(suite)
