@@ -2,11 +2,12 @@ import json
 import random
 from typing import Any
 
-from gm_api_automation.core.paramters_parse.jsonpath_parser import CaseParametersException
+from gm_api_automation.core.paramters_parse.jsonpath_parser import (
+    CaseParametersException,
+)
 
 
 class Parser(object):
-
     @staticmethod
     def parse(source: dict, expression: str = "", idx: str = None) -> Any:
         raise NotImplementedError
@@ -21,12 +22,20 @@ class Parser(object):
             if match_index.isdigit():
                 idx = int(match_index)
                 if idx >= length or idx < -length:
-                    raise CaseParametersException(f"results length is {length}, index is not in [{-length}, {length})")
+                    raise CaseParametersException(
+                        f"results length is {length}, index is not in [{-length}, {length})"
+                    )
                 return json.dumps(data[idx], ensure_ascii=False)
-            if match_index.lower() == 'random':
+            if match_index.lower() == "random":
                 # 随机选取
                 return json.dumps(random.choice(data), ensure_ascii=False)
-            if match_index.lower() == 'all':
+            if match_index.lower() == "all":
                 return json.dumps(data, ensure_ascii=False)
-            raise CaseParametersException(f"invalid match index: {match_index}, not number or random")
+            raise CaseParametersException(
+                f"invalid match index: {match_index}, not number or random"
+            )
         return json.dumps(data, ensure_ascii=False)
+
+
+
+
