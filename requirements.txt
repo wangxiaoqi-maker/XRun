@@ -1,0 +1,114 @@
+# ========================================
+# AI Automation Platform Dependencies
+# ========================================
+# Python 3.9+
+
+# Django Core
+Django==4.2.7
+djangorestframework==3.14.0
+django-cors-headers==4.3.0
+django-filter==23.3
+djangorestframework-simplejwt==5.3.0
+
+# Database
+mysqlclient==2.2.0
+pymysql==1.1.0
+
+# Redis & Celery
+redis==5.0.1
+celery==5.3.4
+django-celery-beat==2.5.0
+django-celery-results==2.5.1
+
+# AI & LLM
+openai==1.6.1
+langchain==0.1.0
+langchain-openai==0.0.2
+tiktoken==0.5.2
+
+# UI Automation
+selenium==4.16.0
+playwright==1.40.0
+Appium-Python-Client==3.1.0
+
+# API Testing
+requests==2.31.0
+httpx==0.25.2
+aiohttp==3.9.1
+
+# Data Processing
+pandas==2.1.4
+numpy==1.26.2
+openpyxl==3.1.2
+
+# Testing Framework
+pytest==7.4.3
+pytest-django==4.7.0
+pytest-asyncio==0.23.2
+pytest-cov==4.1.0
+
+# Code Analysis
+pylint==3.0.3
+flake8==6.1.0
+black==23.12.1
+isort==5.13.2
+
+# Documentation
+drf-yasg==1.21.7
+Markdown==3.5.1
+
+# Utilities
+python-dotenv==1.0.0
+Pillow==10.1.0
+python-dateutil==2.8.2
+pytz==2023.3.post1
+
+# Logging & Monitoring
+loguru==0.7.2
+sentry-sdk==1.39.1
+
+# File Processing
+PyYAML==6.0.1
+jsonschema==4.20.0
+xmltodict==0.13.0
+
+# Encryption & Security
+cryptography==41.0.7
+pyjwt==2.8.0
+bcrypt==4.1.2
+
+# Web Scraping (for UI testing)
+beautifulsoup4==4.12.2
+lxml==4.9.4
+
+# Image Processing (for visual testing)
+opencv-python==4.8.1.78
+Pillow==10.1.0
+
+# Natural Language Processing
+jieba==0.42.1
+pypinyin==0.50.0
+
+# Cloud Storage (Optional)
+oss2==2.18.3  # Aliyun OSS
+qiniu==7.12.1  # Qiniu
+cos-python-sdk-v5==1.9.29  # Tencent COS
+
+# Third-party Integration
+jira==3.6.0
+python-gitlab==4.2.0
+slackclient==2.9.4
+
+# Development Tools
+ipython==8.18.1
+ipdb==0.13.13
+faker==21.0.0
+
+# ASGI Server
+uvicorn==0.25.0
+gunicorn==21.2.0
+
+# Type Checking
+mypy==1.7.1
+types-requests==2.31.0.10
+
