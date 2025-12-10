@@ -4,7 +4,7 @@
     <option name="enabledOnReformat" value="true" />
     <option name="executionMode" value="BINARY" />
     <option name="pathToExecutable" value="D:\python3.9.8\Scripts\black.exe" />
-    <option name="sdkUUID" value="a4829b8b-7477-4bfa-91a5-b631067472c6" />
+    <option name="sdkName" value="Pipenv (api_automation_platfrom_v1.0)" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Pipenv (api_automation_platfrom_v1.0)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.12 (XRun)" project-jdk-type="Python SDK" />
 </project>
