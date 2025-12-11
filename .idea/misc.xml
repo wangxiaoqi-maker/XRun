@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Black">
-    <option name="enabledOnReformat" value="true" />
-    <option name="executionMode" value="BINARY" />
-    <option name="pathToExecutable" value="D:\python3.9.8\Scripts\black.exe" />
-    <option name="sdkName" value="Pipenv (api_automation_platfrom_v1.0)" />
+    <option name="sdkName" value="Python 3.12 (XRun)" />
   </component>
   <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.12 (XRun)" project-jdk-type="Python SDK" />
 </project>
