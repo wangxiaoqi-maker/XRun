@@ -121,3 +121,46 @@ Thumbs.db
 /uploads/
 *.bak
 
+
+# ========================================
+# XRun 项目特定忽略
+# ========================================
+
+# 运行时数据
+data/logs/
+data/reports/
+data/screenshots/
+data/recordings/
+
+# Python
+backend/venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/**/*.pyc
+backend/**/*.pyo
+backend/**/*.db
+
+# Node.js
+frontend/node_modules/
+frontend/dist/
+executors/*/node_modules/
+examples/*/node_modules/
+
+# Sonic
+infra/sonic/agent/logs/
+infra/sonic/agent/test-output/
+infra/sonic/agent/*.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 备份
+*.bak
+.cleanup_backup/
+
+# 临时文件
+*.tmp
+.DS_Store

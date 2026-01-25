@@ -1,0 +1,52 @@
+"""
+应用配置
+"""
+from pydantic_settings import BaseSettings
+from typing import Optional
+import os
+
+class Settings(BaseSettings):
+    """应用配置"""
+    
+    # 应用
+    APP_NAME: str = "UI Automation Platform"
+    DEBUG: bool = True
+    
+    # 数据库
+    DATABASE_URL: str = "sqlite+aiosqlite:///./data/app.db"
+    
+    # Sonic 配置
+    SONIC_ENABLED: bool = True
+    SONIC_SERVER_URL: str = "http://113.249.104.59:3000"  # 云端 Sonic Server
+    SONIC_SECRET_KEY: str = "f63cbbfd-da49-4c86-8ae7-b5820382c768"  # 从 Sonic 后台获取
+    SONIC_USERNAME: Optional[str] = None
+    SONIC_PASSWORD: Optional[str] = None
+    SONIC_AGENT_KEY: Optional[str] = None
+    SONIC_AGENT_HOST: Optional[str] = "localhost"
+    SONIC_AGENT_PORT: Optional[str] = "7777"
+    
+    # AI 模型配置（可通过前端配置）
+    AI_MODEL_BASE_URL: Optional[str] = None
+    AI_MODEL_API_KEY: Optional[str] = None
+    AI_MODEL_NAME: Optional[str] = None
+    AI_MODEL_FAMILY: Optional[str] = None
+    
+    # OpenAI/Midscene 配置
+    OPENAI_API_KEY: Optional[str] = None
+    OPENAI_BASE_URL: Optional[str] = None
+    MIDSCENE_MODEL_NAME: Optional[str] = None
+    
+    # Midscene 执行器路径
+    EXECUTOR_PATH: str = "../executor"
+    
+    # 文件存储
+    UPLOAD_DIR: str = "static/uploads"
+    SCREENSHOT_DIR: str = "static/screenshots"
+    REPORT_DIR: str = "static/reports"
+    
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+        extra = "ignore"  # 忽略 .env 中未定义的额外字段
+
+settings = Settings()

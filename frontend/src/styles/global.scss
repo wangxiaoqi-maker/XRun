@@ -1,0 +1,70 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: #f0f2f5;
+}
+
+#app {
+  height: 100%;
+}
+
+// 自定义主题色
+:root {
+  --primary-color: #409eff;
+  --success-color: #67c23a;
+  --warning-color: #e6a23c;
+  --danger-color: #f56c6c;
+  --info-color: #909399;
+  --bg-color: #f0f2f5;
+  --card-bg: #ffffff;
+  --border-color: #e4e7ed;
+}
+
+// 布局
+.page-container {
+  padding: 20px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.card {
+  background: var(--card-bg);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+}
+
+// 状态标签
+.status-tag {
+  &.success {
+    color: var(--success-color);
+  }
+  &.running {
+    color: var(--primary-color);
+  }
+  &.pending {
+    color: var(--info-color);
+  }
+  &.failed, &.error {
+    color: var(--danger-color);
+  }
+}
+
+// 平台标签
+.platform-tag {
+  &.android {
+    background: #a4c639;
+    color: white;
+  }
+  &.ios {
+    background: #333;
+    color: white;
+  }
+}
+

@@ -1,0 +1,13 @@
+/.idea/
+/test-output/
+/target/
+/.gradle/
+/logs/
+*.iml
+*/.DS_Store
+.DS_Store
+.sib/
+/webview/
+/plugins/sonic-go-mitmproxy*
+/plugins/sonic-ios-bridge*
+/plugins/sonic-android-supply*

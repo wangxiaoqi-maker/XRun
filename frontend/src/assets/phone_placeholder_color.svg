@@ -1,0 +1,31 @@
+<svg width="60" height="100" viewBox="0 0 60 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="screenGrad" x1="0" y1="0" x2="60" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#a18cd1" />
+      <stop offset="100%" stop-color="#fbc2eb" />
+    </linearGradient>
+    <filter id="dropShadow" x="-4" y="0" width="68" height="108" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dy="4"/>
+      <feGaussianBlur stdDeviation="3"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.15 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_1"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_1" result="shape"/>
+    </filter>
+  </defs>
+  <rect x="2" y="2" width="56" height="96" rx="8" fill="#1c1c1e" filter="url(#dropShadow)"/> 
+  <rect x="4" y="4" width="52" height="92" rx="6" fill="url(#screenGrad)"/>
+  <!-- Status Bar / Notch Area -->
+  <path d="M20 4H40V6C40 7.10457 39.1046 8 38 8H22C20.8954 8 20 7.10457 20 6V4Z" fill="#1c1c1e"/>
+  <!-- App Icons Suggestion -->
+  <rect x="10" y="15" width="10" height="10" rx="3" fill="#ffffff" fill-opacity="0.3"/>
+  <rect x="25" y="15" width="10" height="10" rx="3" fill="#ffffff" fill-opacity="0.3"/>
+  <rect x="40" y="15" width="10" height="10" rx="3" fill="#ffffff" fill-opacity="0.3"/>
+  <rect x="10" y="30" width="10" height="10" rx="3" fill="#ffffff" fill-opacity="0.3"/>
+  <rect x="25" y="30" width="10" height="10" rx="3" fill="#ffffff" fill-opacity="0.3"/>
+  <rect x="40" y="30" width="10" height="10" rx="3" fill="#ffffff" fill-opacity="0.3"/>
+  <!-- Dock -->
+  <rect x="8" y="80" width="44" height="12" rx="4" fill="#ffffff" fill-opacity="0.2"/>
+</svg>

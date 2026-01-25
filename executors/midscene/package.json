@@ -1,0 +1,15 @@
+{
+  "name": "ui-automation-executor",
+  "version": "1.0.0",
+  "description": "Midscene 执行器 - 支持 iOS 和 Android",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "@midscene/core": "^1.0.2",
+    "@midscene/web": "^1.0.2",
+    "dotenv": "^16.3.1",
+    "openai": "^4.0.0"
+  }
+}

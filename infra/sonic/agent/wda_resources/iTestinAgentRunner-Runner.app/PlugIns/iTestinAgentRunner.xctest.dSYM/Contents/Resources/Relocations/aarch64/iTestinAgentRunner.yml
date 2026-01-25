@@ -1,0 +1,9 @@
+---
+triple:          'arm64-apple-darwin'
+binary-path:     '/Users/zhaohaibin/Library/Developer/Xcode/DerivedData/WebDriverAgent-aitikhtzoziifkegwzgqrwdtdbpy/Build/Products/Debug-iphoneos/iTestinAgentRunner-Runner.app/PlugIns/iTestinAgentRunner.xctest/iTestinAgentRunner'
+relocations:
+  - { offsetInCU: 0x27, offset: 0x55554, size: 0x8, addend: 0x0, symName: '+[UITestingUITests setUp]', symObjAddr: 0x0, symBinAddr: 0x4000, symSize: 0x1C0 }
+  - { offsetInCU: 0x65, offset: 0x55592, size: 0x8, addend: 0x0, symName: '+[UITestingUITests setUp]', symObjAddr: 0x0, symBinAddr: 0x4000, symSize: 0x1C0 }
+  - { offsetInCU: 0x9A, offset: 0x555C7, size: 0x8, addend: 0x0, symName: '-[UITestingUITests testRunner]', symObjAddr: 0x1C0, symBinAddr: 0x41C0, symSize: 0xC4 }
+  - { offsetInCU: 0xDE, offset: 0x5560B, size: 0x8, addend: 0x0, symName: '-[UITestingUITests webServerDidRequestShutdown:]', symObjAddr: 0x284, symBinAddr: 0x4284, symSize: 0x84 }
+...

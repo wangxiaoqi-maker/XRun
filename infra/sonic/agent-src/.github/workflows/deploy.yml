@@ -1,0 +1,68 @@
+name: deploy to Dockerhub
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: 'Get Previous tag'
+        id: previoustag
+        uses: "WyriHaximus/github-action-get-previous-tag@v1"
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+      - name: replace version
+        run: ver=${{ steps.previoustag.outputs.tag }} && new_ver=${ver:1} && sed -i "s/SONIC_VERSION/${new_ver}/g" pom.xml
+      - name: login docker hub
+        run: echo "${{ secrets.ACCESS_TOKEN }}" | docker login -u zhouyixun --password-stdin
+      - run: rm -rf plugins/sonic-android-apk.apk
+      - name: saa-download
+        uses: robinraju/release-downloader@v1.4
+        with:
+          repository: SonicCloudOrg/sonic-android-apk
+          latest: true
+          fileName: "sonic-android-apk.apk"
+      - name: saa
+        run: mv sonic-android-apk.apk plugins/sonic-android-apk.apk
+      - name: sas-download
+        uses: robinraju/release-downloader@v1.4
+        with:
+          repository: SonicCloudOrg/sonic-android-supply
+          latest: true
+          fileName: "*_linux_x86_64.tar.gz"
+      - name: sas
+        run: tar zxvf *_linux_x86_64.tar.gz && rm *_linux_x86_64.tar.gz && mv sas plugins/sonic-android-supply
+      - name: sgm-download
+        uses: robinraju/release-downloader@v1.4
+        with:
+          repository: SonicCloudOrg/sonic-go-mitmproxy
+          latest: true
+          fileName: "*_linux_x86_64.tar.gz"
+      - name: sgm
+        run: tar zxvf *_linux_x86_64.tar.gz && rm *_linux_x86_64.tar.gz && mv sonic-go-mitmproxy plugins/sonic-go-mitmproxy
+      - name: sib-download
+        uses: robinraju/release-downloader@v1.4
+        with:
+          repository: SonicCloudOrg/sonic-ios-bridge
+          latest: true
+          fileName: "*_linux_x86_64.tar.gz"
+      - name: sib
+        run: tar zxvf *_linux_x86_64.tar.gz && rm *_linux_x86_64.tar.gz && mv sib plugins/sonic-ios-bridge
+      - name: deploy
+        run: mvn package -Dplatform=linux-x86_64 -Dmaven.test.skip=true
+      - name: build image
+        run: docker build -t sonicorg/sonic-agent-linux:${{ steps.previoustag.outputs.tag }} -f src/main/docker/Dockerfile .
+      - name: push
+        run: docker push sonicorg/sonic-agent-linux:${{ steps.previoustag.outputs.tag }}
