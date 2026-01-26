@@ -108,8 +108,8 @@ public class ScrcpyLocalThread extends Thread {
             }
             
             // scrcpy 3.1 参数格式（兼容 Android 15+，SDK >= 35）
-            // 也向下兼容旧版本 Android
-            String scrcpyCommand = "CLASSPATH=/data/local/tmp/sonic-android-scrcpy.jar app_process / com.genymobile.scrcpy.Server 3.1 tunnel_forward=true video=true audio=false control=false max_size=800 max_fps=60";
+            // max_size=0 代表使用原始分辨率，max_size=1920 限制最大边为 1920
+            String scrcpyCommand = "CLASSPATH=/data/local/tmp/sonic-android-scrcpy.jar app_process / com.genymobile.scrcpy.Server 3.1 tunnel_forward=true video=true audio=false control=false max_size=1920 max_fps=60";
             
             log.info("Starting scrcpy with SDK version: {}, command: {}", sdkVersion, scrcpyCommand);
             

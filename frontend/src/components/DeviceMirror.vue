@@ -440,7 +440,7 @@ async function getDevicesFromSonicServer() {
       user: d.user,  // 当前占用用户
       agent_id: d.agentId,
       // 从 Sonic Server 获取 Agent 地址，如果没有则使用默认值
-      agent_host: d.agentHost || '192.168.1.250',
+      agent_host: d.agentHost || '192.168.1.169',
       agent_port: d.agentPort || 7777,
       cpu: d.cpu || '-',
       mem: d.mem || '-',
@@ -819,10 +819,9 @@ function openScreenSocket(url) {
         console.log('投屏消息:', msg)
         
         if (msg.msg === 'size') {
-          // 收到分辨率信息
-          deviceWidth = msg.width || deviceWidth
-          deviceHeight = msg.height || deviceHeight
-          console.log(`设备分辨率: ${deviceWidth}x${deviceHeight}`)
+          // 收到分辨率信息 (这是流的分辨率，比如 360x800)
+          // ⚠️ 不要用它覆盖 deviceWidth（物理分辨率），只打印日志
+          console.log(`收到流分辨率通知: ${msg.width}x${msg.height} (已忽略，保持物理分辨率 ${deviceWidth}x${deviceHeight})`)
         } else if (msg.msg === 'rotation') {
           // 屏幕旋转
           console.log('屏幕旋转:', msg.value)
@@ -1123,11 +1122,108 @@ function stopMirror() {
   touchReady = false
 }
 
-// ... (onImageLoad, getDeviceCoords, isIOSDevice, getWDACoords 保持不变) ...
+/**
+ * 图片加载完成事件 - 用于获取实际渲染尺寸
+ */
+function onImageLoad(e) {
+  const img = e.target
+  console.log(`屏幕图像加载完成: ${img.naturalWidth}x${img.naturalHeight}, 渲染尺寸: ${img.clientWidth}x${img.clientHeight}`)
+}
+
+/**
+ * 获取设备坐标 (Android) - 将鼠标点击位置转换为设备屏幕坐标
+ */
+/**
+ * 获取设备坐标 (Android) 
+ * 处理 object-fit: contain 的留白偏移，并映射到真实设备坐标
+ */
+function getDeviceCoords(clientX, clientY) {
+  const img = screenImg.value
+  if (!img) return null
+  
+  const rect = img.getBoundingClientRect()
+  
+  // 图片的自然尺寸（这是流的分辨率，可能是压缩过的，如 360x800）
+  const nw = img.naturalWidth
+  const nh = img.naturalHeight
+  if (!nw || !nh) return null
+  
+  // ⚠️ 关键修正：不要用流分辨率覆盖 deviceWidth！
+  // deviceWidth / deviceHeight 必须代表物理分辨率（例如 1080x1920 或 1080x2400）
+  // 暂时如果 deviceWidth 未初始化，才兜底，但默认已经是 1080 了
+  
+  // 调试分辨率
+  // console.log(`📐 getDeviceCoords: img=${nw}x${nh}, device=${deviceWidth}x${deviceHeight}, rawClick=${clientX},${clientY}`)
+  
+  // 计算实际渲染区域（处理 object-fit: contain 产生的留白）
+  // 1. 计算显示比例
+  const elementRatio = rect.width / rect.height
+  const fluidRatio = nw / nh
+  
+  let drawWidth, drawHeight, startX, startY
+  
+  if (fluidRatio > elementRatio) {
+    // 图片更宽，上下留白（或刚好）
+    drawWidth = rect.width
+    drawHeight = rect.width / fluidRatio
+    startX = 0
+    startY = (rect.height - drawHeight) / 2
+  } else {
+    // 图片更高，左右留白
+    drawHeight = rect.height
+    drawWidth = rect.height * fluidRatio
+    startX = (rect.width - drawWidth) / 2
+    startY = 0
+  }
+  
+  // 2. 计算点击位置相对于 img 元素的坐标
+  const relX = clientX - rect.left
+  const relY = clientY - rect.top
+  
+  // 3. 转换到绘制区域坐标（扣除留白）
+  const contentX = relX - startX
+  const contentY = relY - startY
+  
+  // 4. 检查是否点在留白处
+  if (contentX < 0 || contentX > drawWidth || contentY < 0 || contentY > drawHeight) {
+    return null
+  }
+  
+  // 5. 映射到设备真实坐标（物理坐标）
+  // 使用 deviceWidth (默认1080) 进行投影
+  const x = Math.round((contentX / drawWidth) * deviceWidth)
+  const y = Math.round((contentY / drawHeight) * deviceHeight)
+  
+  return { x, y }
+}
+
+/**
+ * 获取 WDA 坐标 (iOS) - 将鼠标点击位置转换为 WDA 坐标
+ */
+function getWDACoords(clientX, clientY) {
+  const img = screenImg.value
+  if (!img) return null
+  
+  const rect = img.getBoundingClientRect()
+  const relX = clientX - rect.left
+  const relY = clientY - rect.top
+  
+  if (relX < 0 || relY < 0 || relX > rect.width || relY > rect.height) {
+    return null
+  }
+  
+  const x = Math.round((relX / rect.width) * wdaWidth)
+  const y = Math.round((relY / rect.height) * wdaHeight)
+  return { x, y }
+}
 
 // 辅助函数
 function isIOSDevice() {
   return selectedDevice.value?.platform === 'ios' || selectedDevice.value?.platform === 'iOS'
+}
+
+function isAndroidDevice() {
+  return !isIOSDevice()
 }
 
 // iOS Sonic 协议触控实现
@@ -1183,7 +1279,112 @@ function sendControlCommand(cmd) {
   }
 }
 
-// ... (handleMouseDown, onDocumentMouseMove, onDocumentMouseUp 保持不变) ...
+/**
+ * 鼠标按下事件处理 - 记录起始位置，绑定全局事件
+ */
+/**
+ * 发送 Android 底层触控指令
+ * 协议格式: down x y / move x y / up
+ */
+function sendAndroidTouch(action, x, y) {
+  if (!connected.value || !isAndroidDevice()) return
+  
+  // 必须加换行符，因为 Agent 是按行读取的
+  let cmd = ''
+  if (action === 'down' || action === 'move') {
+    cmd = `${action} ${Math.round(x)} ${Math.round(y)}\n`
+  } else if (action === 'up') {
+    cmd = `up\n`
+  }
+  
+  if (cmd) {
+    sendControlCommand({
+      type: 'touch',
+      detail: cmd
+    })
+  }
+}
+
+/**
+ * 鼠标按下事件处理
+ */
+function handleMouseDown(e) {
+  if (!connected.value) return
+  
+  e.preventDefault()
+  isMouseDown = true
+  mouseStartX = e.clientX
+  mouseStartY = e.clientY
+  mouseStartTime = Date.now()
+  lastMoveTime = Date.now()
+  
+  document.addEventListener('mousemove', onDocumentMouseMove)
+  document.addEventListener('mouseup', onDocumentMouseUp)
+  
+  // Android: 立即发送 down 事件
+  if (isAndroidDevice()) {
+    const coords = getDeviceCoords(mouseStartX, mouseStartY)
+    if (coords) {
+      sendAndroidTouch('down', coords.x, coords.y)
+    }
+  }
+}
+
+/**
+ * 鼠标移动事件处理
+ */
+function onDocumentMouseMove(e) {
+  if (!isMouseDown) return
+  
+  const now = Date.now()
+  // 节流：每 30ms 发送一次 move
+  if (now - lastMoveTime < 30) return
+  lastMoveTime = now
+  
+  const clientX = e.clientX
+  const clientY = e.clientY
+  
+  // Android: 发送 move 事件
+  if (isAndroidDevice()) {
+    const coords = getDeviceCoords(clientX, clientY)
+    if (coords) {
+      sendAndroidTouch('move', coords.x, coords.y)
+    }
+  }
+}
+
+/**
+ * 鼠标释放事件处理
+ */
+function onDocumentMouseUp(e) {
+  if (!isMouseDown) return
+  
+  isMouseDown = false
+  document.removeEventListener('mousemove', onDocumentMouseMove)
+  document.removeEventListener('mouseup', onDocumentMouseUp)
+  
+  const endX = e.clientX
+  const endY = e.clientY
+  const duration = Date.now() - mouseStartTime
+  
+  const deltaX = endX - mouseStartX
+  const deltaY = endY - mouseStartY
+  const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
+  
+  // iOS 逻辑保持不变
+  if (isIOSDevice()) {
+    const isTap = distance < 10 && duration < 300
+    if (isTap) {
+      wdaTap(mouseStartX, mouseStartY)
+    } else {
+      wdaSwipe(mouseStartX, mouseStartY, endX, endY, duration)
+    }
+  } else {
+    // Android: 发送 up 事件
+    sendAndroidTouch('up', 0, 0)
+  }
+}
+
 
 async function doBack() {
   if (isIOSDevice()) {
@@ -1524,7 +1725,7 @@ defineExpose({
   width: 100%; /* 恢复宽度铺满 */
   height: 100%;
   max-height: 100%; /* 由父容器约束高度 */
-  object-fit: fill; /* 强制拉伸填充，消除留白 */
+  object-fit: contain; /* 保持宽高比，避免拉伸变形 */
   cursor: pointer;
   user-select: none;
   -webkit-user-drag: none;

@@ -11,6 +11,13 @@ sonic:
     host: 192.168.1.1
     # Change to SONIC_SERVER_PORT of server | 改成server的SONIC_SERVER_PORT
     port: 3000
+  
+  # Default plugin versions (from src/main/resources/application.yml)
+  saa: 2.0.8
+  sgm: 1.3.4
+  sib: 1.3.20
+  sas: 0.1.12
+  saus: 5.7.4
 
 # The following will be migrated to the server configuration in the future | 以下未来会迁移到server配置
 modules:
