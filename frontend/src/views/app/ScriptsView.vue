@@ -173,14 +173,18 @@ function deleteScript(row) {
 <style lang="scss" scoped>
 .scripts-page {
   background: #fff;
-  border-radius: 4px;
-  min-height: calc(100vh - 132px);
+  /* border-radius: 4px; */
+  /* min-height: calc(100vh - 132px); */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .sub-nav {
   display: flex;
   border-bottom: 1px solid var(--border-color);
   padding: 0 16px;
+  flex-shrink: 0;
 }
 
 .sub-nav-item {
@@ -207,7 +211,9 @@ function deleteScript(row) {
 
 .page-content {
   display: flex;
-  height: calc(100vh - 180px);
+  /* height: calc(100vh - 180px); */
+  flex: 1;
+  overflow: hidden; /* 防止溢出 */
 }
 
 .tree-panel {

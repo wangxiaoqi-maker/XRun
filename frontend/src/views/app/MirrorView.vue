@@ -552,9 +552,11 @@ onUnmounted(() => {
 
 <style lang="scss" scoped>
 .mirror-page {
-  height: calc(100vh - var(--header-height) - 32px);
-  background: #f5f7fa; /* Light gray background for page */
-  border-radius: 8px;
+  /* height: calc(100vh - var(--header-height) - 32px); */
+  height: 100%; /* 占满父容器 */
+  width: 100%;
+  background: #f5f7fa;
+  /* border-radius: 8px; 移除圆角，改为全屏风格 */
   overflow: hidden;
   display: flex;
   flex-direction: column;

@@ -522,8 +522,8 @@ body {
 // ==================== 内容区 ====================
 .main-content {
   flex: 1;
-  padding: 10px; /* 移除内边距，让子页面自己控制 */
-  overflow: auto; /* 改为 hidden，让子页面控制滚动 */
+  padding: 0; /* 移除内边距，让子页面自己控制 */
+  overflow: hidden; /* 改为 hidden，让子页面控制滚动 */
   background: var(--bg-color);
   display: flex; /* 使子页面能够填满 */
   flex-direction: column;

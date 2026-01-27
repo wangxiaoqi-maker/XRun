@@ -510,8 +510,13 @@ onUnmounted(() => {
 
 <style lang="scss" scoped>
 .dashboard {
-  max-width: 1600px;
-  margin: 0 auto;
+  height: 100%;
+  overflow-y: auto;
+  padding: 24px;
+  width: 100%;
+  box-sizing: border-box;
+  /* max-width: 1600px; 移除宽度限制或改大，让其填满 */
+  /* margin: 0 auto; */
 }
 
 // 欢迎区

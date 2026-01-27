@@ -431,7 +431,7 @@ button { outline: none; }
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  margin: 4px;
+  margin: 15px; /* 上下左右间隔 20px */
   border-radius: 8px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
@@ -596,44 +596,75 @@ button { outline: none; }
 .editor-body {
   flex: 1;
   display: flex;
+  align-items: stretch; /* 确保子元素高度一致 */
   padding: 0;
   gap: 0;
   overflow: hidden;
   min-height: 0; /* 关键：允许 flex 子元素收缩 */
 }
 
-/* Device Panel - 左侧面板带圆角分隔 */
+/* Device Panel - 左侧面板，与右侧高度一致 */
 .device-panel {
   width: 340px; 
   min-width: 340px;
-  /* height: auto;  Flex item 默认 stretch，无需指定高度，或设为 100% 显式声明 */
-  height: auto;
-  min-height: 100%;
   flex-shrink: 0;
+  align-self: stretch; /* 关键：让高度与 flex 容器一致 */
   padding: 0;
   background: #ffffff;
   border-right: 1px solid #e2e8f0;
-  border-radius: 0 0 0 8px; /* 恢复左下圆角 */
+  border-radius: 0 0 0 8px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
   position: relative;
-  overflow: hidden; /* 确保内容不溢出圆角 */
+  overflow: hidden;
+
+  /* device-mirror 填满父容器 */
+  :deep(.device-mirror) {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; /* 未连接时居中 .phone-frame */
+    min-height: 0;
+    height: 100%; /* 确保填满 */
+  }
   
-  /* 只有连接后才铺满 */
+  /* 未连接时的 phone-frame：保持固定尺寸，不拉伸 */
+  :deep(.phone-frame:not(.phone-frame--connected)) {
+    flex: none !important; /* 不被 flex 拉伸 */
+    width: 220px !important; /* 固定宽度 */
+    height: auto !important; /* 高度自适应内容 */
+  }
+  
+  /* 连接后：device-mirror 从顶部开始 */
   :deep(.device-mirror.is-active) {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
+    justify-content: flex-start;
   }
 
+  /* 连接后：phone-frame 填满 */
   :deep(.phone-frame--connected) {
-      flex: 1;
-      width: 100%;
-      height: 100%;
-      min-height: 0; /* 允许收缩 */
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    margin: 0 !important;
+    background: transparent !important;
+  }
+  
+  /* 连接后的屏幕区域 */
+  :deep(.phone-frame--connected .phone-screen) {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent !important;
+  }
+  
+  /* 投屏图片 */
+  :deep(.mirror-screen) {
+    width: 100%;
+    height: auto;
+    max-height: 100%;
+    object-fit: contain;
   }
 }
 

@@ -361,6 +361,10 @@ onMounted(() => {
   border-radius: 12px;
   border: 1px solid var(--border-color);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* 未连接时垂直居中 */
+  align-items: center; /* 水平居中 */
 }
 
 .control-panel {

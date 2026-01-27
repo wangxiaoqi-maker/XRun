@@ -150,7 +150,7 @@ public class IOSWSServer implements IIOSWSServer {
                 JSONObject appiumSettings = new JSONObject();
                 appiumSettings.put("mjpegServerFramerate", 60);
                 appiumSettings.put("mjpegScalingFactor", 100);
-                appiumSettings.put("mjpegServerScreenshotQuality", 50);
+                appiumSettings.put("mjpegServerScreenshotQuality", 80);
                 iosStepHandler.appiumSettings(appiumSettings);
                 HandlerMap.getIOSMap().put(udId, iosStepHandler);
             } catch (Exception e) {
@@ -216,13 +216,13 @@ public class IOSWSServer implements IIOSWSServer {
                 case "screen" -> {
                     JSONObject appiumSettings = new JSONObject();
                     if (msg.getString("detail").equals("low")) {
-                        appiumSettings.put("mjpegServerFramerate", 50);
-                        appiumSettings.put("mjpegScalingFactor", 50);
+                        appiumSettings.put("mjpegServerFramerate", 15);
+                        appiumSettings.put("mjpegScalingFactor", 25);
                         appiumSettings.put("mjpegServerScreenshotQuality", 10);
                     } else {
-                        appiumSettings.put("mjpegServerFramerate", 60);
-                        appiumSettings.put("mjpegScalingFactor", 100);
-                        appiumSettings.put("mjpegServerScreenshotQuality", 50);
+                        appiumSettings.put("mjpegServerFramerate", 30);
+                        appiumSettings.put("mjpegScalingFactor", 50);
+                        appiumSettings.put("mjpegServerScreenshotQuality", 30);
                     }
                     try {
                         iosStepHandler.appiumSettings(appiumSettings);

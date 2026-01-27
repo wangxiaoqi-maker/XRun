@@ -17,9 +17,10 @@
     </div>
 
     <!-- 手机外框 -->
-    <div class="phone-frame" :class="{ 'phone-frame--connected': connected }">
+    <div class="phone-frame" 
+         :class="{ 'phone-frame--connected': connected }">
       <!-- 顶部听筒 -->
-      <div class="phone-notch"></div>
+      <div class="phone-notch" v-if="!connected"></div>
       
       <!-- 屏幕区域 -->
       <div class="phone-screen" ref="containerRef">
@@ -50,8 +51,13 @@
         </div>
         
         <!-- 投屏画面容器（使用flex布局让导航栏在底部） -->
+        <!-- 加载中占位（iOS MJPEG 流加载时显示） -->
+        <div v-if="connected && !imageLoaded" class="screen-placeholder">
+          <el-icon class="is-loading" :size="32"><Loading /></el-icon>
+          <p>画面加载中...</p>
+        </div>
         <img
-          v-show="connected && currentFrame"
+          v-show="connected && currentFrame && imageLoaded"
           ref="screenImg"
           :src="currentFrame"
           class="mirror-screen"
@@ -63,7 +69,7 @@
       </div>
       
       <!-- 底部 Home 条 -->
-      <div class="phone-home-bar"></div>
+      <div class="phone-home-bar" v-if="!connected"></div>
     </div>
 
     <!-- 调试信息面板已移除 -->
@@ -193,6 +199,7 @@ const currentFrame = ref('')
 const showDeviceSelector = ref(false)
 const isConnecting = ref(false)
 const controlStatus = ref('disconnected')  // 控制连接状态：disconnected, connecting, ready
+const imageLoaded = ref(false)  // 图片是否已加载完成（解决 iOS 白屏问题）
 
 // 调试状态
 const debugStatus = ref('INIT')
@@ -234,14 +241,34 @@ const deviceDisplayName = computed(() => {
   return d.model || d.name || d.udid
 })
 
+// 动态计算设备长宽比，用于消除黑边
+const deviceAspectRatio = computed(() => {
+  // 优先使用实时获取的分辨率 (WDA/Scrcpy 在连接后会更新)
+  if (deviceWidth.value && deviceHeight.value) {
+    return `${deviceWidth.value} / ${deviceHeight.value}`
+  }
+  
+  if (selectedDevice.value?.resolution) {
+    // resolution 格式如 "1080x2400"
+    const parts = selectedDevice.value.resolution.split('x')
+    if (parts.length === 2) {
+      const w = parseInt(parts[0])
+      const h = parseInt(parts[1])
+      if (w && h) return `${w} / ${h}`
+    }
+  }
+  // 默认兜底比例
+  return '9 / 19.5'
+})
+
 // Sonic 配置
 const SONIC_AGENT_KEY = 'f63cbbfd-da49-4c86-8ae7-b5820382c768'
 
 let screenWs = null
 let controlWs = null
 let sonicToken = null
-let deviceWidth = 1080
-let deviceHeight = 1920
+const deviceWidth = ref(1080)
+const deviceHeight = ref(1920)
 let touchReady = false
 let retryCount = 0
 // 投屏模式：scrcpy（默认推荐）或 minicap
@@ -576,8 +603,8 @@ async function startMirror() {
   if (selectedDevice.value.resolution) {
     const [w, h] = selectedDevice.value.resolution.split('x').map(Number)
     if (w && h) {
-      deviceWidth = w
-      deviceHeight = h
+      deviceWidth.value = w
+      deviceHeight.value = h
     }
   }
   
@@ -972,8 +999,8 @@ async function startIOSMirror(udid) {
     // 2. 构建 Sonic iOS WebSocket URL
     const wsUrl = `ws://${host}:${port}/websockets/ios/${SONIC_AGENT_KEY}/${udid}/${sonicToken}`
     
-    console.log('=== 启动 iOS 原生投屏 ===')
-    console.log('WS URL:', wsUrl)
+    // console.log('=== 启动 iOS 原生投屏 ===')
+    // console.log('WS URL:', wsUrl)
     debugWsUrl.value = wsUrl
     debugStatus.value = 'CONNECTING'
     ElMessage.info('正在连接 Agent WebSocket...')
@@ -993,7 +1020,7 @@ async function startIOSMirror(udid) {
     iosWs = new WebSocket(wsUrl)
     
     iosWs.onopen = () => {
-      console.log('✓ iOS WebSocket 已连接')
+      // console.log('✓ iOS WebSocket 已连接')
       debugStatus.value = 'WS_OPEN'
       ElMessage.success('Agent 连接成功，等待画面...')
     }
@@ -1003,22 +1030,23 @@ async function startIOSMirror(udid) {
       try {
         debugLastMsg.value = event.data.substring(0, 50)
         const msg = JSON.parse(event.data)
-        console.log('iOS WS 消息:', msg)
+        // 减少日志输出以降低延迟
+        // console.log('iOS WS 消息:', msg)
         
         switch (msg.msg) {
           case 'openDriver':
             if (msg.status === 'success') {
               debugStatus.value = 'WDA_SUCCESS'
-              console.log('✓ WDA 启动成功')
+              // console.log('✓ WDA 启动成功')
               // 保存 WDA 端口信息
               if (msg.wda) {
                   wdaPort.value = msg.wda
-                  console.log(`✓ WDA 端口: ${msg.wda}`)
+                  // console.log(`✓ WDA 端口: ${msg.wda}`)
               }
               // 屏幕端口 (msg.port, 但通常通过 share 消息获取)
-              if (msg.width && msg.height) {
-                 deviceWidth = msg.width
-                 deviceHeight = msg.height
+               if (msg.width && msg.height) {
+                 deviceWidth.value = msg.width
+                 deviceHeight.value = msg.height
                  // 自动更新 WDA 坐标转换基准
                  wdaWidth = msg.width
                  wdaHeight = msg.height
@@ -1034,11 +1062,11 @@ async function startIOSMirror(udid) {
             // 格式: {"msg":"share","port":9100}
             if (msg.port > 0) {
               debugStatus.value = 'GOT_SHARE'
-              console.log(`✓ 收到 MJPEG 端口: ${msg.port}`)
+              // console.log(`✓ 收到 MJPEG 端口: ${msg.port}`)
               // 拼接 MJPEG 流地址
               // 注意：如果是 localhost，直接用；如果是远程，需使用 agent_host
               const streamUrl = `http://${host}:${msg.port}`
-              console.log('MJPEG URL:', streamUrl)
+              // console.log('MJPEG URL:', streamUrl)
               
               currentFrame.value = streamUrl
               connected.value = true
@@ -1065,7 +1093,7 @@ async function startIOSMirror(udid) {
     
     iosWs.onerror = (e) => {
       debugStatus.value = 'WS_ERROR'
-      console.error('iOS WebSocket 错误:', e)
+      // console.error('iOS WebSocket 错误:', e)
       connectionError.value = '连接 Agent 失败'
       loading.value = false
       isConnecting.value = false
@@ -1073,7 +1101,7 @@ async function startIOSMirror(udid) {
     
     iosWs.onclose = (e) => {
       debugStatus.value = `WS_CLOSE:${e.code}`
-      console.log('iOS WebSocket 关闭:', e.code, e.reason)
+      // console.log('iOS WebSocket 关闭:', e.code, e.reason)
       if (connected.value) {
         connected.value = false
         ElMessage.warning('iOS 连接已断开')
@@ -1120,14 +1148,24 @@ function stopMirror() {
   connectionError.value = ''
   retryCount = 0
   touchReady = false
+  imageLoaded.value = false  // 重置图片加载状态
 }
 
 /**
- * 图片加载完成事件 - 用于获取实际渲染尺寸
+ * 图片加载完成事件 - 用于获取实际渲染尺寸，并标记图片已加载
+ * 对于 iOS MJPEG 流，每帧都会触发此事件，可用于计算 FPS
  */
 function onImageLoad(e) {
   const img = e.target
-  console.log(`屏幕图像加载完成: ${img.naturalWidth}x${img.naturalHeight}, 渲染尺寸: ${img.clientWidth}x${img.clientHeight}`)
+  // 标记图片已加载，解决 iOS MJPEG 流的白屏问题
+  if (!imageLoaded.value) {
+    imageLoaded.value = true
+  }
+  
+  // iOS MJPEG 流：通过 img.onload 计算 FPS
+  if (isIOSDevice()) {
+    frameCount++
+  }
 }
 
 /**
@@ -1191,8 +1229,8 @@ function getDeviceCoords(clientX, clientY) {
   
   // 5. 映射到设备真实坐标（物理坐标）
   // 使用 deviceWidth (默认1080) 进行投影
-  const x = Math.round((contentX / drawWidth) * deviceWidth)
-  const y = Math.round((contentY / drawHeight) * deviceHeight)
+  const x = Math.round((contentX / drawWidth) * deviceWidth.value)
+  const y = Math.round((contentY / drawHeight) * deviceHeight.value)
   
   return { x, y }
 }
@@ -1227,20 +1265,25 @@ function isAndroidDevice() {
 }
 
 // iOS Sonic 协议触控实现
+let iosTapTimer = null  // iOS 快速点击计时器
+let iosIsSwiping = false // iOS 是否正在滑动
+
 function sendIOSCommand(cmd) {
   if (!iosWs || iosWs.readyState !== WebSocket.OPEN) {
-    console.warn('iOS WS 未连接')
-    return
+    return false
   }
   iosWs.send(JSON.stringify(cmd))
+  return true
 }
 
-async function wdaTap(clientX, clientY) {
+/**
+ * iOS 点击 - 立即发送，无需等待
+ */
+function wdaTap(clientX, clientY) {
   if (!selectedDevice.value || !isIOSDevice()) return
   const pt = getWDACoords(clientX, clientY)
   if (!pt) return
   
-  // 协议: {"type": "debug", "detail": "tap", "point": "x,y"}
   sendIOSCommand({
     type: 'debug',
     detail: 'tap',
@@ -1248,19 +1291,87 @@ async function wdaTap(clientX, clientY) {
   })
 }
 
-async function wdaSwipe(startX, startY, endX, endY, duration = 300) {
+/**
+ * iOS 滑动 - 发送滑动命令
+ */
+function wdaSwipe(startX, startY, endX, endY) {
   if (!selectedDevice.value || !isIOSDevice()) return
   const startPt = getWDACoords(startX, startY)
   const endPt = getWDACoords(endX, endY)
   if (!startPt || !endPt) return
   
-  // 协议: {"type": "debug", "detail": "swipe", "pointA": "x1,y1", "pointB": "x2,y2"}
   sendIOSCommand({
     type: 'debug',
     detail: 'swipe',
     pointA: `${startPt.x},${startPt.y}`,
     pointB: `${endPt.x},${endPt.y}`
   })
+}
+
+/**
+ * iOS mousedown 处理 - 快速响应点击
+ * 策略：100ms 内无移动则立即发送 tap，提升响应速度
+ */
+function handleIOSMouseDown(clientX, clientY) {
+  if (iosTapTimer) {
+    clearTimeout(iosTapTimer)
+    iosTapTimer = null
+  }
+  iosIsSwiping = false
+  
+  // 100ms 后如果没有移动，立即发送 tap
+  iosTapTimer = setTimeout(() => {
+    if (!iosIsSwiping && isMouseDown) {
+      // 仍然按住且没有移动 = 可能是长按或即将点击
+      // 这里不发送，等 mouseup 时再处理
+    }
+    iosTapTimer = null
+  }, 100)
+}
+
+/**
+ * iOS mousemove 处理 - 标记为滑动
+ */
+function handleIOSMouseMove(clientX, clientY) {
+  const deltaX = clientX - mouseStartX
+  const deltaY = clientY - mouseStartY
+  const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
+  
+  // 移动超过 8px 标记为滑动
+  if (distance > 8) {
+    iosIsSwiping = true
+    if (iosTapTimer) {
+      clearTimeout(iosTapTimer)
+      iosTapTimer = null
+    }
+  }
+}
+
+/**
+ * iOS mouseup 处理 - 根据行为发送 tap 或 swipe
+ */
+function handleIOSMouseUp(startX, startY, endX, endY, duration) {
+  if (iosTapTimer) {
+    clearTimeout(iosTapTimer)
+    iosTapTimer = null
+  }
+  
+  const deltaX = endX - startX
+  const deltaY = endY - startY
+  const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
+  
+  // 快速点击判定：移动 < 10px 且时间 < 200ms
+  if (distance < 10 && duration < 200) {
+    wdaTap(startX, startY)
+  } else if (distance >= 10) {
+    // 滑动
+    wdaSwipe(startX, startY, endX, endY)
+  } else {
+    // 长按后释放，也发送 tap
+    wdaTap(startX, startY)
+  }
+  
+  iosIsSwiping = false
 }
 
 // Android 触控命令封装 (保持不变)
@@ -1288,6 +1399,13 @@ function sendControlCommand(cmd) {
  */
 function sendAndroidTouch(action, x, y) {
   if (!connected.value || !isAndroidDevice()) return
+  
+  // 检查触控是否就绪，如果未就绪尝试重连
+  if (!touchReady && controlWs?.readyState !== WebSocket.OPEN) {
+    console.warn('触控未就绪，尝试重连...')
+    reconnectControl()
+    return
+  }
   
   // 必须加换行符，因为 Agent 是按行读取的
   let cmd = ''
@@ -1321,12 +1439,15 @@ function handleMouseDown(e) {
   document.addEventListener('mousemove', onDocumentMouseMove)
   document.addEventListener('mouseup', onDocumentMouseUp)
   
-  // Android: 立即发送 down 事件
   if (isAndroidDevice()) {
+    // Android: 立即发送 down 事件
     const coords = getDeviceCoords(mouseStartX, mouseStartY)
     if (coords) {
       sendAndroidTouch('down', coords.x, coords.y)
     }
+  } else if (isIOSDevice()) {
+    // iOS: 初始化触控状态
+    handleIOSMouseDown(mouseStartX, mouseStartY)
   }
 }
 
@@ -1336,20 +1457,22 @@ function handleMouseDown(e) {
 function onDocumentMouseMove(e) {
   if (!isMouseDown) return
   
-  const now = Date.now()
-  // 节流：每 30ms 发送一次 move
-  if (now - lastMoveTime < 30) return
-  lastMoveTime = now
-  
   const clientX = e.clientX
   const clientY = e.clientY
   
-  // Android: 发送 move 事件
   if (isAndroidDevice()) {
+    const now = Date.now()
+    // Android: 节流 30ms 发送 move 事件
+    if (now - lastMoveTime < 30) return
+    lastMoveTime = now
+    
     const coords = getDeviceCoords(clientX, clientY)
     if (coords) {
       sendAndroidTouch('move', coords.x, coords.y)
     }
+  } else if (isIOSDevice()) {
+    // iOS: 标记滑动状态（无节流，因为只是标记）
+    handleIOSMouseMove(clientX, clientY)
   }
 }
 
@@ -1367,18 +1490,9 @@ function onDocumentMouseUp(e) {
   const endY = e.clientY
   const duration = Date.now() - mouseStartTime
   
-  const deltaX = endX - mouseStartX
-  const deltaY = endY - mouseStartY
-  const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
-  
-  // iOS 逻辑保持不变
   if (isIOSDevice()) {
-    const isTap = distance < 10 && duration < 300
-    if (isTap) {
-      wdaTap(mouseStartX, mouseStartY)
-    } else {
-      wdaSwipe(mouseStartX, mouseStartY, endX, endY, duration)
-    }
+    // iOS: 使用优化后的处理函数
+    handleIOSMouseUp(mouseStartX, mouseStartY, endX, endY, duration)
   } else {
     // Android: 发送 up 事件
     sendAndroidTouch('up', 0, 0)
@@ -1451,24 +1565,24 @@ defineExpose({
 </script>
 
 <style lang="scss" scoped>
-// 容器 - 未连接时自适应内容高度，连接后填满
+// 容器 - 未连接时居中显示手机框，连接后铺满
 .device-mirror {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  height: auto; /* 未连接时自适应内容 */
-  padding: 20px;
-  background: transparent; /* 透明背景，让父容器控制 */
+  justify-content: center; /* 垂直居中 */
+  height: 100%;
+  width: 100%;
+  padding: 20px; /* 添加 padding 让手机框有呼吸空间 */
+  background: transparent;
   position: relative;
-  transition: all 0.3s ease;
+  box-sizing: border-box;
   
   &.is-active {
-    justify-content: flex-start;
-    padding: 0;
-    width: 100%;
-    height: 100%; /* 连接后才填满 */
-    min-height: 0; /* 关键flexbox收缩属性 */
+    padding: 0; /* 连接后移除 padding */
+    justify-content: flex-start; /* 连接后从顶部开始 */
+    align-items: stretch; /* 连接后横向拉伸 */
+    min-height: 0;
     overflow: hidden;
   }
 }
@@ -1531,36 +1645,42 @@ defineExpose({
   padding: 3px; /* 边框更窄 */
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  display: flex;
+  flex-direction: column;
   
   &--connected {
+    /* 连接后：填满父容器，背景透明 */
     width: 100%;
-    height: 100%;
-    min-height: 0;
+    flex: 1 1 0%; /* 填充剩余空间 */
+    max-width: 100%;
+    max-height: 100%;
+    min-height: 0; /* 允许收缩 */
     border-radius: 0;
-    padding: 0; /* 底部无需预留 (footer Flex排版) */
-    background: transparent;
+    padding: 0;
+    background: transparent; /* 透明背景，避免黑边 */
     border: none;
-    overflow: hidden;
     box-shadow: none;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   }
 }
 
-// 底部操作栏 - Flex 布局
+// 底部操作栏 - Flex 布局，紧贴投屏画面
 .mirror-footer {
-  position: relative; /* 改为 relative，自然堆叠 */
+  position: relative;
   flex-shrink: 0;
+  flex-grow: 0; /* 不扩展 */
   z-index: 10;
   display: flex;
   justify-content: center;
   align-items: center;
   width: 100%;
-  height: 40px; /* 增加高度 */
+  height: 36px; /* 固定高度 */
   background: rgba(255, 255, 255, 0.98);
-  border-top: 1px solid #f8fafc;
-  padding: 0 32px; /* 左右增加内边距 */
-  justify-content: space-between; /* 分散对齐 (左中右) */
+  border-top: 1px solid #e8e8e8;
+  padding: 0 16px;
+  margin: 0; /* 确保无间距 */
 }
 
 // 集成导航栏（嵌入屏幕底部）- 优雅简约设计
@@ -1646,7 +1766,7 @@ defineExpose({
   margin: 2px auto 3px;
   
   .phone-frame--connected & {
-    display: none; // 连接后隐藏听筒，最大化显示区域
+    display: none !important;
   }
 }
 
@@ -1663,22 +1783,18 @@ defineExpose({
   justify-content: center; /* 居中内容 */
   
   .phone-frame--connected & {
+    /* 连接后：填满父容器 */
+    width: 100%;
+    height: 100%;
+    aspect-ratio: unset;
+    max-height: 100%;
+    min-height: 0;
     border-radius: 0;
     background: transparent;
-    aspect-ratio: auto;
-    max-height: none; /* 连接后移除高度限制 */
-    min-height: 0; /* 关键：允许flex收缩 */
-    height: 100%;
-    width: 100%;
-    flex: 1;
-    overflow: hidden;
-  }
-  
-  // 图片容器
-  > div {
+    flex: 1 1 0%; /* 填充剩余空间 */
     display: flex;
-    flex-direction: column;
-    flex: 1;
+    align-items: center;
+    justify-content: center;
     overflow: hidden;
   }
 }
@@ -1691,7 +1807,7 @@ defineExpose({
   margin: 3px auto 2px;
   
   .phone-frame--connected & {
-    display: none; // 连接后隐藏底部横条
+    display: none !important;
   }
 }
 
@@ -1722,15 +1838,16 @@ defineExpose({
 }
 
 .mirror-screen {
-  width: 100%; /* 恢复宽度铺满 */
-  height: 100%;
-  max-height: 100%; /* 由父容器约束高度 */
-  object-fit: contain; /* 保持宽高比，避免拉伸变形 */
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  width: 100%;
+  height: 100%; /* 填满父容器高度 */
+  object-fit: cover; /* 填满容器，避免留白 */
   cursor: pointer;
   user-select: none;
   -webkit-user-drag: none;
   touch-action: none;
-  display: block;
 }
 
 // 悬浮操作栏
@@ -1758,14 +1875,17 @@ defineExpose({
   opacity: 1;
 }
 
-// 底部状态栏
+// 底部状态栏 - 绝对定位在底部，不占用 flex 空间
 .bottom-bar {
-  margin-top: 16px;
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  max-width: 360px;
+  width: auto;
+  max-width: 260px;
 }
 
 .device-info {
