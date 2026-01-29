@@ -467,7 +467,7 @@ async function getDevicesFromSonicServer() {
       user: d.user,  // 当前占用用户
       agent_id: d.agentId,
       // 从 Sonic Server 获取 Agent 地址，如果没有则使用默认值
-      agent_host: d.agentHost || '192.168.1.169',
+      agent_host: d.agentHost || '192.168.0.105',
       agent_port: d.agentPort || 7777,
       cpu: d.cpu || '-',
       mem: d.mem || '-',
