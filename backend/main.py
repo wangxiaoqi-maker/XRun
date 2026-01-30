@@ -2,6 +2,10 @@
 XRun - AI 驱动的自动化测试平台
 FastAPI 后端主文件
 """
+# 加载环境变量（必须在其他导入之前）
+from dotenv import load_dotenv
+load_dotenv("../.Env")  # 加载项目根目录的 .Env 文件
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -9,7 +13,8 @@ from contextlib import asynccontextmanager
 import os
 
 # 导入各个模块的路由
-from apps.ui_automation.api import devices, cases, execution, ai_config
+from apps.ui_automation.api import devices, cases, execution, ai_config, llm_config
+from apps.ui_automation.knowledge.api import router as knowledge_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -17,9 +22,22 @@ async def lifespan(app: FastAPI):
     # 启动时
     print("🚀 XRun 后端服务启动中...")
 
-    # 初始化数据库
-    from apps.ui_automation.database import init_db
+    # 初始化数据库（主应用）
+    from apps.ui_automation.database import init_db, engine
     await init_db()
+    
+    # 初始化知识库数据库表
+    from apps.ui_automation.knowledge.models import KnowledgeBase
+    async with engine.begin() as conn:
+        await conn.run_sync(KnowledgeBase.metadata.create_all)
+    print("✓ 知识库数据表初始化完成")
+    
+    # 初始化 LLM 配置表
+    from apps.ui_automation.models.llm_config import LLMProvider, LLMModel, LLMUsageLog
+    from apps.ui_automation.database import Base as MainBase
+    async with engine.begin() as conn:
+        await conn.run_sync(MainBase.metadata.create_all)
+    print("✓ LLM 配置数据表初始化完成")
 
     # 创建必要目录
     os.makedirs("../data/screenshots", exist_ok=True)
@@ -82,6 +100,12 @@ app.include_router(devices.router, prefix="/api/devices", tags=["设备管理"])
 app.include_router(cases.router, prefix="/api/cases", tags=["用例管理"])
 app.include_router(execution.router, prefix="/api/execution", tags=["用例执行"])
 app.include_router(ai_config.router, prefix="/api/ai-config", tags=["AI配置"])
+
+# 路由 - AI 知识库模块
+app.include_router(knowledge_router, prefix="/api/ai", tags=["AI教学模式"])
+
+# 路由 - LLM 配置模块
+app.include_router(llm_config.router, prefix="/api", tags=["大模型配置"])
 
 # 静态文件
 os.makedirs("../data", exist_ok=True)

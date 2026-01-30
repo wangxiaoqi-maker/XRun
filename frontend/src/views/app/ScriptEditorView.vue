@@ -25,29 +25,75 @@
 
       <!-- 右侧：脚本信息与操作 -->
       <div class="header-script-portion">
-        <div class="script-meta">
-           <div class="script-icon-box">
-             <el-icon><Document /></el-icon>
-           </div>
-           <div class="script-text-group">
-             <span class="script-title">{{ scriptName }}</span>
-             <span class="script-subtitle">Last edited just now</span>
-           </div>
-        </div>
-
-        <div class="header-actions">
-          <el-button @click="saveScript" class="header-btn" plain size="default">保存</el-button>
-          <el-button type="primary" @click="runScript" :loading="isRunning" class="header-btn run-btn" size="default">
-            <el-icon v-if="!isRunning" class="el-icon--left"><VideoPlay /></el-icon>
-            {{ isRunning ? 'Running...' : 'Run' }}
-          </el-button>
+        <!-- 执行模式内容 -->
+        <template v-if="editorMode === 'execute'">
+          <div class="script-meta">
+             <div class="script-icon-box">
+               <el-icon><Document /></el-icon>
+             </div>
+             <div class="script-text-group">
+               <span class="script-title">{{ scriptName }}</span>
+               <span class="script-subtitle">Last edited just now</span>
+             </div>
+          </div>
+          <div class="header-actions">
+            <el-button @click="saveScript" class="header-btn" plain size="default">保存</el-button>
+            <el-button type="primary" @click="runScript" :loading="isRunning" class="header-btn run-btn" size="default">
+              {{ isRunning ? 'Running...' : 'Run' }}
+            </el-button>
+          </div>
+        </template>
+        
+        <!-- 教学模式内容 -->
+        <template v-else>
+          <div class="teach-info" v-if="analysisResult">
+            <span class="page-name">{{ analysisResult.page_name }}</span>
+            <span class="update-time">上次更新: {{ lastAnalyzeTime }}</span>
+          </div>
+          <div class="header-actions">
+            <el-button text :disabled="!mirrorRef?.connected" @click="clearAnalysis" title="清空">
+              <el-icon><Delete /></el-icon>
+            </el-button>
+            <el-button 
+              type="primary"
+              :loading="analyzing"
+              :disabled="!mirrorRef?.connected"
+              @click="analyzeCurrentPage"
+              class="ai-analyze-btn"
+            >
+              <el-icon v-if="!analyzing"><MagicStick /></el-icon>
+              {{ analyzing ? '正在扫描...' : 'AI 全页分析' }}
+            </el-button>
+          </div>
+        </template>
+        
+        <!-- 模式切换（右侧） -->
+        <div class="mode-switcher">
+          <el-tooltip content="执行模式" placement="bottom">
+            <div 
+              class="mode-item" 
+              :class="{ active: editorMode === 'execute' }"
+              @click="switchMode('execute')"
+            >
+              <el-icon :size="16"><VideoPlay /></el-icon>
+            </div>
+          </el-tooltip>
+          <el-tooltip content="知识库教学" placement="bottom">
+            <div 
+              class="mode-item teach" 
+              :class="{ active: editorMode === 'teach' }"
+              @click="switchMode('teach')"
+            >
+              <el-icon :size="16"><MagicStick /></el-icon>
+            </div>
+          </el-tooltip>
         </div>
       </div>
     </div>
     
     <!-- 主体内容 -->
     <div class="editor-body">
-      <!-- 左侧：设备投屏 (移除背景，纯净展示) -->
+      <!-- 左侧：设备投屏 -->
       <div class="device-panel">
         <DeviceMirror 
           ref="mirrorRef"
@@ -55,13 +101,53 @@
           :hide-header="true"
           @action-recorded="onActionRecorded"
           @device-connected="onDeviceConnected"
-        />
-        <!-- 移除原来底部的 device-controls -->
+        >
+          <!-- 元素框选 Overlay (仅教学模式 + 有分析结果) -->
+          <template #overlay="{ deviceWidth: dw, deviceHeight: dh }">
+            <ElementOverlay
+              v-if="editorMode === 'teach' && mirrorRef?.connected && analysisElements.length > 0"
+              class="element-overlay-layer"
+              :elements="analysisElements"
+              :hovered-id="hoveredElementId"
+              :selected-id="selectedElementId"
+              :device-width="dw"
+              :device-height="dh"
+              @hover="hoveredElementId = $event"
+              @leave="hoveredElementId = null"
+              @click="selectedElementId = $event.id"
+            />
+          </template>
+        </DeviceMirror>
+        
+        <!-- 扫描动效 (仅教学模式 + 分析中) -->
+        <div v-if="editorMode === 'teach' && analyzing" class="scan-overlay">
+          <div class="scan-line"></div>
+          <div class="scan-text">AI 正在分析页面...</div>
+        </div>
       </div>
       
-      <!-- 右侧：步骤编辑器 -->
+      <!-- 右侧：步骤编辑器 / 教学面板 -->
       <div class="steps-panel">
-        <div class="steps-container">
+        <!-- 教学模式面板 -->
+        <AITeachingPanel
+          v-if="editorMode === 'teach'"
+          ref="teachingPanelRef"
+          :elements="analysisElements"
+          :page-summary="pageSummary"
+          :hovered-id="hoveredElementId"
+          :analyzing="analyzing"
+          :saving="savingToKnowledge"
+          @update:page-summary="pageSummary = $event"
+          @hover="hoveredElementId = $event"
+          @leave="hoveredElementId = null"
+          @remove-element="onRemoveElement"
+          @add-element="onAddElement"
+          @save="saveToKnowledge"
+          @cancel="clearAnalysis"
+        />
+        
+        <!-- 执行模式步骤列表 -->
+        <div v-else class="steps-container">
           <div class="steps-wrapper">
             
             <draggable 
@@ -205,20 +291,76 @@
       </div>
     </div>
   </div>
+  
+  <!-- AI 分析配置弹窗 -->
+  <el-dialog 
+    v-model="showAnalyzeConfig" 
+    title="AI 页面分析配置" 
+    width="480px"
+    :close-on-click-modal="false"
+  >
+    <el-form label-width="80px" :disabled="analyzing">
+      <el-form-item label="视觉模型">
+        <el-select 
+          v-model="analyzeConfig.modelId" 
+          placeholder="选择模型（可选）"
+          style="width: 100%"
+          clearable
+          :loading="loadingModels"
+          @change="onModelChange"
+        >
+          <el-option 
+            v-for="model in visionModels" 
+            :key="model.id" 
+            :label="`${model.provider?.name || '未知'} / ${model.name}`"
+            :value="model.id"
+          >
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span>{{ model.name }}</span>
+              <span style="color: #999; font-size: 12px;">{{ model.provider?.name }}</span>
+            </div>
+          </el-option>
+        </el-select>
+        <div class="form-tip">不选择则使用默认模型（qwen-vl）</div>
+      </el-form-item>
+      <el-form-item label="页面描述">
+        <el-input 
+          v-model="analyzeConfig.contextHint" 
+          type="textarea"
+          :rows="3"
+          placeholder="可选。描述当前页面的上下文，帮助 AI 更准确识别，如：&#10;• 这是微信支付首页&#10;• 用户已登录状态&#10;• 这是订单确认页面"
+          maxlength="500"
+          show-word-limit
+        />
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button @click="showAnalyzeConfig = false">取消</el-button>
+      <el-button type="primary" @click="doAnalyze" :loading="analyzing">
+        开始分析
+      </el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup>
 import { ref, nextTick, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+
+// 定义组件名称，用于 keep-alive 缓存
+defineOptions({
+  name: 'ScriptEditorView'
+})
 import { ElMessage } from 'element-plus'
 import { 
   ArrowLeft, VideoPlay, Check, Minus, Setting, Delete, Plus, Loading, Camera,
-  SwitchButton, CircleClose, Document
+  SwitchButton, CircleClose, Document, ChatLineSquare, MagicStick
 } from '@element-plus/icons-vue'
 import Draggable from 'vuedraggable'
 import DeviceMirror from '@/components/DeviceMirror.vue'
-import { deviceApi } from '@/api'
-import axios from 'axios'
+import ElementOverlay from '@/components/ElementOverlay.vue'
+import AITeachingPanel from '@/components/AITeachingPanel.vue'
+import { deviceApi, knowledgeApi, llmApi } from '@/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -228,11 +370,41 @@ const isSaved = ref(true)
 const isRecording = ref(false)
 const isRunning = ref(false)
 const activeIndex = ref(-1)
-const mirrorRef = ref(null) // DeviceMirror 组件引用
+const mirrorRef = ref(null)
+const teachingPanelRef = ref(null)
 
-// Mock Data
+// 编辑器模式: execute(执行) / teach(教学)
+const editorMode = ref('execute')
+
+function switchMode(mode) {
+  editorMode.value = mode
+}
+
 // 脚本步骤数据
 const steps = ref([])
+
+// ========== AI 教学模式状态 ==========
+const analyzing = ref(false)
+const savingToKnowledge = ref(false)
+const analysisResult = ref(null)
+const analysisElements = ref([])
+const pageSummary = ref('')
+const hoveredElementId = ref(null)
+const selectedElementId = ref(null)
+const lastAnalyzeTime = ref('刚刚')
+const deviceWidth = ref(1080)
+const deviceHeight = ref(2400)
+const connectedDevice = ref(null)
+
+// AI 分析配置弹窗
+const showAnalyzeConfig = ref(false)
+const analyzeConfig = ref({
+  providerId: '',
+  modelId: '',
+  contextHint: ''
+})
+const visionModels = ref([])  // 支持视觉的模型列表
+const loadingModels = ref(false)
 
 const actionOptions = [
   { value: '点击 (Click)', action: 'click' },
@@ -255,7 +427,127 @@ function saveScript() { isSaved.value = true; ElMessage.success('保存成功') 
 function toggleRecord() { isRecording.value = !isRecording.value }
 function screenshot() { /* Implement screenshot */ }
 function onActionRecorded(action) { console.log("Recorded", action) }
-function onDeviceConnected(device) { ElMessage.success('设备已连接') }
+function onDeviceConnected(device) { 
+  connectedDevice.value = device
+  ElMessage.success('设备已连接')
+  if (device?.resolution) {
+    const [w, h] = device.resolution.split('x').map(Number)
+    if (w && h) { deviceWidth.value = w; deviceHeight.value = h }
+  }
+}
+
+// ========== AI 教学模式方法 ==========
+
+// 加载支持视觉的模型
+async function loadVisionModels() {
+  loadingModels.value = true
+  try {
+    const res = await llmApi.listModels({ include_disabled: false })
+    // 过滤出支持视觉的模型
+    visionModels.value = (res.data.models || []).filter(m => m.supports_vision)
+    // 如果有模型，默认选择第一个
+    if (visionModels.value.length > 0 && !analyzeConfig.value.modelId) {
+      const first = visionModels.value[0]
+      analyzeConfig.value.providerId = first.provider_id
+      analyzeConfig.value.modelId = first.id
+    }
+  } catch (e) {
+    console.error('加载模型列表失败:', e)
+  } finally {
+    loadingModels.value = false
+  }
+}
+
+// 打开分析配置弹窗
+function openAnalyzeConfig() {
+  if (!mirrorRef.value?.connected || !connectedDevice.value) {
+    ElMessage.warning('请先连接设备')
+    return
+  }
+  loadVisionModels()
+  showAnalyzeConfig.value = true
+}
+
+// 执行 AI 分析
+async function doAnalyze() {
+  showAnalyzeConfig.value = false
+  analyzing.value = true
+  try {
+    // 获取 WDA 端口（iOS 设备需要）
+    const wdaPort = mirrorRef.value?.wdaPort || 0
+    console.log('[AI分析] 截图参数:', connectedDevice.value.udid, connectedDevice.value.platform, 'wdaPort:', wdaPort)
+    
+    const screenshotRes = await deviceApi.screenshotBase64(connectedDevice.value.udid, connectedDevice.value.platform, wdaPort)
+    if (!screenshotRes.data?.screenshot) throw new Error('获取截图失败')
+    
+    const requestData = {
+      image_data: screenshotRes.data.screenshot,
+      app_name: connectedDevice.value.name || '未知应用',
+      platform: connectedDevice.value.platform,
+      device_udid: connectedDevice.value.udid,
+      device_resolution: connectedDevice.value.resolution,
+      skip_duplicate: true,
+      context_hint: analyzeConfig.value.contextHint || undefined,
+      provider_id: analyzeConfig.value.providerId || undefined,
+      model_id: analyzeConfig.value.modelId || undefined
+    }
+    
+    const result = await knowledgeApi.analyzePage(requestData)
+    
+    analysisResult.value = result.data
+    analysisElements.value = result.data.elements || []
+    pageSummary.value = result.data.page_description || ''
+    lastAnalyzeTime.value = '刚刚'
+    ElMessage.success(`识别到 ${analysisElements.value.length} 个可测试元素`)
+  } catch (e) {
+    console.error('AI 分析失败:', e)
+    ElMessage.error(e.response?.data?.detail || 'AI 分析失败，请重试')
+  } finally {
+    analyzing.value = false
+  }
+}
+
+// 模型选择变化
+function onModelChange(modelId) {
+  if (modelId) {
+    const model = visionModels.value.find(m => m.id === modelId)
+    if (model) {
+      analyzeConfig.value.providerId = model.provider_id
+    }
+  } else {
+    analyzeConfig.value.providerId = ''
+  }
+}
+
+// 兼容旧的直接调用
+async function analyzeCurrentPage() {
+  openAnalyzeConfig()
+}
+
+function clearAnalysis() {
+  analysisResult.value = null
+  analysisElements.value = []
+  pageSummary.value = ''
+  hoveredElementId.value = null
+  selectedElementId.value = null
+}
+
+function onRemoveElement(id) {
+  analysisElements.value = analysisElements.value.filter(e => e.id !== id)
+}
+
+function onAddElement() {
+  ElMessage.info('手动添加元素功能开发中')
+}
+
+async function saveToKnowledge() {
+  savingToKnowledge.value = true
+  try {
+    ElMessage.success('已保存到知识库')
+  } finally {
+    savingToKnowledge.value = false
+  }
+}
 
 function formatDuration(ms) {
     if (ms >= 1000) return (ms / 1000).toFixed(1) + 's';
@@ -424,16 +716,19 @@ watchEffect(() => {
 /* Reset */
 button { outline: none; }
 
-/* Full Page Layout - 填满父容器 */
+/* Full Page Layout - 填满父容器，强制固定高度 */
 .editor-page {
   background: #f8fafc;
-  flex: 1; /* 填满 .main-content */
+  flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  margin: 15px; /* 上下左右间隔 20px */
+  margin: 15px;
   border-radius: 8px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  /* 关键：强制高度约束 */
+  min-height: 0;
+  max-height: 100%;
 }
 
 /* Header */
@@ -522,15 +817,17 @@ button { outline: none; }
   flex: 1;
   display: flex;
   align-items: center;
-  padding: 0 24px;
-  justify-content: space-between;
-  background: #fcfcfc; /* 轻微区别于左侧 */
+  padding: 0 16px;
+  justify-content: flex-end; /* 内容靠右 */
+  gap: 16px;
+  background: #fcfcfc;
 }
 
 .script-meta {
   display: flex;
   align-items: center;
   gap: 12px;
+  margin-right: auto; /* 把自己推到左边，后面的元素靠右 */
 }
 
 .script-icon-box {
@@ -576,7 +873,7 @@ button { outline: none; }
 .run-btn {
   padding-left: 20px; 
   padding-right: 24px;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); /* 渐变蓝 */
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   border: none;
   color: #fff;
   transition: all 0.2s;
@@ -596,19 +893,20 @@ button { outline: none; }
 .editor-body {
   flex: 1;
   display: flex;
-  align-items: stretch; /* 确保子元素高度一致 */
   padding: 0;
   gap: 0;
   overflow: hidden;
-  min-height: 0; /* 关键：允许 flex 子元素收缩 */
+  min-height: 0;
+  height: 0; /* 关键：配合 flex:1 强制固定高度 */
 }
 
-/* Device Panel - 左侧面板，与右侧高度一致 */
+/* Device Panel - 左侧面板，完全固定高度 */
 .device-panel {
   width: 340px; 
   min-width: 340px;
+  max-width: 340px;
   flex-shrink: 0;
-  align-self: stretch; /* 关键：让高度与 flex 容器一致 */
+  flex-grow: 0;
   padding: 0;
   background: #ffffff;
   border-right: 1px solid #e2e8f0;
@@ -617,6 +915,8 @@ button { outline: none; }
   flex-direction: column;
   position: relative;
   overflow: hidden;
+  /* 关键：使用绝对定位方式固定高度 */
+  align-self: stretch;
 
   /* device-mirror 填满父容器 */
   :deep(.device-mirror) {
@@ -624,16 +924,17 @@ button { outline: none; }
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center; /* 未连接时居中 .phone-frame */
+    justify-content: center;
     min-height: 0;
-    height: 100%; /* 确保填满 */
+    height: 100%;
+    overflow: hidden;
   }
   
   /* 未连接时的 phone-frame：保持固定尺寸，不拉伸 */
   :deep(.phone-frame:not(.phone-frame--connected)) {
-    flex: none !important; /* 不被 flex 拉伸 */
-    width: 220px !important; /* 固定宽度 */
-    height: auto !important; /* 高度自适应内容 */
+    flex: none !important;
+    width: 220px !important;
+    height: auto !important;
   }
   
   /* 连接后：device-mirror 从顶部开始 */
@@ -648,6 +949,7 @@ button { outline: none; }
     min-height: 0;
     margin: 0 !important;
     background: transparent !important;
+    overflow: hidden;
   }
   
   /* 连接后的屏幕区域 */
@@ -657,26 +959,30 @@ button { outline: none; }
     align-items: center;
     justify-content: center;
     background: transparent !important;
+    overflow: hidden;
   }
   
-  /* 投屏图片 */
+  /* 投屏图片 - 保持比例，不变形 */
   :deep(.mirror-screen) {
-    width: 100%;
-    height: auto;
+    width: auto;
+    height: 100%;
+    max-width: 100%;
     max-height: 100%;
     object-fit: contain;
   }
 }
 
+/* 右侧面板 - 独立滚动，不影响左侧 */
 .steps-panel {
   flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   min-height: 0;
+  min-width: 0; /* 防止内容撑开 */
   background: #f8fafc;
-  padding: 16px 0 16px 16px;
-  border-radius: 0 0 8px 0; /* 右下圆角 */
+  padding: 0;
+  border-radius: 0 0 8px 0;
 }
 
 .steps-container {
@@ -845,5 +1151,125 @@ button { outline: none; }
     box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
     .form-row { display: flex; gap: 16px; margin-bottom: 20px; }
     .form-footer { display: flex; gap: 12px; }
+}
+
+/* ========== 教学模式新增样式 ========== */
+
+/* 模式切换器 - 右侧图标按钮组 */
+.mode-switcher {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 16px;
+  padding-left: 16px;
+  border-left: 1px solid #e2e8f0;
+}
+
+.mode-item {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #94a3b8;
+  transition: all 0.2s;
+  
+  &:hover {
+    background: #f1f5f9;
+    color: #64748b;
+  }
+  
+  &.active {
+    background: #10b981; /* 绿色 */
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+  }
+  
+  &.teach.active {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+  }
+}
+
+/* 教学模式信息 */
+.teach-info {
+  display: flex;
+  flex-direction: column;
+  margin-right: auto; /* 把自己推到左边 */
+  .page-name { font-size: 14px; font-weight: 600; color: #1e293b; }
+  .update-time { font-size: 11px; color: #94a3b8; }
+}
+
+/* AI 分析按钮 */
+.ai-analyze-btn {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+  border: none !important;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+  &:hover { 
+    background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%) !important;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  }
+}
+
+/* 元素框选层 */
+// ElementOverlay 在 DeviceMirror slot 中，样式由组件自身控制
+.element-overlay-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+}
+
+/* 扫描动效 */
+.scan-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(1px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent 0%, rgba(99, 102, 241, 0.3) 20%, rgba(99, 102, 241, 0.8) 50%, rgba(99, 102, 241, 0.3) 80%, transparent 100%);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+  animation: scan 2s linear infinite;
+}
+
+@keyframes scan {
+  0% { top: 0%; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+.scan-text {
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #a5b4fc;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 20px;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+/* AI 配置弹窗 */
+.form-tip {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 4px;
 }
 </style>

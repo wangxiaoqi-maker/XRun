@@ -38,3 +38,17 @@ async def get_db():
         finally:
             await session.close()
 
+
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def get_session():
+    """获取数据库会话（上下文管理器）"""
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+

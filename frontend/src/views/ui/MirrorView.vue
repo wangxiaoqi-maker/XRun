@@ -156,6 +156,11 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+
+// 定义组件名称，用于 keep-alive 缓存
+defineOptions({
+  name: 'MirrorView'
+})
 import { ElMessage } from 'element-plus'
 import { Camera, VideoCamera, Download, MagicStick, Delete } from '@element-plus/icons-vue'
 import DeviceMirror from '@/components/DeviceMirror.vue'

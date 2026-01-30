@@ -293,7 +293,6 @@ async def agent_terminal_ws(websocket: WebSocket, udid: str):
             return
             
         token = await sonic_service.get_token()
-        token = await sonic_service.get_token()
         # Use Agent Key if available, otherwise fallback to Secret Key (but Agent likely needs its own key)
         key = settings.SONIC_AGENT_KEY or settings.SONIC_SECRET_KEY
         
@@ -326,7 +325,6 @@ async def agent_general_ws(websocket: WebSocket, udid: str):
             return
             
         token = await sonic_service.get_token()
-        token = await sonic_service.get_token()
         # Use Agent Key if available, otherwise fallback to Secret Key (but Agent likely needs its own key)
         key = settings.SONIC_AGENT_KEY or settings.SONIC_SECRET_KEY
         
@@ -354,14 +352,68 @@ async def screenshot(udid: str, platform: str = "android"):
     raise HTTPException(status_code=500, detail="截图失败")
 
 @router.get("/{udid}/screenshot-base64")
-async def screenshot_base64(udid: str, platform: str = "android"):
-    """获取截图 Base64"""
-    if platform == "android":
-        image_data = adb_screenshot(udid)
+async def screenshot_base64(udid: str, platform: str = "android", wda_port: int = 0):
+    """获取截图 Base64（支持 Android 和 iOS）
+    
+    iOS 截图优先级：
+    1. 通过 WDA 端口直接截图（如果提供了 wda_port）
+    2. 通过 Sonic Agent 截图
+    3. 通过 tidevice/pymobiledevice3 截图
+    """
+    from apps.ui_automation.services.ios_device_service import ios_device_service
+    import httpx
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    image_data = None
+    
+    try:
+        if platform == "android":
+            image_data = adb_screenshot(udid)
+        elif platform == "ios":
+            logger.info(f"[iOS截图] 开始获取截图, udid={udid}, wda_port={wda_port}")
+            
+            # 方案1: 通过 WDA 端口直接截图
+            if wda_port > 0:
+                try:
+                    async with httpx.AsyncClient(timeout=10.0) as client:
+                        resp = await client.get(f"http://localhost:{wda_port}/screenshot")
+                        if resp.status_code == 200:
+                            # WDA 返回的是 JSON: {"value": "base64_data", ...}
+                            resp_json = resp.json()
+                            if "value" in resp_json:
+                                image_data = base64.b64decode(resp_json["value"])
+                                logger.info(f"[iOS截图] WDA 成功: {len(image_data)} bytes")
+                            else:
+                                logger.warning(f"[iOS截图] WDA 响应格式异常: {list(resp_json.keys())}")
+                except Exception as e:
+                    logger.warning(f"[iOS截图] WDA 失败: {e}")
+            
+            # 方案2: 通过 Sonic Agent 截图
+            if not image_data and sonic_service is not None:
+                image_data = await sonic_service.screenshot(udid)
+                if image_data:
+                    logger.info(f"[iOS截图] Sonic Agent 成功: {len(image_data)} bytes")
+            
+            # 方案3: 通过 tidevice/pymobiledevice3 截图
+            if not image_data:
+                logger.info("[iOS截图] 尝试 tidevice/pymobiledevice3...")
+                image_data = await ios_device_service.screenshot(udid)
+                if image_data:
+                    logger.info(f"[iOS截图] tidevice 成功: {len(image_data)} bytes")
+        
         if image_data:
             b64 = base64.b64encode(image_data).decode()
-            return {"image": f"data:image/png;base64,{b64}"}
-    raise HTTPException(status_code=500, detail="截图失败")
+            return {"screenshot": b64}
+        
+        logger.error(f"[截图] 获取失败, platform={platform}, udid={udid}")
+        raise HTTPException(status_code=500, detail="截图失败: 无数据返回")
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"[截图] 异常: {e}")
+        raise HTTPException(status_code=500, detail=f"截图失败: {str(e)}")
 
 @router.post("/{udid}/tap")
 async def tap(udid: str, x: int, y: int, platform: str = "android"):
@@ -474,85 +526,7 @@ async def mirror_websocket(
         print(f"WebSocket 错误: {e}")
 
 
-# ===== iOS 原生设备服务 API =====
-
-# 延迟导入 iOS 服务
-ios_device_service = None
-
-def get_ios_service():
-    """获取 iOS 设备服务实例"""
-    global ios_device_service
-    if ios_device_service is None:
-        try:
-            from apps.ui_automation.services.ios_device_service import ios_device_service as _ios_service
-            ios_device_service = _ios_service
-        except ImportError as e:
-            print(f"iOS 服务导入失败: {e}")
-    return ios_device_service
-
-
-@router.get("/ios/native")
-async def list_ios_native_devices():
-    """获取原生 iOS 设备列表（本地 tidevice 检测）"""
-    service = get_ios_service()
-    if not service:
-        raise HTTPException(status_code=500, detail="iOS 服务未初始化")
-    
-    devices = service.get_all_devices()
-    return {
-        "devices": [d.to_dict() for d in devices],
-        "source": "tidevice"
-    }
-
-
-@router.post("/ios/native/{udid}/start-wda")
-async def start_ios_wda(udid: str):
-    """为 iOS 设备启动 WDA"""
-    service = get_ios_service()
-    if not service:
-        raise HTTPException(status_code=500, detail="iOS 服务未初始化")
-    
-    device = service.get_device(udid)
-    if not device:
-        raise HTTPException(status_code=404, detail="设备未找到")
-    
-    # WDA 启动在设备连接时会自动进行
-    # 这里返回当前状态
-    return {
-        "udid": udid,
-        "status": device.status.value,
-        "wda_port": device.wda_port,
-        "mjpeg_port": device.mjpeg_port
-    }
-
-
-@router.get("/ios/native/{udid}/mjpeg")
-async def ios_mjpeg_proxy(udid: str):
-    """代理 iOS MJPEG 流"""
-    from fastapi.responses import StreamingResponse
-    import httpx
-    
-    service = get_ios_service()
-    if not service:
-        raise HTTPException(status_code=500, detail="iOS 服务未初始化")
-    
-    device = service.get_device(udid)
-    if not device or device.mjpeg_port == 0:
-        raise HTTPException(status_code=404, detail="设备未就绪或 WDA 未启动")
-    
-    mjpeg_url = f"http://localhost:{device.mjpeg_port}"
-    
-    async def stream_mjpeg():
-        async with httpx.AsyncClient() as client:
-            async with client.stream("GET", mjpeg_url, timeout=None) as response:
-                async for chunk in response.aiter_bytes():
-                    yield chunk
-    
-    return StreamingResponse(
-        stream_mjpeg(),
-        media_type="multipart/x-mixed-replace; boundary=--BoundaryString"
-    )
-
+# ===== iOS 原生投屏与控制 API =====
 
 @router.websocket("/ios/native/{udid}/mirror")
 async def ios_native_mirror_ws(websocket: WebSocket, udid: str):
@@ -560,32 +534,45 @@ async def ios_native_mirror_ws(websocket: WebSocket, udid: str):
     iOS 原生投屏 WebSocket
     从 MJPEG 流提取帧并通过 WebSocket 发送给前端
     """
+    print(f"[iOS Mirror] WebSocket 连接请求: {udid}")
     await websocket.accept()
     
     service = get_ios_service()
     if not service:
+        print(f"[iOS Mirror] 错误: iOS 服务未初始化")
         await websocket.close(code=1011, reason="iOS 服务未初始化")
         return
     
     device = service.get_device(udid)
     if not device:
+        print(f"[iOS Mirror] 错误: 设备 {udid} 未找到")
         await websocket.close(code=1008, reason="设备未找到")
         return
     
+    print(f"[iOS Mirror] 设备状态: wda_port={device.wda_port}, mjpeg_port={device.mjpeg_port}")
+    
     # 确保 WDA 已启动
     if device.mjpeg_port == 0:
+        print(f"[iOS Mirror] 正在启动 WDA...")
         mjpeg_url = await service.start_mirror(udid)
         if not mjpeg_url:
+            print(f"[iOS Mirror] 错误: WDA 启动失败")
             await websocket.close(code=1011, reason="WDA 启动失败")
             return
+        # 重新获取设备信息（获取更新后的端口）
+        device = service.get_device(udid)
+        print(f"[iOS Mirror] WDA 启动成功: mjpeg_port={device.mjpeg_port}")
+    
+    mjpeg_port = device.mjpeg_port
+    print(f"[iOS Mirror] 连接 MJPEG 流: http://localhost:{mjpeg_port}")
     
     import httpx
     
     try:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             async with client.stream(
                 "GET", 
-                f"http://localhost:{device.mjpeg_port}",
+                f"http://localhost:{mjpeg_port}",
                 timeout=None
             ) as response:
                 

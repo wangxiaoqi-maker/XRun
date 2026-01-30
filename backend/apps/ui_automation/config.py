@@ -22,8 +22,9 @@ class Settings(BaseSettings):
     SONIC_USERNAME: Optional[str] = None
     SONIC_PASSWORD: Optional[str] = None
     SONIC_AGENT_KEY: Optional[str] = None
-    SONIC_AGENT_HOST: Optional[str] = "localhost"
+    SONIC_AGENT_HOST: Optional[str] = "localhost"  # 本地 Agent Host（覆盖 Sonic Server 返回的地址）
     SONIC_AGENT_PORT: Optional[str] = "7777"
+    SONIC_USE_LOCAL_AGENT: bool = True  # 是否使用本地 Agent（忽略 Sonic Server 返回的 IP）
     
     # AI 模型配置（可通过前端配置）
     AI_MODEL_BASE_URL: Optional[str] = None

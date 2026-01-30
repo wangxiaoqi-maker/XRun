@@ -29,7 +29,7 @@ class ModelConfig:
 # 预置模型配置
 MODELS: dict[str, ModelConfig] = {
     "deepseek": ModelConfig("deepseek-chat", "DEEPSEEK_API_KEY", "https://api.deepseek.com/v1"),
-    "qwenvl": ModelConfig("qwen-vl-plus", "QWENVL_API_KEY", "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "qwenvl": ModelConfig("qwen-vl-max", "QWENVL_API_KEY", "https://dashscope.aliyuncs.com/compatible-mode/v1",
                           vision=True),
     "openai": ModelConfig("gpt-4", "OPENAI_API_KEY", "https://api.openai.com/v1"),
     "gpt4v": ModelConfig("gpt-4-vision-preview", "OPENAI_API_KEY", "https://api.openai.com/v1", vision=True),

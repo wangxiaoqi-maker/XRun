@@ -36,6 +36,10 @@ const routes = [
   // 设置
   { path: '/settings', name: 'Settings', component: () => import('../views/SettingsView.vue'), meta: { title: '系统设置' } },
   
+  // LLM 配置
+  { path: '/llm/providers', name: 'LLMProviders', component: () => import('../views/llm/ProvidersView.vue'), meta: { title: '模型供应商' } },
+  { path: '/llm/usage', name: 'LLMUsage', component: () => import('../views/llm/UsageView.vue'), meta: { title: '用量统计' } },
+  
   // 404 - 放在最后
   { path: '/:pathMatch(.*)*', redirect: '/dashboard' }
 ]

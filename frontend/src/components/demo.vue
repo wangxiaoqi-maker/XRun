@@ -1,253 +1,293 @@
 <template>
-  <div class="flex h-screen w-full bg-[#F5F7FA] font-sans text-slate-600 overflow-hidden">
+  <div class="flex h-screen bg-slate-50 font-sans text-slate-700 overflow-hidden">
     
-    <aside class="w-[360px] flex flex-col border-r border-slate-200 bg-white shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-10">
-      
-      <div class="h-14 border-b border-slate-100 flex items-center justify-between px-4 bg-white/50 backdrop-blur">
+    <div class="w-[380px] flex-shrink-0 bg-slate-900 flex flex-col border-r border-slate-800 shadow-2xl z-10">
+      <div class="h-10 flex items-center justify-between px-4 border-b border-slate-800 text-[10px] text-slate-400 font-mono">
         <div class="flex items-center gap-2">
-           <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-           <span class="text-xs font-bold text-slate-700">iPhone 15 Pro</span>
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]"></span>
+          <span>ONLINE: iPhone 15 Pro</span>
         </div>
-        <div class="flex items-center gap-1">
-           <button class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors" title="Back">
-             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-           </button>
-           <button class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors" title="Home">
-             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="5" width="14" height="14" rx="4"/></svg>
-           </button>
-           <button class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors" title="Inspector Mode">
-             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-           </button>
-        </div>
+        <span>FPS: 60 | 12ms</span>
       </div>
 
-      <div class="flex-1 bg-slate-50 flex items-center justify-center p-6 overflow-hidden relative group">
-        
-        <div class="relative w-full max-w-[280px] aspect-[9/19.5] bg-gray-900 rounded-[2.5rem] shadow-2xl border-[6px] border-gray-800 ring-1 ring-black/10 overflow-hidden select-none transform transition-transform duration-500 hover:scale-[1.02]">
-           
-           <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[30%] h-[24px] bg-black rounded-b-2xl z-20"></div>
-
-           <div class="absolute inset-0 bg-white flex flex-col">
-              <div class="h-24 bg-slate-100 border-b border-slate-200 flex items-end pb-3 px-4">
-                 <div class="flex-1 h-8 bg-slate-200 rounded animate-pulse"></div>
-                 <div class="w-6 h-6 bg-slate-200 rounded-full ml-3"></div>
-              </div>
-              <div class="flex-1 p-4 space-y-4 overflow-hidden">
-                 <div class="h-20 bg-blue-50 rounded-xl border border-blue-100 flex items-center justify-center text-blue-300 text-xs">File Transfer Helper</div>
-                 <div class="space-y-2">
-                    <div class="h-3 w-1/2 bg-slate-100 rounded"></div>
-                    <div class="h-3 w-3/4 bg-slate-100 rounded"></div>
-                 </div>
-                 <div class="absolute top-[30%] left-[10%] right-[10%] h-12 border-2 border-dashed border-red-500 bg-red-500/10 flex items-center justify-center z-10 cursor-pointer">
-                    <span class="bg-red-500 text-white text-[10px] px-1 absolute -top-4 left-0 rounded-t">Button: Login</span>
-                 </div>
-              </div>
-           </div>
-        </div>
-
-        <div class="absolute bottom-4 text-[10px] text-slate-400 font-mono">
-           Resolution: 1179x2556 | 60fps
-        </div>
-
-      </div>
-    </aside>
-
-    <main class="flex-1 flex flex-col min-w-0 bg-[#F5F7FA]">
-      
-      <header class="h-14 flex items-center justify-between px-6 bg-white border-b border-slate-200 shadow-sm z-10">
-         <div class="flex items-center gap-3">
-             <div class="p-1.5 bg-blue-100 rounded text-blue-600">
-               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-             </div>
-             <div>
-                <h1 class="text-sm font-bold text-slate-800">微信支付流程自动化</h1>
-                <p class="text-[10px] text-slate-400 leading-none mt-0.5">Last edited 2 mins ago</p>
-             </div>
-         </div>
-         
-         <div class="flex items-center gap-2">
-            <span class="text-xs text-slate-400 mr-2" v-if="isRunning">Executing Step {{ currentStepIndex + 1 }}/{{ steps.length }}</span>
-            <button class="h-8 px-3 bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-500 text-slate-600 rounded text-xs font-semibold transition-all">保存</button>
-            <button 
-              @click="runScript"
-              :disabled="isRunning"
-              class="h-8 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-semibold transition-all flex items-center gap-2 shadow-lg shadow-slate-200"
-            >
-              <svg v-if="!isRunning" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-              <svg v-else class="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
-              {{ isRunning ? 'Running...' : 'Run Test' }}
-            </button>
-         </div>
-      </header>
-
-      <div class="flex-1 overflow-y-auto p-6 scroll-smooth" ref="scrollContainer">
-        <div class="max-w-4xl mx-auto space-y-2.5 pb-20">
+      <div class="flex-1 flex items-center justify-center p-4 overflow-hidden relative group select-none">
+        <div class="relative w-[300px] h-[650px] bg-black rounded-[35px] border-[6px] border-slate-700 shadow-2xl overflow-hidden ring-1 ring-white/10">
           
-          <transition-group name="list">
+          <img 
+            src="https://images.unsplash.com/photo-1616348436168-de43ad0db179?q=80&w=1000&auto=format&fit=crop" 
+            class="w-full h-full object-cover opacity-95"
+            draggable="false"
+          />
+
+          <div v-if="mode === 'teach'" class="absolute inset-0 z-10">
             <div 
-              v-for="(step, index) in steps" 
-              :key="step.id"
-              :id="'step-' + index"
-              draggable="true"
-              @dragstart="onDragStart($event, index)"
-              @dragover.prevent="onDragOver($event, index)"
-              @dragend="onDragEnd"
-              class="relative bg-white rounded-lg border flex items-center overflow-hidden transition-all duration-300"
+              v-for="item in elements" 
+              :key="item.id"
+              class="absolute transition-all duration-200 border-2 rounded-[2px] cursor-pointer"
               :class="[
-                draggedIndex === index ? 'opacity-40 border-dashed border-slate-400 bg-slate-50 scale-[0.98]' : 'hover:shadow-md',
-                // 运行状态样式逻辑
-                step.status === 'running' ? 'border-blue-400 ring-1 ring-blue-400 shadow-md translate-x-1 z-10' : 
-                step.status === 'success' ? 'border-slate-100 opacity-70 hover:opacity-100' : 'border-slate-100'
+                hoverId === item.id 
+                  ? 'border-indigo-400 bg-indigo-500/20 z-20 shadow-[0_0_15px_rgba(99,102,241,0.6)]' 
+                  : 'border-blue-400/30 hover:border-blue-400 hover:bg-blue-400/10'
               ]"
+              :style="{
+                left: item.bbox[0] + '%',
+                top: item.bbox[1] + '%',
+                width: item.bbox[2] + '%',
+                height: item.bbox[3] + '%'
+              }"
+              @mouseenter="hoverId = item.id"
+              @mouseleave="hoverId = null"
+              @click="scrollToItem(item.id)"
             >
-              
-              <div 
-                 class="absolute left-0 top-0 bottom-0 w-[3px] transition-colors duration-300 z-20"
-                 :class="{
-                    'bg-blue-500': step.status === 'running',
-                    'bg-emerald-400': step.status === 'success',
-                    'bg-transparent': step.status === 'pending'
-                 }"
-              ></div>
-
-              <div class="w-10 flex-shrink-0 self-stretch flex items-center justify-center bg-slate-50/50 border-r border-slate-50">
-                <span class="text-[10px] font-mono font-medium" :class="step.status === 'running' ? 'text-blue-600 font-bold' : 'text-slate-300'">
-                  {{ String(index + 1).padStart(2, '0') }}
-                </span>
+              <div v-if="hoverId === item.id" class="absolute -top-5 left-0 bg-indigo-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm whitespace-nowrap z-30 flex items-center gap-1">
+                <span>{{ item.id }}</span>
+                <span class="opacity-50">|</span>
+                <span>{{ item.name }}</span>
               </div>
+            </div>
+            
+            <div v-if="isAnalyzing" class="absolute inset-0 z-50 bg-slate-900/40 backdrop-blur-[1px] pointer-events-none flex flex-col items-center justify-center">
+               <div class="w-full h-[2px] bg-gradient-to-r from-transparent via-indigo-400 to-transparent absolute top-0 animate-scan"></div>
+               <div class="px-3 py-1 bg-black/60 rounded-full text-indigo-300 text-xs font-mono border border-indigo-500/30">AI Analysis in Progress...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-              <div class="flex-1 flex items-center py-2.5 px-3 gap-3 overflow-hidden">
-                <span 
-                    class="flex-shrink-0 inline-flex items-center justify-center px-2 py-[2px] rounded-[4px] text-[10px] font-bold uppercase tracking-wide min-w-[50px] border shadow-sm"
-                    :class="getActionStyle(step.type).badge"
-                  >
-                    {{ getActionLabel(step.type) }}
-                </span>
+    <div class="flex-1 flex flex-col bg-slate-100 h-full min-w-0">
+      
+      <div class="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0 shadow-sm z-20">
+        
+        <div class="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
+          <button 
+            @click="mode = 'execute'"
+            class="px-4 py-1.5 text-xs font-bold rounded-md transition-all flex items-center gap-2"
+            :class="mode === 'execute' ? 'bg-white text-slate-800 shadow-sm ring-1 ring-black/5' : 'text-slate-500 hover:text-slate-700'"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            执行模式
+          </button>
+          <button 
+            @click="mode = 'teach'"
+            class="px-4 py-1.5 text-xs font-bold rounded-md transition-all flex items-center gap-2"
+            :class="mode === 'teach' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-700'"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            知识库教学
+          </button>
+        </div>
 
-                <div class="flex-1 flex items-center text-[13px] leading-none gap-2 truncate">
-                   <span v-if="step.method" class="font-medium" :class="getMethodColor(step.type)">{{ step.method }}</span>
-                   <span v-if="step.target" class="font-semibold text-slate-700">{{ step.target }}</span>
-                   <code v-if="step.value" class="px-1.5 py-0.5 bg-slate-50 border border-slate-200 text-slate-600 rounded text-[11px] font-mono">{{ step.value }}</code>
-                   <span v-if="step.suffix" class="text-blue-600 font-medium ml-0.5 text-[12px]">{{ step.suffix }}</span>
+        <div v-if="mode === 'teach'" class="flex items-center gap-4">
+           <div class="text-right hidden xl:block">
+             <div class="text-xs font-bold text-slate-700">微信-个人中心</div>
+             <div class="text-[10px] text-slate-400">上次更新: 刚刚</div>
+           </div>
+           <div class="h-6 w-px bg-slate-200 mx-2"></div>
+           <button class="text-slate-400 hover:text-red-500 p-2 rounded-full hover:bg-slate-100 transition-colors" title="清空">
+             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+           </button>
+           <button 
+             @click="analyzePage"
+             :disabled="isAnalyzing"
+             class="group relative px-5 py-2 bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-black transition-all disabled:opacity-70 shadow-lg shadow-slate-300"
+           >
+             <svg v-if="!isAnalyzing" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+             <svg v-else class="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+             <span>{{ isAnalyzing ? '正在扫描...' : 'AI 全页分析' }}</span>
+           </button>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-4 md:p-6" ref="listContainer">
+        
+        <div v-if="mode === 'teach' && elements.length === 0 && !isAnalyzing" class="h-full flex flex-col items-center justify-center opacity-40">
+           <div class="w-32 h-32 bg-slate-200 rounded-full flex items-center justify-center mb-6">
+             <svg class="text-slate-400" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12h20M2 12l5-5M22 12l-5 5"/></svg>
+           </div>
+           <p class="text-lg font-medium text-slate-500">知识库暂无当前页面数据</p>
+           <p class="text-sm text-slate-400 mt-2">点击右上角按钮开始 AI 扫描</p>
+        </div>
+
+        <div v-if="mode === 'teach' && elements.length > 0" class="max-w-6xl mx-auto space-y-6">
+          
+          <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex gap-4 items-start">
+            <div class="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
+               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <div class="flex-1">
+               <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Page Summary & Context</label>
+               <textarea 
+                  v-model="pageSummary" 
+                  rows="2"
+                  class="w-full mt-1 text-sm text-slate-700 bg-transparent border-none p-0 focus:ring-0 resize-none leading-relaxed placeholder-slate-300"
+                  placeholder="请输入页面描述..."
+               ></textarea>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            
+            <div 
+              v-for="item in elements" 
+              :key="item.id"
+              :id="'item-' + item.id"
+              class="group bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all duration-200 flex flex-col relative overflow-hidden"
+              :class="{'ring-2 ring-indigo-500 ring-offset-2': hoverId === item.id}"
+              @mouseenter="hoverId = item.id"
+              @mouseleave="hoverId = null"
+            > 
+              <div class="p-3 flex gap-3 border-b border-slate-50 bg-gradient-to-b from-white to-slate-50/50">
+                <div class="w-14 h-14 bg-slate-200 rounded-lg border border-slate-300 overflow-hidden shrink-0 relative shadow-inner">
+                   <div 
+                     class="w-full h-full bg-no-repeat transition-transform duration-500 group-hover:scale-110"
+                     :style="calculateBackgroundStyle(item.bbox)"
+                   ></div>
                 </div>
 
-                <div class="flex items-center justify-end pl-2 min-w-[80px]">
-                   <div v-if="step.status === 'running'" class="flex items-center gap-1.5 text-blue-600">
-                      <svg class="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+                <div class="flex-1 min-w-0 flex flex-col justify-center">
+                   <div class="flex items-center justify-between">
+                      <input 
+                        v-model="item.name" 
+                        class="font-bold text-sm text-slate-800 bg-transparent border-none p-0 focus:ring-0 w-full truncate hover:text-indigo-600 transition-colors"
+                      />
+                      <span class="text-[9px] font-mono px-1.5 py-0.5 bg-slate-100 text-slate-400 rounded-full">
+                        {{ item.confidence }}%
+                      </span>
                    </div>
-                   <div v-if="step.status === 'success'" class="flex items-center gap-1 text-emerald-500 animate-in fade-in zoom-in">
-                      <span class="text-[10px] font-mono text-slate-300 mr-1">{{ step.actualDuration }}</span>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                   
+                   <div class="flex items-center gap-2 mt-1.5">
+                     <span class="text-[10px] font-bold px-2 py-0.5 rounded border" 
+                       :class="{
+                         'bg-blue-50 text-blue-600 border-blue-100': item.type === 'Button',
+                         'bg-green-50 text-green-600 border-green-100': item.type === 'Input',
+                         'bg-orange-50 text-orange-600 border-orange-100': item.type === 'Icon',
+                         'bg-slate-50 text-slate-600 border-slate-100': item.type === 'Text'
+                       }">
+                       {{ item.type }}
+                     </span>
+                     
+                     <span v-if="item.ocr" class="flex items-center gap-1 text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded truncate max-w-[120px]">
+                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
+                       {{ item.ocr }}
+                     </span>
                    </div>
                 </div>
               </div>
 
-              <div v-if="!isRunning" class="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1 opacity-0 hover:opacity-100 transition-opacity bg-white pl-2 shadow-[-10px_0_10px_white]">
-                 <button class="p-1.5 hover:bg-slate-100 rounded text-slate-400 hover:text-blue-600"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                 <button class="p-1.5 hover:bg-slate-100 rounded text-slate-400 hover:text-red-600"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+              <div class="p-3 bg-white flex-1 relative">
+                <label class="text-[9px] font-bold text-slate-300 uppercase mb-1 block">Visual Context</label>
+                <textarea 
+                  v-model="item.desc" 
+                  rows="2"
+                  class="w-full text-xs text-slate-600 bg-slate-50 border border-transparent rounded-md px-2 py-1.5 focus:bg-white focus:border-indigo-300 focus:ring-2 focus:ring-indigo-50 outline-none resize-none leading-relaxed transition-all hover:bg-white hover:border-slate-200"
+                ></textarea>
+                
+                <div class="absolute bottom-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 backdrop-blur pl-2 rounded-l-lg">
+                   <button class="p-1.5 hover:bg-slate-100 rounded text-slate-400 hover:text-indigo-600" title="重新生成">
+                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+                   </button>
+                   <button class="p-1.5 hover:bg-red-50 rounded text-slate-400 hover:text-red-500" @click="removeElement(item.id)" title="删除">
+                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                   </button>
+                </div>
               </div>
 
             </div>
-          </transition-group>
+            
+            <div class="border-2 border-dashed border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center text-slate-400 min-h-[140px] hover:border-indigo-300 hover:text-indigo-500 hover:bg-indigo-50/10 cursor-pointer transition-all">
+               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+               <span class="text-xs font-bold mt-2">手动添加元素</span>
+            </div>
+
+          </div>
         </div>
+        
+        <div v-if="mode === 'execute'" class="h-full flex flex-col items-center justify-center text-slate-400">
+           <div class="text-6xl mb-4">🤖</div>
+           <h3 class="text-slate-600 font-bold text-lg">执行模式就绪</h3>
+           <p class="text-sm mt-2">点击顶部切换到“知识库教学”模式进行录入</p>
+        </div>
+
       </div>
-      
-      <div class="h-16 bg-white border-t border-slate-100 flex items-center justify-center px-6">
-         <div class="w-full max-w-2xl relative group">
-             <div class="absolute inset-0 bg-blue-100 rounded-lg opacity-20 blur group-hover:opacity-40 transition duration-500"></div>
-             <div class="relative bg-white rounded-lg flex items-center p-1.5 border border-blue-100 shadow-sm">
-                <div class="pl-3 pr-2 text-blue-500"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
-                <input type="text" class="flex-1 py-1.5 bg-transparent border-none focus:ring-0 text-slate-700 placeholder-slate-400 text-sm" placeholder="Ask AI to add step: 'Wait for Login button then Click'...">
-                <button class="px-3 py-1 bg-slate-50 hover:bg-blue-50 text-slate-500 hover:text-blue-600 rounded text-xs font-medium border border-slate-200 transition-colors">Generate</button>
-             </div>
+
+      <div v-if="mode === 'teach' && elements.length > 0" class="h-16 bg-white border-t border-slate-200 px-6 flex items-center justify-between shrink-0 z-20 shadow-[0_-5px_20px_rgba(0,0,0,0.03)]">
+         <div class="flex items-center gap-4">
+            <div class="text-xs text-slate-500 font-medium bg-slate-100 px-3 py-1.5 rounded-full">
+               已识别 <span class="text-indigo-600 font-bold">{{ elements.length }}</span> 个元素
+            </div>
+            <div class="text-[10px] text-slate-400">预计消耗向量存储: 12KB</div>
+         </div>
+         <div class="flex gap-3">
+           <button class="px-5 py-2.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors">取消变更</button>
+           <button class="px-6 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transition-all transform active:scale-95 flex items-center gap-2">
+             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+             保存到知识库
+           </button>
          </div>
       </div>
 
-    </main>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 
-// 样式配置与之前的保持一致
-const actionConfig = {
-  click: { label: '点击', badge: 'bg-blue-50 text-blue-600 border-blue-100' },
-  input: { label: '输入', badge: 'bg-purple-50 text-purple-600 border-purple-100' },
-  swipe: { label: '滑动', badge: 'bg-orange-50 text-orange-600 border-orange-100' },
-  wait:  { label: '等待', badge: 'bg-slate-100 text-slate-600 border-slate-200' },
-  check: { label: '检查', badge: 'bg-teal-50 text-teal-600 border-teal-100' },
+const mode = ref('teach');
+const isAnalyzing = ref(false);
+const hoverId = ref(null);
+const pageSummary = ref("微信-个人中心页，包含顶部的用户信息卡片，以及下方的支付、收藏等入口列表。");
+
+// 模拟更丰富的数据
+const elements = ref([
+  { id: 1, name: '微信图标', type: 'Icon', ocr: null, bbox: [5, 42, 18, 9], confidence: 99, desc: '绿色的方形App图标，经典对话气泡Logo。' },
+  { id: 2, name: '支付入口', type: 'Button', ocr: '支付', bbox: [5, 30, 90, 8], confidence: 95, desc: '列表项，包含绿色钱包图标和文字“支付”，右侧有箭头。' },
+  { id: 3, name: '收藏', type: 'Button', ocr: '收藏', bbox: [5, 40, 90, 8], confidence: 92, desc: '列表项，包含彩色立方体图标。' },
+  { id: 4, name: '搜索框', type: 'Input', ocr: '搜索', bbox: [10, 5, 80, 6], confidence: 98, desc: '顶部灰色圆角矩形区域，内含放大镜图标。' },
+  { id: 5, name: '底部导航-我', type: 'Text', ocr: '我', bbox: [75, 92, 20, 8], confidence: 88, desc: '底部Tab栏最右侧的选项，图标为高亮绿色。' },
+]);
+
+const calculateBackgroundStyle = (bbox) => {
+  const [left, top, width, height] = bbox;
+  const imgUrl = 'https://images.unsplash.com/photo-1616348436168-de43ad0db179?q=80&w=1000&auto=format&fit=crop';
+  const safeW = Math.max(width, 1);
+  const safeH = Math.max(height, 1);
+  return {
+    backgroundImage: `url('${imgUrl}')`,
+    backgroundSize: `${(100 / safeW) * 100}% ${(100 / safeH) * 100}%`,
+    backgroundPosition: `${(left / (100 - safeW)) * 100}% ${(top / (100 - safeH)) * 100}%`
+  };
 };
 
-const initialSteps = [
-  { id: 1, type: 'wait', value: '3秒', status: 'pending', duration: 3000 },
-  { id: 2, type: 'swipe', method: '向上', target: '文件传输助手', suffix: '出现', status: 'pending', duration: 1200 },
-  { id: 3, type: 'click', method: '文字', target: '文件传输助手', status: 'pending', duration: 500 },
-  { id: 4, type: 'input', method: '变量', target: 'random', value: '=', status: 'pending', duration: 200 },
-  { id: 5, type: 'click', method: 'ID', target: '微信input', status: 'pending', duration: 800 },
-  { id: 6, type: 'input', value: '${wechat_pay_link}', status: 'pending', duration: 600 },
-  { id: 7, type: 'click', method: '文字', target: '发送', status: 'pending', duration: 400 },
-  { id: 8, type: 'check', method: '文字', target: '支付成功', suffix: '存在', status: 'pending', duration: 300 },
-];
-
-const steps = ref(JSON.parse(JSON.stringify(initialSteps)));
-const isRunning = ref(false);
-const draggedIndex = ref(null);
-const currentStepIndex = ref(0);
-
-// 辅助函数
-const getActionStyle = (type) => actionConfig[type] || actionConfig.click;
-const getActionLabel = (type) => actionConfig[type]?.label || type;
-const getMethodColor = (type) => {
-    if (type === 'swipe') return 'text-orange-500';
-    if (type === 'click') return 'text-red-500';
-    if (type === 'input') return 'text-purple-500';
-    if (type === 'check') return 'text-teal-600';
-    return 'text-slate-500';
-}
-
-// 拖拽逻辑
-const onDragStart = (e, index) => { draggedIndex.value = index; e.dataTransfer.effectAllowed = 'move'; };
-const onDragOver = (e, index) => {
-  if (draggedIndex.value === null || draggedIndex.value === index) return;
-  const item = steps.value[draggedIndex.value];
-  steps.value.splice(draggedIndex.value, 1);
-  steps.value.splice(index, 0, item);
-  draggedIndex.value = index;
+const analyzePage = () => {
+  isAnalyzing.value = true;
+  setTimeout(() => isAnalyzing.value = false, 2000);
 };
-const onDragEnd = () => { draggedIndex.value = null; };
 
-// 运行逻辑 (带滚动)
-const runScript = async () => {
-  if (isRunning.value) return;
-  isRunning.value = true;
-  steps.value.forEach(s => { s.status = 'pending'; delete s.actualDuration; });
+const removeElement = (id) => {
+  elements.value = elements.value.filter(e => e.id !== id);
+};
 
-  for (let i = 0; i < steps.value.length; i++) {
-    currentStepIndex.value = i;
-    const step = steps.value[i];
-    step.status = 'running';
-    
-    // 自动滚动到对应元素
-    const el = document.getElementById('step-' + i);
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-    await new Promise(resolve => setTimeout(resolve, step.duration || 500));
-    
-    step.status = 'success';
-    step.actualDuration = (step.duration < 1000) ? `${step.duration}ms` : `${(step.duration/1000).toFixed(1)}s`;
-  }
-  isRunning.value = false;
+const scrollToItem = (id) => {
+  const el = document.getElementById('item-' + id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  hoverId.value = id;
 };
 </script>
 
 <style scoped>
-/* 隐藏滚动条但保留功能 */
-.overflow-y-auto::-webkit-scrollbar { width: 6px; }
-.overflow-y-auto::-webkit-scrollbar-track { background: transparent; }
-.overflow-y-auto::-webkit-scrollbar-thumb { background-color: rgba(203, 213, 225, 0.5); border-radius: 3px; }
-.overflow-y-auto::-webkit-scrollbar-thumb:hover { background-color: rgba(148, 163, 184, 0.8); }
+/* 扫描动画 */
+@keyframes scan {
+  0% { top: 0%; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+.animate-scan {
+  animation: scan 2s linear infinite;
+}
 
-.list-enter-active, .list-leave-active { transition: all 0.3s ease; }
-.list-enter-from, .list-leave-to { opacity: 0; transform: translateX(20px); }
+/* 隐藏滚动条但保留滚动功能 (可选，看个人喜好) */
+/* ::-webkit-scrollbar { width: 0px; } */
 </style>

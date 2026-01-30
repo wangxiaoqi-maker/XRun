@@ -27,6 +27,16 @@ python-dotenv==1.0.1
 loguru==0.7.3
 greenlet==3.1.1
 
-# AI 相关（根据需要添加）
-# openai>=1.0.0
-# anthropic>=0.8.0
+# AI 相关
+openai>=1.0.0
+autogen-core>=0.4.0
+autogen-ext>=0.4.0
+
+# 向量数据库
+pymilvus>=2.4.0
+
+# 图像处理
+Pillow>=10.0.0
+
+# 通义千问（可选）
+# dashscope>=1.14.0

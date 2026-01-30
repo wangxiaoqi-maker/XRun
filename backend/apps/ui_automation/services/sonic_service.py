@@ -151,6 +151,14 @@ class SonicService:
                         # 解析分辨率
                         size = item.get("size", "0x0")
                         
+                        # 如果启用本地 Agent，使用配置的 host；否则使用 Sonic Server 返回的
+                        if settings.SONIC_USE_LOCAL_AGENT:
+                            agent_host = settings.SONIC_AGENT_HOST or "localhost"
+                            agent_port = int(settings.SONIC_AGENT_PORT or 7777)
+                        else:
+                            agent_host = agent.get("host", "localhost")
+                            agent_port = agent.get("port", 7777)
+                        
                         devices.append(SonicDevice(
                             id=item.get("id", 0),
                             udid=item.get("udId", ""),
@@ -162,8 +170,8 @@ class SonicService:
                             resolution=size,
                             status=item.get("status", "OFFLINE"),
                             agent_id=agent_id,
-                            agent_host=agent.get("host", "localhost"),
-                            agent_port=agent.get("port", 7777)
+                            agent_host=agent_host,
+                            agent_port=agent_port
                         ))
                 except Exception as e:
                     logger.warning(f"获取 Agent {agent_id} 设备失败: {e}")

@@ -200,10 +200,36 @@ class IOSDeviceService:
         pass
     
     async def start_mirror(self, udid: str) -> Optional[str]:
-        return None
+        """
+        启动投屏服务（自动启动 WDA）
+        返回 MJPEG 流 URL
+        """
+        device = self.devices.get(udid)
+        if not device:
+            print(f"设备 {udid} 未找到")
+            return None
+        
+        # 如果 WDA 未启动，先启动
+        if device.wda_port == 0:
+            wda_port = await self.start_wda(udid)
+            if not wda_port:
+                print(f"WDA 启动失败: {udid}")
+                return None
+        
+        # 设置 MJPEG 端口（WDA 端口 + 1）
+        if device.mjpeg_port == 0:
+            device.mjpeg_port = device.wda_port + 1
+            device.status = IOSDeviceStatus.MIRRORING
+        
+        mjpeg_url = f"http://localhost:{device.mjpeg_port}"
+        print(f"投屏已启动: {mjpeg_url}")
+        return mjpeg_url
         
     async def stop_mirror(self, udid: str):
-        pass
+        """停止投屏"""
+        device = self.devices.get(udid)
+        if device:
+            device.status = IOSDeviceStatus.READY
         
     async def tap(self, udid: str, x: int, y: int) -> bool:
         return False
@@ -213,6 +239,86 @@ class IOSDeviceService:
         
     async def home(self, udid: str) -> bool:
         return False
+
+    async def screenshot(self, udid: str) -> Optional[bytes]:
+        """
+        使用 pymobiledevice3 截图 (支持 iOS 17+)
+        """
+        import io
+        
+        # 先刷新设备列表
+        self.refresh_devices()
+        
+        device = self.devices.get(udid)
+        if not device:
+            print(f"[iOS截图] 设备 {udid} 未找到，尝试直接截图...")
+        elif device.status == IOSDeviceStatus.OFFLINE:
+            print(f"[iOS截图] 设备 {udid} 离线")
+            return None
+        
+        try:
+            from pymobiledevice3.lockdown import create_using_usbmux
+            from pymobiledevice3.services.screenshot import ScreenshotService
+            
+            print(f"[iOS截图] 使用 pymobiledevice3, udid={udid}")
+            
+            # 连接设备
+            lockdown = create_using_usbmux(serial=udid)
+            
+            # 截图
+            screenshot_service = ScreenshotService(lockdown)
+            png_data = screenshot_service.take_screenshot()
+            
+            if png_data:
+                # pymobiledevice3 返回的是 PIL Image，需要转为 bytes
+                if hasattr(png_data, 'tobytes'):
+                    # 如果是 PIL Image
+                    buffer = io.BytesIO()
+                    png_data.save(buffer, format='PNG')
+                    data = buffer.getvalue()
+                else:
+                    # 直接是 bytes
+                    data = png_data
+                
+                print(f"[iOS截图] 成功，大小: {len(data)} bytes")
+                return data
+            
+            return None
+            
+        except ImportError as e:
+            print(f"[iOS截图] pymobiledevice3 未安装: {e}")
+            return await self._screenshot_with_tidevice(udid)
+        except Exception as e:
+            print(f"[iOS截图] pymobiledevice3 异常: {e}")
+            # Fallback to tidevice
+            return await self._screenshot_with_tidevice(udid)
+    
+    async def _screenshot_with_tidevice(self, udid: str) -> Optional[bytes]:
+        """Fallback: 使用 tidevice 截图"""
+        import tempfile
+        import os
+        
+        try:
+            with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
+                tmp_path = tmp.name
+            
+            cmd = ["tidevice", "-u", udid, "screenshot", tmp_path]
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            
+            if result.returncode != 0:
+                print(f"[iOS截图] tidevice 失败: {result.stderr}")
+                return None
+            
+            if os.path.exists(tmp_path):
+                with open(tmp_path, 'rb') as f:
+                    data = f.read()
+                os.unlink(tmp_path)
+                return data
+            
+            return None
+        except Exception as e:
+            print(f"[iOS截图] tidevice 异常: {e}")
+            return None
 
     async def stop(self):
         self._running = False

@@ -19,7 +19,7 @@ export const deviceApi = {
 
   // 截图
   screenshot: (udid, platform) => api.get(`/devices/${udid}/screenshot?platform=${platform}`, { responseType: 'blob' }),
-  screenshotBase64: (udid, platform) => api.get(`/devices/${udid}/screenshot-base64?platform=${platform}`),
+  screenshotBase64: (udid, platform, wdaPort = 0) => api.get(`/devices/${udid}/screenshot-base64?platform=${platform}&wda_port=${wdaPort}`),
 
   // 设备控制
   tap: (udid, x, y, platform) => api.post(`/devices/${udid}/tap?x=${x}&y=${y}&platform=${platform}`),
@@ -116,6 +116,54 @@ export const aiConfigApi = {
   activate: (id) => api.post(`/ai-config/${id}/activate`),
   getActive: () => api.get('/ai-config/active/current'),
   test: (data) => api.post('/ai-config/test', data)
+}
+
+// ===== AI 知识库 API =====
+export const knowledgeApi = {
+  // 分析页面截图（视觉模型处理较慢，超时设为 5 分钟）
+  analyzePage: (data) => api.post('/ai/analyze-page', data, { timeout: 300000 }),
+  
+  // 语义搜索元素
+  searchElements: (data) => api.post('/ai/search-elements', data),
+  
+  // 获取应用列表
+  getApps: (params) => api.get('/ai/apps', { params }),
+  
+  // 获取页面列表
+  getPages: (params) => api.get('/ai/pages', { params }),
+  
+  // 获取页面元素
+  getPageElements: (pageId, params) => api.get(`/ai/pages/${pageId}/elements`, { params }),
+  
+  // 获取统计信息
+  getStats: () => api.get('/ai/stats'),
+  
+  // 删除页面
+  deletePage: (pageId) => api.delete(`/ai/pages/${pageId}`),
+  
+  // 删除应用
+  deleteApp: (appId) => api.delete(`/ai/apps/${appId}`)
+}
+
+// ===== LLM 配置 API =====
+export const llmApi = {
+  // 供应商管理
+  listProviders: (includeDisabled = false) => api.get(`/llm/providers?include_disabled=${includeDisabled}`),
+  getProvider: (id, includeKey = false) => api.get(`/llm/providers/${id}?include_key=${includeKey}`),
+  createProvider: (data) => api.post('/llm/providers', data),
+  updateProvider: (id, data) => api.put(`/llm/providers/${id}`, data),
+  deleteProvider: (id) => api.delete(`/llm/providers/${id}`),
+  
+  // 模型管理
+  listModels: (params) => api.get('/llm/models', { params }),
+  createModel: (data) => api.post('/llm/models', data),
+  updateModel: (id, data) => api.put(`/llm/models/${id}`, data),
+  deleteModel: (id) => api.delete(`/llm/models/${id}`),
+  
+  // 用量统计
+  getUsageStats: (hours = 24, providerId) => api.get('/llm/usage/stats', { params: { hours, provider_id: providerId } }),
+  getUsageTrend: (hours = 24, interval = 'hour') => api.get('/llm/usage/trend', { params: { hours, interval } }),
+  getUsageByModel: (hours = 24) => api.get('/llm/usage/by-model', { params: { hours } })
 }
 
 // ===== 系统 API =====

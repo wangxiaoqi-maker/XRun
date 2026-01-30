@@ -105,6 +105,21 @@
             <span>测试计划</span>
           </span>
           
+          <!-- AI 中心 -->
+          <el-dropdown trigger="click" @command="navTo" popper-class="nav-dropdown">
+            <span class="nav-item" :class="{ active: currentNav === 'llm' }">
+              <el-icon><MagicStick /></el-icon>
+              <span>AI 中心</span>
+              <el-icon class="arrow"><ArrowDown /></el-icon>
+            </span>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="/llm/providers">模型供应商</el-dropdown-item>
+                <el-dropdown-item command="/llm/usage">用量统计</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+          
           <!-- 项目管理 -->
           <el-dropdown trigger="click" @command="navTo" popper-class="nav-dropdown">
             <span class="nav-item" :class="{ active: currentNav === 'project' }">
@@ -164,7 +179,11 @@
       
       <!-- 内容区 -->
       <main class="main-content">
-        <router-view />
+        <router-view v-slot="{ Component }">
+          <keep-alive :include="cachedViews">
+            <component :is="Component" />
+          </keep-alive>
+        </router-view>
       </main>
     </div>
   </el-config-provider>
@@ -177,7 +196,7 @@ import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 import { 
   ArrowDown, ArrowLeft, ArrowRight, Close,
   DataLine, Monitor, ChromeFilled, Connection, 
-  Coin, Iphone, Calendar, Folder
+  Coin, Iphone, Calendar, Folder, MagicStick
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -186,6 +205,9 @@ const tabsWrapper = ref(null)
 
 const username = ref('测试工程师')
 const currentPath = computed(() => route.path)
+
+// 需要缓存的页面组件名称（保持设备连接等状态）
+const cachedViews = ref(['ScriptEditorView', 'CaseEditorView', 'MirrorView'])
 
 const currentNav = computed(() => {
   const path = route.path
@@ -196,6 +218,7 @@ const currentNav = computed(() => {
   if (path.startsWith('/data')) return 'data'
   if (path.startsWith('/device')) return 'device'
   if (path.startsWith('/plan')) return 'plan'
+  if (path.startsWith('/llm')) return 'llm'
   if (path.startsWith('/project')) return 'project'
   return ''
 })
@@ -274,7 +297,9 @@ body {
 .app-layout {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh; /* 关键：固定高度为视口高度，不允许超出 */
+  max-height: 100vh;
+  overflow: hidden;
 }
 
 // ==================== 第一行：白色主导航栏 ====================
@@ -522,11 +547,12 @@ body {
 // ==================== 内容区 ====================
 .main-content {
   flex: 1;
-  padding: 0; /* 移除内边距，让子页面自己控制 */
-  overflow: hidden; /* 改为 hidden，让子页面控制滚动 */
+  padding: 0;
+  overflow: hidden;
   background: var(--bg-color);
-  display: flex; /* 使子页面能够填满 */
+  display: flex;
   flex-direction: column;
+  min-height: 0; /* 关键：允许 flex 子元素正确收缩 */
 }
 
 // ==================== 下拉菜单 ====================
@@ -556,4 +582,73 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #c0c4cc; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #909399; }
+
+// ==================== Element Plus 弹窗圆角 ====================
+.el-dialog {
+  border-radius: 10px !important;
+  overflow: hidden;
+  
+  .el-dialog__header {
+    padding: 10px 15px;
+    margin-right: 0;
+    
+    .el-dialog__title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1e293b;
+    }
+    
+    .el-dialog__headerbtn {
+      top: 12px;
+      right: 14px;
+      width: 24px;
+      height: 24px;
+      
+      .el-dialog__close {
+        font-size: 14px;
+      }
+    }
+  }
+  
+  .el-dialog__body {
+    padding: 10px 14px;
+  }
+  
+  .el-dialog__footer {
+    padding: 10px 15px 12px;
+  }
+}
+
+// Message Box 弹窗圆角
+.el-message-box {
+  border-radius: 12px !important;
+  padding-bottom: 16px;
+  
+  .el-message-box__header {
+    padding: 14px 16px 10px;
+  }
+  
+  .el-message-box__title {
+    font-size: 15px;
+    font-weight: 600;
+  }
+  
+  .el-message-box__content {
+    padding: 10px 16px;
+  }
+  
+  .el-message-box__btns {
+    padding: 8px 16px 0;
+  }
+}
+
+// Popover 圆角
+.el-popover {
+  border-radius: 12px !important;
+}
+
+// Select dropdown 圆角
+.el-select-dropdown {
+  border-radius: 10px !important;
+}
 </style>

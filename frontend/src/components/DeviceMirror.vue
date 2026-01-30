@@ -7,7 +7,8 @@
           <span class="device-name">{{ selectedDevice?.manufacturer }}</span>
           <span class="device-model">{{ selectedDevice?.model }}</span>
         </div>
-        <span class="fps-badge">{{ fps }} FPS</span>
+        <span class="fps-badge" v-if="selectedDevice?.platform !== 'ios'">{{ fps }} FPS</span>
+        <span class="fps-badge" v-else>--</span>
       </div>
       <div class="header-right">
         <el-tag size="small" type="info" effect="plain" class="mode-tag">{{ screenMode }}</el-tag>
@@ -56,15 +57,21 @@
           <el-icon class="is-loading" :size="32"><Loading /></el-icon>
           <p>画面加载中...</p>
         </div>
-        <img
-          v-show="connected && currentFrame && imageLoaded"
-          ref="screenImg"
-          :src="currentFrame"
-          class="mirror-screen"
-          @mousedown="handleMouseDown"
-          @load="onImageLoad"
-          draggable="false"
-        />
+        <!-- 投屏画面容器（用于定位叠加层） -->
+        <div class="screen-wrapper" ref="screenWrapperRef">
+          <img
+            v-show="connected && currentFrame && imageLoaded"
+            ref="screenImg"
+            :src="currentFrame"
+            class="mirror-screen"
+            @mousedown="handleMouseDown"
+            @load="onImageLoad"
+            draggable="false"
+          />
+          
+          <!-- 叠加层 slot（用于 ElementOverlay 等） -->
+          <slot name="overlay" :device-width="deviceWidth" :device-height="deviceHeight"></slot>
+        </div>
 
       </div>
       
@@ -277,7 +284,7 @@ let retryCount = 0
 const screenMode = ref('scrcpy') // 'scrcpy' | 'minicap'
 const wdaPort = ref(0) // WDA 端口
 
-// FPS 统计
+// FPS 统计（仅 Android 有效，iOS MJPEG 流无法准确统计）
 const fps = ref(0)
 let frameCount = 0
 let lastFpsTime = Date.now()
@@ -295,6 +302,15 @@ let heartbeatTimer = null
 onMounted(async () => {
   await refreshDevices()
   
+  // FPS 统计定时器（每秒更新，不输出日志）
+  setInterval(() => {
+    const now = Date.now()
+    const elapsed = (now - lastFpsTime) / 1000
+    fps.value = Math.round(frameCount / elapsed)
+    frameCount = 0
+    lastFpsTime = now
+  }, 1000)
+  
   // 如果传入了 udid，自动连接
   if (props.udid) {
     const target = allDevices.value.find(d => d.udid === props.udid)
@@ -309,14 +325,6 @@ onMounted(async () => {
     }
   }
   
-  setInterval(() => {
-    const now = Date.now()
-    const elapsed = (now - lastFpsTime) / 1000
-    fps.value = Math.round(frameCount / elapsed)
-    console.log('DeviceMirror: FPS updated to', fps.value)
-    frameCount = 0
-    lastFpsTime = now
-  }, 1000)
 })
 
 onUnmounted(() => {
@@ -327,7 +335,6 @@ onUnmounted(() => {
 
 async function getSonicToken() {
   try {
-    console.log('正在获取 Sonic Token...')
     const res = await fetch('/sonic/server/api/controller/users/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -336,14 +343,10 @@ async function getSonicToken() {
     const data = await res.json()
     if (data.code === 2000) {
       sonicToken = data.data
-      console.log('✓ Sonic Token 获取成功')
       return true
-    } else {
-      console.error('Sonic Token 获取失败:', data)
-      return false
     }
+    return false
   } catch (e) {
-    console.error('❌ 无法连接到 Sonic Server:', e.message)
     return false
   }
 }
@@ -358,11 +361,8 @@ async function refreshDevices() {
     let serverDevices = []
     try {
       serverDevices = await getDevicesFromSonicServer()
-    } catch (e) {
-      console.warn('Sonic Server 连接失败，忽略:', e)
-    }
+    } catch (e) {}
 
-    // 2. 获取本地后端管理的设备 (Android + iOS)
     let localDevices = { android: [], ios: [] }
     try {
       const res = await deviceApi.list()
@@ -370,9 +370,7 @@ async function refreshDevices() {
         localDevices.android = res.data.android || []
         localDevices.ios = res.data.ios || []
       }
-    } catch (e) {
-      console.warn('本地设备列表获取失败:', e)
-    }
+    } catch (e) {}
     
     // 3. 特别尝试获取原生 iOS (tidevice) - 补充本地发现
     try {
@@ -398,9 +396,7 @@ async function refreshDevices() {
                 }
             })
         }
-    } catch (e) {
-        console.warn('原生 iOS 列表获取失败:', e)
-    }
+    } catch (e) {}
 
     // 4. 合并结果 (优先使用 Server 的状态信息，因为它有占用状态)
     // 如果 Server 返回了数据，我们以 Server 为主，但也可以补充本地独有的设备
@@ -413,11 +409,7 @@ async function refreshDevices() {
        // 如果 Server 没数据，完全使用本地
        devices.value = localDevices
     }
-    
-    console.log('设备列表更新:', devices.value)
-    
   } catch (e) {
-    console.error('加载设备失败:', e)
     ElMessage.error('加载设备失败')
   } finally {
     loadingDevices.value = false
@@ -466,15 +458,14 @@ async function getDevicesFromSonicServer() {
       is_busy: d.status === 'DEBUGGING',  // DEBUGGING 表示设备被占用
       user: d.user,  // 当前占用用户
       agent_id: d.agentId,
-      // 从 Sonic Server 获取 Agent 地址，如果没有则使用默认值
-      agent_host: d.agentHost || '192.168.0.105',
+      // Agent 运行在本地时，使用 localhost（不受本地 IP 变化影响）
+      agent_host: d.agentHost || 'localhost',
       agent_port: d.agentPort || 7777,
       cpu: d.cpu || '-',
       mem: d.mem || '-',
       remark: d.remark || d.comment || '-'
     }))
   } catch (e) {
-    console.error('从 Sonic Server 获取设备失败:', e)
     return []
   }
 }
@@ -550,13 +541,25 @@ function disconnect() {
     heartbeatTimer = null
   }
   
-  // 关闭投屏连接
+  // 关闭 iOS WebSocket 连接 - 这会触发 Agent 停止 WDA
+  if (iosWs) {
+    try { 
+      // 发送关闭消息给 Agent，确保 WDA 停止
+      if (iosWs.readyState === WebSocket.OPEN) {
+        iosWs.send(JSON.stringify({ msg: 'close' }))
+      }
+      iosWs.close() 
+    } catch (e) {}
+    iosWs = null
+  }
+  
+  // 关闭投屏连接 (Android)
   if (screenWs) {
     try { screenWs.close() } catch (e) {}
     screenWs = null
   }
   
-  // 关闭控制连接 - 这会触发 Agent 释放设备锁
+  // 关闭控制连接 (Android) - 这会触发 Agent 释放设备锁
   if (controlWs) {
     try { controlWs.close() } catch (e) {}
     controlWs = null
@@ -574,6 +577,8 @@ function disconnect() {
   controlStatus.value = 'disconnected'
   selectedDevice.value = null
   retryCount = 0
+  wdaPort.value = 0
+  imageLoaded.value = false  // 重置图片加载状态
 }
 
 /**
@@ -610,13 +615,11 @@ async function startMirror() {
   
   // 获取 Token
   if (!sonicToken) {
-    ElMessage.info('正在连接 Sonic Server...')
     const ok = await getSonicToken()
     if (!ok) {
-      connectionError.value = 'Sonic Server 连接失败！请确认 Sonic Server 是否运行在 http://113.249.104.59:3001'
+      connectionError.value = 'Sonic Server 连接失败'
       loading.value = false
       isConnecting.value = false
-      ElMessage.error('无法连接到 Sonic Server，Android 设备需要 Sonic Server 支持')
       return
     }
   }
@@ -625,57 +628,38 @@ async function startMirror() {
   const host = agent_host === 'host.docker.internal' ? 'localhost' : (agent_host || 'localhost')
   const port = agent_port || 7777
   
-  console.log('=== 连接信息 ===')
-  console.log('设备 UDID:', udid)
-  console.log('Agent Host:', agent_host, '-> 解析为:', host)
-  console.log('Agent Port:', port)
-  console.log('Platform:', platform)
-  
   // iOS 使用 WDA
   if (platform === 'iOS' || platform === 'ios') {
     startIOSMirror(udid)
     return
   }
   
-  // ===== 步骤 1: 建立控制 WebSocket =====
+  // Android: 建立控制和投屏 WebSocket
   const controlUrl = `ws://${host}:${port}/websockets/android/${SONIC_AGENT_KEY}/${udid}/${sonicToken}`
-  console.log('=== 步骤1: 建立控制连接 ===')
-  console.log('控制 URL:', controlUrl)
   
   try {
     await openControlSocket(controlUrl)
   } catch (e) {
-    console.error('控制连接失败:', e)
     connectionError.value = '无法连接设备，请确认设备在线'
     loading.value = false
     isConnecting.value = false
     return
   }
   
-  // ===== 步骤 2: 建立投屏 WebSocket =====
   const screenUrl = `ws://${host}:${port}/websockets/android/screen/${SONIC_AGENT_KEY}/${udid}/${sonicToken}`
-  console.log('=== 步骤2: 建立投屏连接 ===')
-  console.log('投屏 URL:', screenUrl)
-  
   openScreenSocket(screenUrl)
 }
 
 /**
  * 建立控制 WebSocket 连接
- * 这个连接会触发 Sonic Agent 的设备初始化流程，并且必须保持打开
  */
 function openControlSocket(url) {
   return new Promise((resolve, reject) => {
-    console.log('📡 尝试建立控制连接:', url)
-    
-    // 如果已有连接且状态正常，直接返回
     if (controlWs && controlWs.readyState === WebSocket.OPEN) {
-      console.log('✓ 控制连接已存在，复用')
       resolve()
       return
     }
     
-    // 关闭旧连接
     if (controlWs) {
       try { controlWs.close() } catch (e) {}
       controlWs = null
@@ -687,15 +671,11 @@ function openControlSocket(url) {
     let resolved = false
     
     ws.onopen = () => {
-      console.log('✓ 控制 WebSocket 已连接')
       controlWs = ws
       controlStatus.value = 'ready'
-      
-      // 设置连接超时，等待 Agent 初始化设备
       connectTimeout = setTimeout(() => {
         if (!resolved) {
           resolved = true
-          console.log('✓ 设备初始化完成（等待超时）')
           resolve()
         }
       }, 6000)
@@ -704,14 +684,9 @@ function openControlSocket(url) {
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data)
-        console.log('📨 控制消息:', msg)
         
-        // 监听 sas 消息 - 表示 Touch 服务就绪
         if (msg.msg === 'sas' && msg.isEnable) {
           touchReady = true
-          console.log('✓ Touch 服务就绪')
-          
-          // 收到 sas 消息表示设备初始化完成
           if (!resolved) {
             resolved = true
             clearTimeout(connectTimeout)
@@ -719,10 +694,8 @@ function openControlSocket(url) {
           }
         }
         
-        // 监听 openDriver 消息 - 表示驱动启动完成
         if (msg.msg === 'openDriver') {
           if (msg.status === 1 || msg.status === 'success') {
-            console.log('✓ 驱动启动成功')
             if (!resolved) {
               resolved = true
               clearTimeout(connectTimeout)
@@ -731,13 +704,10 @@ function openControlSocket(url) {
           }
         }
         
-        // 错误消息
         if (msg.msg === 'error') {
-          console.error('控制连接错误:', msg)
           if (!resolved) {
             resolved = true
             clearTimeout(connectTimeout)
-            // 检测是否是设备锁问题
             const errorMsg = msg.detail || msg.text || ''
             if (errorMsg.includes('lock') || errorMsg.includes('busy') || errorMsg.includes('占用')) {
               reject(new Error('设备正在被占用，请稍后再试'))
@@ -746,39 +716,25 @@ function openControlSocket(url) {
             }
           }
         }
-      } catch (e) {
-        // 忽略非 JSON 消息
-      }
+      } catch (e) {}
     }
     
     ws.onerror = (e) => {
-      console.error('❌ 控制 WebSocket 连接错误')
-      console.error('URL:', url)
-      console.error('错误对象:', e)
-      console.error('WebSocket readyState:', ws.readyState)
-      // readyState: 0=CONNECTING, 1=OPEN, 2=CLOSING, 3=CLOSED
-      
       controlStatus.value = 'disconnected'
       if (!resolved) {
         resolved = true
         clearTimeout(connectTimeout)
-        reject(new Error(`控制连接失败: ${url}`))
+        reject(new Error('控制连接失败'))
       }
     }
     
     ws.onclose = (e) => {
-      console.log('控制 WebSocket 关闭:', e.code, e.reason)
-      
-      // 如果是当前连接关闭
       if (controlWs === ws) {
         controlWs = null
         controlStatus.value = 'disconnected'
         touchReady = false
         
-        // 如果投屏还在连接，尝试自动重连控制连接
         if (connected.value && selectedDevice.value) {
-          console.warn('⚠️ 控制连接断开，尝试自动重连...')
-          // 延迟后尝试重连
           setTimeout(() => {
             if (connected.value && selectedDevice.value && !controlWs) {
               reconnectControl()
@@ -790,7 +746,6 @@ function openControlSocket(url) {
       if (!resolved) {
         resolved = true
         clearTimeout(connectTimeout)
-        // 如果是正常关闭，也算成功（可能是 Agent 端关闭了）
         if (e.code === 1000) {
           resolve()
         } else {
@@ -814,67 +769,45 @@ function openScreenSocket(url) {
   screenWs = new WebSocket(url)
   
   screenWs.onopen = () => {
-    console.log('✓ 投屏 WebSocket 已连接')
-    
-    // 发送启动投屏命令
     const cmd = { type: 'switch', detail: screenMode.value }
-    console.log('发送投屏命令:', JSON.stringify(cmd))
     screenWs.send(JSON.stringify(cmd))
   }
   
   screenWs.onmessage = (event) => {
     if (event.data instanceof Blob) {
-      // 收到视频帧
       if (!connected.value) {
-        // 首帧收到，标记连接成功
         connected.value = true
         loading.value = false
         isConnecting.value = false
         retryCount = 0
         emit('device-connected', selectedDevice.value)
-        console.log('✓ 投屏成功，开始接收视频帧')
       }
       
       if (currentFrame.value) {
         URL.revokeObjectURL(currentFrame.value)
       }
       currentFrame.value = URL.createObjectURL(event.data)
-      frameCount++
+      frameCount++ // Android FPS 统计
     } else {
       try {
         const msg = JSON.parse(event.data)
-        console.log('投屏消息:', msg)
-        
-        if (msg.msg === 'size') {
-          // 收到分辨率信息 (这是流的分辨率，比如 360x800)
-          // ⚠️ 不要用它覆盖 deviceWidth（物理分辨率），只打印日志
-          console.log(`收到流分辨率通知: ${msg.width}x${msg.height} (已忽略，保持物理分辨率 ${deviceWidth}x${deviceHeight})`)
-        } else if (msg.msg === 'rotation') {
-          // 屏幕旋转
-          console.log('屏幕旋转:', msg.value)
-        } else if (msg.msg === 'error') {
-          console.error('投屏错误:', msg)
+        if (msg.msg === 'error') {
           handleScreenError()
         }
       } catch (e) {}
     }
   }
   
-  screenWs.onerror = (e) => {
-    console.error('投屏 WebSocket 错误:', e)
+  screenWs.onerror = () => {
     handleScreenError()
   }
   
-  screenWs.onclose = (e) => {
-    console.log('投屏 WebSocket 关闭:', e.code, e.reason)
-    
+  screenWs.onclose = () => {
     if (screenWs) {
       screenWs = null
-      
       if (connected.value) {
         connected.value = false
         connectionError.value = '投屏连接已断开'
-        ElMessage.warning('投屏连接已断开')
       }
     }
   }
@@ -888,11 +821,8 @@ function toggleScreenMode() {
   screenMode.value = newMode
   localStorage.setItem('screenMode', newMode)
   
-  // 发送切换命令
   if (screenWs && screenWs.readyState === WebSocket.OPEN) {
-    console.log('切换投屏模式:', newMode)
     screenWs.send(JSON.stringify({ type: 'switch', detail: newMode }))
-    ElMessage.info(`正在切换到 ${newMode} 模式...`)
   }
 }
 
@@ -901,9 +831,6 @@ function toggleScreenMode() {
  */
 function onScreenModeChange(newMode) {
   localStorage.setItem('screenMode', newMode)
-  ElMessage.info(`已切换到 ${newMode} 模式，正在重新连接...`)
-  
-  // 断开当前连接并重新连接
   stopMirror()
   setTimeout(() => {
     startMirror()
@@ -921,15 +848,10 @@ async function reconnectControl() {
   const port = agent_port || 7777
   const controlUrl = `ws://${host}:${port}/websockets/android/${SONIC_AGENT_KEY}/${udid}/${sonicToken}`
   
-  console.log('🔄 尝试重连控制连接...')
-  
   try {
     await openControlSocket(controlUrl)
-    console.log('✓ 控制连接重连成功')
-    ElMessage.success('控制功能已恢复')
   } catch (e) {
-    console.error('控制连接重连失败:', e)
-    // 不显示错误，静默失败，用户可以手动重试
+    // 静默失败
   }
 }
 
@@ -939,7 +861,6 @@ async function reconnectControl() {
 function handleScreenError() {
   if (retryCount < 3) {
     retryCount++
-    console.log(`投屏失败，自动重试第 ${retryCount} 次...`)
     
     // 关闭当前投屏连接
     if (screenWs) {
@@ -980,10 +901,8 @@ async function startIOSMirror(udid) {
   connectionError.value = ''
   
   try {
-    // 1. 获取 Sonic Token (如果尚未获取)
     debugStatus.value = 'GET_TOKEN'
     if (!sonicToken) {
-      ElMessage.info('正在获取认证 Token...')
       if (!await getSonicToken()) {
         debugStatus.value = 'GET_TOKEN_FAIL'
         throw new Error('无法获取 Sonic Token')
@@ -991,38 +910,28 @@ async function startIOSMirror(udid) {
     }
 
     const device = selectedDevice.value
-    // iPhone 13 Pro Max 示例：host.docker.internal 替换为 localhost
-    // 使用 localhost，并提供 fallback
     const host = 'localhost' 
     const port = device.agent_port || 7777
-    
-    // 2. 构建 Sonic iOS WebSocket URL
     const wsUrl = `ws://${host}:${port}/websockets/ios/${SONIC_AGENT_KEY}/${udid}/${sonicToken}`
     
-    // console.log('=== 启动 iOS 原生投屏 ===')
-    // console.log('WS URL:', wsUrl)
     debugWsUrl.value = wsUrl
     debugStatus.value = 'CONNECTING'
-    ElMessage.info('正在连接 Agent WebSocket...')
     
     // 超时保护
     const connectionTimeout = setTimeout(() => {
         if (loading.value && !connected.value) {
-            console.error('连接超时')
             debugStatus.value = 'TIMEOUT'
-            connectionError.value = '连接超时 (15s)'
+            connectionError.value = '连接超时'
             loading.value = false
             isConnecting.value = false
             if(iosWs) iosWs.close()
         }
-    }, 40000) // 超时时间 40 秒
+    }, 40000)
 
     iosWs = new WebSocket(wsUrl)
     
     iosWs.onopen = () => {
-      // console.log('✓ iOS WebSocket 已连接')
       debugStatus.value = 'WS_OPEN'
-      ElMessage.success('Agent 连接成功，等待画面...')
     }
     
     iosWs.onmessage = (event) => {
@@ -1030,70 +939,51 @@ async function startIOSMirror(udid) {
       try {
         debugLastMsg.value = event.data.substring(0, 50)
         const msg = JSON.parse(event.data)
-        // 减少日志输出以降低延迟
-        // console.log('iOS WS 消息:', msg)
         
         switch (msg.msg) {
           case 'openDriver':
             if (msg.status === 'success') {
               debugStatus.value = 'WDA_SUCCESS'
-              // console.log('✓ WDA 启动成功')
-              // 保存 WDA 端口信息
               if (msg.wda) {
-                  wdaPort.value = msg.wda
-                  // console.log(`✓ WDA 端口: ${msg.wda}`)
+                wdaPort.value = msg.wda
               }
-              // 屏幕端口 (msg.port, 但通常通过 share 消息获取)
-               if (msg.width && msg.height) {
-                 deviceWidth.value = msg.width
-                 deviceHeight.value = msg.height
-                 // 自动更新 WDA 坐标转换基准
-                 wdaWidth = msg.width
-                 wdaHeight = msg.height
+              if (msg.width && msg.height) {
+                deviceWidth.value = msg.width
+                deviceHeight.value = msg.height
+                wdaWidth = msg.width
+                wdaHeight = msg.height
               }
             } else if (msg.status === 'error') {
-               debugStatus.value = 'WDA_ERROR'
-               connectionError.value = 'WDA 启动失败，请检查 Agent 日志'
+              debugStatus.value = 'WDA_ERROR'
+              connectionError.value = 'WDA 启动失败'
             }
             break
             
           case 'share':
-            // 收到 MJPEG 端口信息
-            // 格式: {"msg":"share","port":9100}
             if (msg.port > 0) {
               debugStatus.value = 'GOT_SHARE'
-              // console.log(`✓ 收到 MJPEG 端口: ${msg.port}`)
-              // 拼接 MJPEG 流地址
-              // 注意：如果是 localhost，直接用；如果是远程，需使用 agent_host
               const streamUrl = `http://${host}:${msg.port}`
-              // console.log('MJPEG URL:', streamUrl)
-              
               currentFrame.value = streamUrl
               connected.value = true
               loading.value = false
               isConnecting.value = false
-              touchReady = true // WDA 启动后触控即就绪
+              touchReady = true
               emit('device-connected', selectedDevice.value)
             } else {
               debugStatus.value = 'INVALID_PORT'
-              console.warn('MJPEG 端口无效')
             }
             break
             
           case 'error':
             debugStatus.value = 'AGENT_ERROR'
-            console.error('Agent 返回错误')
             connectionError.value = 'Agent 内部错误'
             break
         }
-      } catch (e) {
-        // 忽略非 JSON 消息
-      }
+      } catch (e) {}
     }
     
-    iosWs.onerror = (e) => {
+    iosWs.onerror = () => {
       debugStatus.value = 'WS_ERROR'
-      // console.error('iOS WebSocket 错误:', e)
       connectionError.value = '连接 Agent 失败'
       loading.value = false
       isConnecting.value = false
@@ -1101,10 +991,8 @@ async function startIOSMirror(udid) {
     
     iosWs.onclose = (e) => {
       debugStatus.value = `WS_CLOSE:${e.code}`
-      // console.log('iOS WebSocket 关闭:', e.code, e.reason)
       if (connected.value) {
         connected.value = false
-        ElMessage.warning('iOS 连接已断开')
       }
       loading.value = false
       isConnecting.value = false
@@ -1113,7 +1001,6 @@ async function startIOSMirror(udid) {
 
   } catch (e) {
     debugStatus.value = `EXCEPTION:${e.message}`
-    console.error('iOS 投屏启动失败:', e)
     connectionError.value = e.message
     loading.value = false
     isConnecting.value = false
@@ -1124,7 +1011,13 @@ function stopMirror() {
   // 通用停止逻辑
   if (selectedDevice.value?.platform === 'ios' || selectedDevice.value?.platform === 'iOS') {
     if (iosWs) {
-      try { iosWs.close() } catch (e) {}
+      try { 
+        // 发送关闭消息给 Agent，确保 WDA 停止
+        if (iosWs.readyState === WebSocket.OPEN) {
+          iosWs.send(JSON.stringify({ msg: 'close' }))
+        }
+        iosWs.close() 
+      } catch (e) {}
       iosWs = null
     }
   } else {
@@ -1148,23 +1041,16 @@ function stopMirror() {
   connectionError.value = ''
   retryCount = 0
   touchReady = false
+  imageLoaded.value = false
   imageLoaded.value = false  // 重置图片加载状态
 }
 
 /**
- * 图片加载完成事件 - 用于获取实际渲染尺寸，并标记图片已加载
- * 对于 iOS MJPEG 流，每帧都会触发此事件，可用于计算 FPS
+ * 图片加载完成事件 - 标记图片已加载，解决白屏问题
  */
 function onImageLoad(e) {
-  const img = e.target
-  // 标记图片已加载，解决 iOS MJPEG 流的白屏问题
   if (!imageLoaded.value) {
     imageLoaded.value = true
-  }
-  
-  // iOS MJPEG 流：通过 img.onload 计算 FPS
-  if (isIOSDevice()) {
-    frameCount++
   }
 }
 
@@ -1374,18 +1260,15 @@ function handleIOSMouseUp(startX, startY, endX, endY, duration) {
   iosIsSwiping = false
 }
 
-// Android 触控命令封装 (保持不变)
 function sendControlCommand(cmd) {
   if (!controlWs || controlWs.readyState !== WebSocket.OPEN) {
-    if (isIOSDevice()) return false // iOS 不走这里
-    console.warn('控制连接不可用，命令发送失败:', cmd.type)
+    if (isIOSDevice()) return false
     return false
   }
   try {
     controlWs.send(JSON.stringify(cmd))
     return true
   } catch (e) {
-    console.error('发送命令失败:', e)
     return false
   }
 }
@@ -1400,9 +1283,7 @@ function sendControlCommand(cmd) {
 function sendAndroidTouch(action, x, y) {
   if (!connected.value || !isAndroidDevice()) return
   
-  // 检查触控是否就绪，如果未就绪尝试重连
   if (!touchReady && controlWs?.readyState !== WebSocket.OPEN) {
-    console.warn('触控未就绪，尝试重连...')
     reconnectControl()
     return
   }
@@ -1560,7 +1441,9 @@ defineExpose({
   doAppSwitch,
   refreshDevices,
   connected,
-  wdaPort
+  wdaPort,
+  deviceWidth,
+  deviceHeight
 })
 </script>
 
@@ -1623,12 +1506,13 @@ defineExpose({
 }
 
 .fps-badge {
-  font-size: 12px;
-  font-family: monospace;
+  background: rgba(0, 0, 0, 0.6);
   color: #67c23a;
-  background: rgba(103, 194, 58, 0.1);
-  padding: 1px 6px;
+  padding: 2px 8px;
   border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Monaco', 'Consolas', monospace;
 }
 
 .mode-tag {
@@ -1636,29 +1520,29 @@ defineExpose({
   font-size: 10px;
 }
 
-// 手机外框样式 - 未连接时适中尺寸，连接后铺满
+// 简洁手机外框样式
 .phone-frame {
   position: relative;
-  width: 220px; /* 未连接时的手机框宽度 */
-  background: #1a1a1a;
-  border-radius: 30px; /* 圆角 */
-  padding: 3px; /* 边框更窄 */
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  width: 220px;
+  background: #fff;
+  border-radius: 24px;
+  border: 2px solid #e0e0e0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  overflow: hidden;
   
   &--connected {
-    /* 连接后：填满父容器，背景透明 */
     width: 100%;
-    flex: 1 1 0%; /* 填充剩余空间 */
+    flex: 1 1 0%;
     max-width: 100%;
     max-height: 100%;
-    min-height: 0; /* 允许收缩 */
+    min-height: 0;
     border-radius: 0;
-    padding: 0;
-    background: transparent; /* 透明背景，避免黑边 */
     border: none;
+    background: transparent;
     box-shadow: none;
     display: flex;
     flex-direction: column;
@@ -1758,32 +1642,24 @@ defineExpose({
 
 // 移除了 .top-info-bar 相关样式
 
+// 顶部装饰（隐藏）
 .phone-notch {
-  width: 50px;
-  height: 3px;
-  background: #333;
-  border-radius: 2px;
-  margin: 2px auto 3px;
-  
-  .phone-frame--connected & {
-    display: none !important;
-  }
+  display: none;
 }
 
 .phone-screen {
   width: 100%;
   aspect-ratio: 9 / 19.5;
-  max-height: 460px; /* 未连接时允许更大高度 */
-  background: #e8eaed;
-  border-radius: 20px;
+  max-height: 480px;
+  background: #f5f5f5;
+  border-radius: 22px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  justify-content: center; /* 居中内容 */
+  align-items: center;
+  justify-content: center;
   
   .phone-frame--connected & {
-    /* 连接后：填满父容器 */
     width: 100%;
     height: 100%;
     aspect-ratio: unset;
@@ -1791,7 +1667,7 @@ defineExpose({
     min-height: 0;
     border-radius: 0;
     background: transparent;
-    flex: 1 1 0%; /* 填充剩余空间 */
+    flex: 1 1 0%;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1799,16 +1675,9 @@ defineExpose({
   }
 }
 
+// 底部装饰（隐藏）
 .phone-home-bar {
-  width: 60px;
-  height: 3px;
-  background: #444;
-  border-radius: 2px;
-  margin: 3px auto 2px;
-  
-  .phone-frame--connected & {
-    display: none !important;
-  }
+  display: none;
 }
 
 .screen-placeholder {
@@ -1817,24 +1686,42 @@ defineExpose({
   align-items: center;
   justify-content: center;
   gap: 16px;
-  color: #999;
+  color: #8e8e93;
   text-align: center;
   padding: 20px;
+  width: 100%;
+  flex: 1;
   
   .placeholder-icon {
-    color: #c0c4cc;
+    color: #c7c7cc;
   }
   
   p {
     margin: 0;
     font-size: 13px;
-    color: #909399;
+    color: #8e8e93;
+  }
+  
+  .el-button {
+    border-radius: 18px;
+    padding: 8px 24px;
   }
   
   &.error {
-    color: #f56c6c;
-    p { color: #f56c6c; }
+    color: #ff3b30;
+    p { color: #ff3b30; }
   }
+}
+
+// 投屏画面容器（用于叠加层定位）
+.screen-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
 .mirror-screen {
@@ -1906,10 +1793,6 @@ defineExpose({
   gap: 8px;
   font-size: 12px;
   color: #909399;
-  
-  .fps {
-    color: #67c23a;
-  }
   
   .mode-tag {
     color: #909399;
