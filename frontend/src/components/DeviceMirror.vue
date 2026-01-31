@@ -20,16 +20,48 @@
     <!-- 手机外框 -->
     <div class="phone-frame" 
          :class="{ 'phone-frame--connected': connected }">
-      <!-- 顶部听筒 -->
+      <!-- 顶部刘海 -->
       <div class="phone-notch" v-if="!connected"></div>
+      
+      <!-- 底部 Home Bar -->
+      <div class="phone-home-bar" v-if="!connected"></div>
       
       <!-- 屏幕区域 -->
       <div class="phone-screen" ref="containerRef">
         <!-- 未选择设备 -->
         <div v-if="!selectedDevice" class="screen-placeholder">
-          <div class="placeholder-icon">
-            <svg viewBox="0 0 24 24" width="64" height="64">
-              <path fill="currentColor" d="M7 4v16h10V4H7zM6 2h12a1 1 0 011 1v18a1 1 0 01-1 1H6a1 1 0 01-1-1V3a1 1 0 011-1zm6 15a1 1 0 110 2 1 1 0 010-2z"/>
+          <div class="placeholder-illustration">
+            <!-- 测试自动化插画 -->
+            <svg width="140" height="120" viewBox="0 0 140 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- 背景手机 -->
+              <rect x="35" y="15" width="50" height="85" rx="8" stroke="#d1d5db" stroke-width="2" stroke-dasharray="4 2" fill="white"/>
+              <!-- 前景手机 -->
+              <rect x="50" y="10" width="50" height="85" rx="8" fill="white" stroke="#374151" stroke-width="2"/>
+              <!-- 手机屏幕 -->
+              <rect x="54" y="18" width="42" height="65" rx="2" fill="#f8fafc"/>
+              <!-- 趋势线 -->
+              <path d="M58 55 L68 45 L78 50 L88 35" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <!-- 数据条 -->
+              <rect x="58" y="60" width="8" height="12" rx="1" fill="#e5e7eb"/>
+              <rect x="68" y="56" width="8" height="16" rx="1" fill="#e5e7eb"/>
+              <rect x="78" y="52" width="8" height="20" rx="1" fill="#e5e7eb"/>
+              <!-- 复选框 -->
+              <rect x="58" y="76" width="10" height="10" rx="2" fill="#dbeafe" stroke="#3b82f6" stroke-width="1"/>
+              <path d="M60 81 L63 84 L67 78" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <rect x="72" y="76" width="10" height="10" rx="2" fill="#dbeafe" stroke="#3b82f6" stroke-width="1"/>
+              <path d="M74 81 L77 84 L81 78" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <!-- 侧边卡片 -->
+              <rect x="88" y="45" width="28" height="35" rx="4" fill="white" stroke="#d1d5db" stroke-width="1.5"/>
+              <rect x="92" y="50" width="20" height="3" rx="1" fill="#e5e7eb"/>
+              <rect x="92" y="56" width="16" height="3" rx="1" fill="#e5e7eb"/>
+              <path d="M92 66 L96 70 L108 58" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <!-- 装饰星星 -->
+              <path d="M30 30 L31 33 L34 33 L32 35 L33 38 L30 36 L27 38 L28 35 L26 33 L29 33 Z" fill="#94a3b8"/>
+              <path d="M110 20 L111 22 L113 22 L111.5 23.5 L112 26 L110 24.5 L108 26 L108.5 23.5 L107 22 L109 22 Z" fill="#94a3b8"/>
+              <path d="M120 55 L121 57 L123 57 L121.5 58.5 L122 61 L120 59.5 L118 61 L118.5 58.5 L117 57 L119 57 Z" fill="#94a3b8"/>
+              <!-- 信封 -->
+              <rect x="100" y="72" width="22" height="16" rx="2" fill="white" stroke="#d1d5db" stroke-width="1.5"/>
+              <path d="M102 74 L111 81 L120 74" stroke="#d1d5db" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
           <el-button type="primary" @click="openDeviceSelector">
@@ -70,7 +102,7 @@
           />
           
           <!-- 叠加层 slot（用于 ElementOverlay 等） -->
-          <slot name="overlay" :device-width="deviceWidth" :device-height="deviceHeight"></slot>
+          <slot name="overlay" :device-width="deviceWidth" :device-height="deviceHeight" :img-rect="imgDisplayRect"></slot>
         </div>
 
       </div>
@@ -215,6 +247,10 @@ const debugLastMsg = ref('')
 
 const containerRef = ref(null)
 const screenImg = ref(null)
+const screenWrapperRef = ref(null)
+
+// 图片实际显示区域（用于 ElementOverlay 定位）
+const imgDisplayRect = ref({ left: 0, top: 0, width: 0, height: 0 })
 
 // 所有设备（合并 Android 和 iOS，保留原始 platform 字段）
 const allDevices = computed(() => [
@@ -302,6 +338,9 @@ let heartbeatTimer = null
 onMounted(async () => {
   await refreshDevices()
   
+  // 监听窗口大小变化，更新 imgDisplayRect
+  window.addEventListener('resize', updateImgDisplayRect)
+  
   // FPS 统计定时器（每秒更新，不输出日志）
   setInterval(() => {
     const now = Date.now()
@@ -331,6 +370,7 @@ onUnmounted(() => {
   disconnect()
   document.removeEventListener('mousemove', onDocumentMouseMove)
   document.removeEventListener('mouseup', onDocumentMouseUp)
+  window.removeEventListener('resize', updateImgDisplayRect)
 })
 
 async function getSonicToken() {
@@ -1052,6 +1092,58 @@ function onImageLoad(e) {
   if (!imageLoaded.value) {
     imageLoaded.value = true
   }
+  // 更新图片实际显示区域
+  updateImgDisplayRect()
+}
+
+/**
+ * 计算图片在容器中的实际显示区域
+ * 使用 object-fit: contain 模式，图片完整显示不裁剪
+ */
+function updateImgDisplayRect() {
+  const img = screenImg.value
+  const wrapper = screenWrapperRef.value
+  if (!img || !wrapper) return
+  
+  const wrapperRect = wrapper.getBoundingClientRect()
+  const nw = img.naturalWidth
+  const nh = img.naturalHeight
+  
+  if (!nw || !nh || !wrapperRect.width || !wrapperRect.height) return
+  
+  const wrapperRatio = wrapperRect.width / wrapperRect.height
+  const imgRatio = nw / nh
+  
+  let drawWidth, drawHeight, offsetX, offsetY
+  
+  // object-fit: contain 模式
+  // 图片完整显示，可能有留白
+  if (imgRatio > wrapperRatio) {
+    // 图片更宽，上下有留白
+    drawWidth = wrapperRect.width
+    drawHeight = drawWidth / imgRatio
+    offsetX = 0
+    offsetY = (wrapperRect.height - drawHeight) / 2
+  } else {
+    // 图片更高，左右有留白
+    drawHeight = wrapperRect.height
+    drawWidth = drawHeight * imgRatio
+    offsetX = (wrapperRect.width - drawWidth) / 2
+    offsetY = 0
+  }
+  
+  imgDisplayRect.value = {
+    left: offsetX,
+    top: offsetY,
+    width: drawWidth,
+    height: drawHeight
+  }
+  
+  console.log('[imgDisplayRect] 更新:', {
+    投屏帧尺寸: `${nw}x${nh}`,
+    容器尺寸: `${wrapperRect.width.toFixed(0)}x${wrapperRect.height.toFixed(0)}`,
+    图片显示区域: `left=${offsetX.toFixed(1)}, top=${offsetY.toFixed(1)}, ${drawWidth.toFixed(1)}x${drawHeight.toFixed(1)}`
+  })
 }
 
 /**
@@ -1520,34 +1612,38 @@ defineExpose({
   font-size: 10px;
 }
 
-// 简洁手机外框样式
+// 未连接时的 iPhone 风格手机外框
 .phone-frame {
   position: relative;
-  width: 220px;
-  background: #fff;
-  border-radius: 24px;
-  border: 2px solid #e0e0e0;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  width: 260px;
+  padding: 6px;
+  background: #1a1a1a;
+  border-radius: 40px;
+  box-shadow: 
+    0 25px 80px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
   transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
   align-items: center;
-  overflow: hidden;
-  
-  &--connected {
-    width: 100%;
-    flex: 1 1 0%;
-    max-width: 100%;
-    max-height: 100%;
-    min-height: 0;
-    border-radius: 0;
-    border: none;
-    background: transparent;
-    box-shadow: none;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
+  overflow: visible;
+}
+
+// 连接后的样式 - 铺满全屏（高优先级）
+.phone-frame.phone-frame--connected {
+  width: 100% !important;
+  height: 100% !important;
+  flex: 1 1 0% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
 }
 
 // 底部操作栏 - Flex 布局，紧贴投屏画面
@@ -1642,55 +1738,94 @@ defineExpose({
 
 // 移除了 .top-info-bar 相关样式
 
-// 顶部装饰（隐藏）
+// 顶部刘海（仅未连接时显示）
 .phone-notch {
-  display: none;
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90px;
+  height: 24px;
+  background: #1a1a1a;
+  border-radius: 16px;
+  z-index: 10;
+  
+  // 摄像头
+  &::before {
+    content: '';
+    position: absolute;
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    background: #2d2d2d;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 2px #1a1a1a;
+  }
 }
 
 .phone-screen {
   width: 100%;
   aspect-ratio: 9 / 19.5;
-  max-height: 480px;
-  background: #f5f5f5;
-  border-radius: 22px;
+  max-height: 520px;
+  background: #f5f5f7;
+  border-radius: 34px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  
-  .phone-frame--connected & {
-    width: 100%;
-    height: 100%;
-    aspect-ratio: unset;
-    max-height: 100%;
-    min-height: 0;
-    border-radius: 0;
-    background: transparent;
-    flex: 1 1 0%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-  }
+  position: relative;
 }
 
-// 底部装饰（隐藏）
+// 连接后的屏幕样式（高优先级）
+.phone-frame--connected .phone-screen {
+  width: 100% !important;
+  height: 100% !important;
+  aspect-ratio: unset !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  flex: 1 1 0% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+}
+
+// 底部 home bar 指示条（仅未连接时显示）
 .phone-home-bar {
-  display: none;
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 4px;
+  background: #333;
+  border-radius: 2px;
+  z-index: 10;
 }
 
 .screen-placeholder {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: 20px;
   color: #8e8e93;
   text-align: center;
   padding: 20px;
-  width: 100%;
-  flex: 1;
+  z-index: 5;
+  
+  .placeholder-illustration {
+    margin-bottom: 8px;
+  }
   
   .placeholder-icon {
     color: #c7c7cc;
@@ -1703,8 +1838,10 @@ defineExpose({
   }
   
   .el-button {
-    border-radius: 18px;
-    padding: 8px 24px;
+    border-radius: 8px;
+    padding: 10px 28px;
+    font-size: 14px;
+    font-weight: 500;
   }
   
   &.error {
@@ -1730,7 +1867,7 @@ defineExpose({
   max-height: 100%;
   width: 100%;
   height: 100%; /* 填满父容器高度 */
-  object-fit: cover; /* 填满容器，避免留白 */
+  object-fit: contain; /* 保证完整显示，不裁剪，bbox 才能精确对应 */
   cursor: pointer;
   user-select: none;
   -webkit-user-drag: none;

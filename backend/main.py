@@ -15,6 +15,7 @@ import os
 # 导入各个模块的路由
 from apps.ui_automation.api import devices, cases, execution, ai_config, llm_config
 from apps.ui_automation.knowledge.api import router as knowledge_router
+from apps.ui_automation.knowledge.api import exploration_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -103,6 +104,7 @@ app.include_router(ai_config.router, prefix="/api/ai-config", tags=["AI配置"])
 
 # 路由 - AI 知识库模块
 app.include_router(knowledge_router, prefix="/api/ai", tags=["AI教学模式"])
+app.include_router(exploration_router, prefix="/api/knowledge", tags=["知识图谱探索"])
 
 # 路由 - LLM 配置模块
 app.include_router(llm_config.router, prefix="/api", tags=["大模型配置"])

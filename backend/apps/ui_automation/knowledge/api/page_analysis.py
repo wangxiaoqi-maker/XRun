@@ -71,6 +71,17 @@ async def analyze_page(
         # 转换元素为 ElementInfo
         elements = [ElementInfo(**e) for e in result.get("elements", [])]
         
+        # 构建 usage 信息
+        usage_data = result.get("usage", {})
+        usage = None
+        if usage_data:
+            from ..schemas.page_analysis import UsageInfo
+            usage = UsageInfo(
+                input_tokens=usage_data.get("input_tokens", 0),
+                output_tokens=usage_data.get("output_tokens", 0),
+                total_tokens=usage_data.get("total_tokens", 0)
+            )
+        
         return PageAnalyzeResponse(
             page_id=result["page_id"],
             page_name=result["page_name"],
@@ -81,7 +92,8 @@ async def analyze_page(
             confidence_score=result.get("confidence_score", 0.0),
             is_new_page=result.get("is_new_page", True),
             is_cached=result.get("is_cached", False),
-            processing_time=result.get("processing_time", 0.0)
+            processing_time=result.get("processing_time", 0.0),
+            usage=usage
         )
     except Exception as e:
         logger.error(f"页面分析失败: {e}")

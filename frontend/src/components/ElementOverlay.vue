@@ -1,6 +1,6 @@
 <template>
   <!-- 元素框选 Overlay - 叠加在投屏画面上 -->
-  <div class="element-overlay" ref="overlayRef">
+  <div class="element-overlay" ref="overlayRef" :style="overlayStyle">
     <!-- 元素框选 -->
     <div
       v-for="element in elements"
@@ -65,6 +65,40 @@ const props = defineProps({
   deviceHeight: {
     type: Number,
     default: 2400
+  },
+  // 图片实际显示区域（处理 object-fit 偏移）
+  imgRect: {
+    type: Object,
+    default: () => ({ left: 0, top: 0, width: 0, height: 0 })
+  }
+})
+
+// overlay 精确匹配投屏画面的实际显示区域
+const overlayStyle = computed(() => {
+  const rect = props.imgRect
+  
+  console.log('[ElementOverlay] imgRect:', rect, '元素数量:', props.elements?.length)
+  
+  if (rect && rect.width > 0 && rect.height > 0) {
+    const style = {
+      position: 'absolute',
+      left: `${rect.left}px`,
+      top: `${rect.top}px`,
+      width: `${rect.width}px`,
+      height: `${rect.height}px`
+    }
+    console.log('[ElementOverlay] 应用样式:', style)
+    return style
+  }
+  
+  // 兜底：填满容器
+  console.log('[ElementOverlay] imgRect 无效，使用 100%')
+  return {
+    position: 'absolute',
+    left: '0',
+    top: '0',
+    width: '100%',
+    height: '100%'
   }
 })
 
@@ -258,8 +292,7 @@ function onElementClick(element) {
 
 <style lang="scss" scoped>
 .element-overlay {
-  position: absolute;
-  inset: 0;
+  /* position, left, top, width, height 由 overlayStyle 动态设置 */
   pointer-events: none;
   z-index: 10;
   overflow: hidden;

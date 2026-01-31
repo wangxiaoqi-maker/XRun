@@ -132,6 +132,13 @@ class PageAnalyzeRequest(BaseModel):
         }
 
 
+class UsageInfo(BaseModel):
+    """Token 用量信息"""
+    input_tokens: int = Field(0, description="输入 token 数")
+    output_tokens: int = Field(0, description="输出 token 数")
+    total_tokens: int = Field(0, description="总 token 数")
+
+
 class PageAnalyzeResponse(BaseModel):
     """页面分析响应"""
     page_id: str = Field(..., description="页面 ID")
@@ -144,6 +151,7 @@ class PageAnalyzeResponse(BaseModel):
     is_new_page: bool = Field(True, description="是否是新页面")
     is_cached: bool = Field(False, description="是否使用缓存")
     processing_time: float = Field(0.0, description="处理耗时（秒）")
+    usage: Optional[UsageInfo] = Field(None, description="Token 用量")
 
 
 # ==================== 语义搜索 ====================

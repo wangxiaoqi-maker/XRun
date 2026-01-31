@@ -20,68 +20,56 @@ from ..config import AnalyzerConfig, get_analyzer_config
 # ============== Prompt 模板 ==============
 
 MOBILE_UI_ANALYSIS_PROMPT = """
-你是移动端 UI 元素识别专家。分析 App 截图，提取所有可交互元素。
+你是一个拥有像素级眼力的**高级 UI 自动化感知引擎**。你的任务是将移动端页面截图转化为机器可读的结构化数据。
+你的输出将被用于下游的自动化测试框架（Midscene），因此**准确性**和**定位描述的唯一性**至关重要。
 
-## 任务要求
-1. 识别页面上所有可点击、可输入的元素
-2. 提供精确的 bbox 位置坐标（百分比，用于框选高亮）
-3. 提供详细的定位描述（用于自动化测试）
+# 核心任务：全量元素穷举
+请像扫描仪一样，从屏幕左上角开始，至右下角，**穷举所有**用户可以交互的元素。
+**宁可多识别一个，不可漏掉一个。**
 
-## bbox 坐标说明
-[left, top, width, height]，均为百分比值(0-100)：
-- left: 元素左边距离屏幕左边的百分比
-- top: 元素上边距离屏幕顶部的百分比  
-- width: 元素宽度占屏幕宽度的百分比
-- height: 元素高度占屏幕高度的百分比
+# 扫描策略 (必须严格执行)
+1.  **全局扫描**：先识别页面的整体结构（顶部导航、中部内容流、底部 Tab 栏）。
+2.  **局部细查**：
+    -   **顶部导航栏**：必须识别返回键、标题、右侧所有功能图标（如：客服、设置、分享）。
+    -   **金刚区/九宫格**：必须将每个图标+文字识别为**独立**的元素，**严禁**将整个九宫格画成一个大框。
+    -   **列表/Feed流**：识别每一个列表项（Container），同时识别列表项内部的按钮（如“去完成”、“购买”）。
+    -   **浮层/弹窗**：如果有弹窗，优先识别弹窗上的元素（关闭按钮、确认按钮）。
+    -   **底部 Tab**：识别所有 Tab 图标及其文字。
 
-## 元素类型
-button | icon_button | text_input | search_box | link | tab | nav_item | list_item | card | switch | checkbox | image | banner
+# 元素定义标准
+-   **可交互**：点击、长按、滑动、输入。
+-   **信息展示**：关键的业务数据（如余额数值、订单状态）也视为元素。
+-   **视觉完整**：bbox 必须**紧紧包裹**元素的可见边缘，不要包含多余的空白背景。
+
+## bbox 坐标格式
+[left, top, width, height] - 像素坐标（我会告知图片尺寸）或百分比(0-100)
 
 ## 输出格式（严格 JSON）
-
 ```json
 {
   "page_name": "页面名称",
-  "page_type": "home|login|list|detail|form|search|settings|profile|unknown",
-  "page_description": "页面功能描述",
-  "confidence_score": 0.95,
+  "page_type": "home|profile|list|detail|form|settings|unknown",
+  "page_description": "简短描述",
   "elements": [
     {
       "name": "元素语义名称",
-      "type": "icon_button",
-      "text_content": "元素显示文字",
-      "description": "视觉描述：图标颜色、形状、背景色、位置",
-      "bbox": [10, 20, 15, 8],
+      "type": "button|icon_button|link|tab|card|banner|text_input|switch|nav_item|list_item",
+      "text_content": "元素文字",
+      "description": "简短视觉描述",
+      "bbox": [100, 200, 80, 40],
       "area": "顶部|中部|底部",
-      "midscene_locator": "详细定位描述，包含：区域+位置+视觉特征+文字",
+      "midscene_locator": "区域+位置+视觉特征+文字的唯一定位描述",
       "is_navigation": false,
-      "target_page": "",
-      "confidence_score": 0.95
+      "target_page": ""
     }
   ]
 }
 ```
 
-## midscene_locator 撰写规则（重要）
-定位描述必须足够详细，能唯一定位元素：
-- ✅ "首页九宫格区域第一行第一个，蓝色扫码图标下方写着「扫一扫」的入口按钮"
-- ✅ "底部导航栏从左数第三个Tab，房子图标上方写着「首页」"
-- ✅ "页面顶部左上角的返回箭头按钮"
-- ❌ "扫一扫按钮"（太简单，无法唯一定位）
-
-## 必须识别的元素类型
-1. 顶部状态栏元素：返回按钮、标题、右上角操作按钮
-2. 搜索框、输入框
-3. 九宫格/功能入口区域的所有入口
-4. Banner/轮播图区域
-5. 列表/卡片中的可点击项
-6. 底部导航栏的所有Tab
-7. 浮动按钮（如客服、返回顶部）
-8. 弹窗中的按钮
-
-## 输出要求
-- 尽可能识别所有可交互元素（目标 30-50 个）
-- 每个元素必须有准确的 bbox
+## 重要提示
+- 输出中文
+- **不要合并元素**：九宫格的每个图标是独立元素，不要合并成一个
+- **不要遗漏小元素**：角标、关闭按钮、箭头图标都要识别
 - 只输出 JSON，不要其他文字
 
 开始分析：
@@ -103,6 +91,9 @@ class PageAnalyzerService:
         self._current_model_id = None
         # 用于记录 token 用量
         self._last_usage = None
+        # 用于 bbox 坐标转换的图片尺寸
+        self._image_width = None
+        self._image_height = None
     
     async def initialize(self, provider_id: Optional[str] = None, model_id: Optional[str] = None) -> None:
         """
@@ -222,8 +213,14 @@ class PageAnalyzerService:
         start_time = time.time()
         
         try:
-            # 构建 Prompt
-            prompt = self._build_prompt(context_hint)
+            # 先解析图片获取尺寸（用于 prompt 和 bbox 转换）
+            image_size = self._get_image_size(image_data)
+            if image_size:
+                self._image_width, self._image_height = image_size
+                logger.info(f"截图尺寸: {self._image_width}x{self._image_height}")
+            
+            # 构建 Prompt（包含图片尺寸信息）
+            prompt = self._build_prompt(context_hint, image_size)
             
             # 构建消息（多模态）
             messages = self._build_messages(image_data, prompt)
@@ -253,9 +250,50 @@ class PageAnalyzerService:
             logger.error(f"页面分析失败: {e}")
             raise
     
-    def _build_prompt(self, context_hint: Optional[str] = None) -> str:
+    def _get_image_size(self, image_data: str) -> Optional[Tuple[int, int]]:
+        """解析图片获取尺寸"""
+        from PIL import Image as PILImage
+        import io
+        
+        try:
+            # 提取 base64 数据
+            if image_data.startswith("data:"):
+                _, base64_data = image_data.split(",", 1)
+            else:
+                base64_data = image_data
+            
+            # 解码并获取尺寸
+            image_bytes = base64.b64decode(base64_data)
+            buffer = io.BytesIO(image_bytes)
+            pil_image = PILImage.open(buffer)
+            return pil_image.size  # (width, height)
+        except Exception as e:
+            logger.warning(f"获取图片尺寸失败: {e}")
+            return None
+    
+    def _build_prompt(self, context_hint: Optional[str] = None, image_size: Optional[Tuple[int, int]] = None) -> str:
         """构建分析 Prompt"""
         prompt = MOBILE_UI_ANALYSIS_PROMPT
+        
+        # 添加图片尺寸信息，帮助 LLM 计算准确的 bbox
+        if image_size:
+            width, height = image_size
+            prompt += f"""
+
+## 重要：图片尺寸信息
+当前截图的实际像素尺寸为 **{width} x {height}** 像素。
+请基于此尺寸返回准确的 bbox 坐标（百分比）：
+- left% = 元素左边距 / {width} × 100
+- top% = 元素上边距 / {height} × 100  
+- width% = 元素宽度 / {width} × 100
+- height% = 元素高度 / {height} × 100
+
+例如：如果一个元素在像素位置 (100, 200) 处，宽 150px，高 80px：
+- left = 100 / {width} × 100 = {round(100/width*100, 2)}%
+- top = 200 / {height} × 100 = {round(200/height*100, 2)}%
+
+请仔细观察每个元素的精确位置，不要估算！
+"""
         
         if context_hint:
             prompt += f"\n\n## 上下文提示\n{context_hint}\n"
@@ -313,6 +351,8 @@ class PageAnalyzerService:
                             try:
                                 pil_image = PILImage.open(buffer)
                                 pil_image.load()  # 确保图片完全加载
+                                # 保存图片尺寸，用于 bbox 坐标转换
+                                self._image_width, self._image_height = pil_image.size
                                 logger.info(f"PIL 图片格式: {pil_image.format}, 尺寸: {pil_image.size}")
                             except Exception as pil_err:
                                 logger.error(f"PIL 加载失败: {pil_err}, 尝试检测格式...")
@@ -679,7 +719,6 @@ class PageAnalyzerService:
         
         # 提取 bbox 坐标（支持新旧格式和字符串格式）
         raw_bbox = element_data.get("bbox") or position.get("bbox", [])
-        logger.debug(f"原始 bbox: {raw_bbox}, 类型: {type(raw_bbox).__name__}")
         
         bbox = raw_bbox
         
@@ -701,11 +740,21 @@ class PageAnalyzerService:
                 
                 # 判断 bbox 格式并转换为百分比
                 # 如果任何值 > 100，说明是像素坐标
-                if any(v > 100 for v in bbox):
-                    # 假设设备分辨率，从 resolution 参数获取或使用默认值
-                    # 标准移动设备分辨率
-                    device_w = 1080  # 默认宽度
-                    device_h = 2400  # 默认高度（现代手机通常是 19.5:9 或 20:9）
+                # 注意：有些 LLM 返回的像素值可能刚好 <= 100（如小图标），需要更智能判断
+                is_pixel_format = any(v > 100 for v in bbox)
+                
+                # 额外检查：如果所有值都很小（< 5）且 width+height 占比不合理，也可能是像素
+                # 或者：如果 left+width > 100 或 top+height > 100，说明不是有效百分比
+                left_v, top_v, w_v, h_v = bbox
+                if not is_pixel_format:
+                    # 检查百分比合理性：left+width 应该 <= 100，top+height 应该 <= 100
+                    if left_v + w_v > 105 or top_v + h_v > 105:  # 容差 5%
+                        is_pixel_format = True
+                
+                if is_pixel_format:
+                    # 使用实际截图尺寸（如果有），否则使用默认值
+                    device_w = getattr(self, '_image_width', None) or 1080
+                    device_h = getattr(self, '_image_height', None) or 2400
                     
                     # 判断是 [left, top, right, bottom] 还是 [left, top, width, height]
                     left, top, v3, v4 = bbox

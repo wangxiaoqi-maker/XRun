@@ -6,6 +6,7 @@ python-multipart==0.0.12
 # 数据库
 sqlalchemy==2.0.36
 aiosqlite==0.20.0
+aiomysql==0.2.0  # MySQL 异步驱动
 
 # 数据验证
 pydantic==2.10.0

@@ -145,6 +145,40 @@ export const knowledgeApi = {
   deleteApp: (appId) => api.delete(`/ai/apps/${appId}`)
 }
 
+// ===== 知识图谱探索 API =====
+export const explorationApi = {
+  // 开始探索会话
+  startExploration: (data) => api.post('/knowledge/exploration/start', data),
+  
+  // 结束探索会话
+  endExploration: (sessionId) => api.post('/knowledge/exploration/end', { session_id: sessionId }),
+  
+  // 记录页面跳转（视觉模型处理较慢，超时设为 5 分钟）
+  recordTransition: (data) => api.post('/knowledge/exploration/record-transition', data, { timeout: 300000 }),
+  
+  // 更新当前页面
+  updateCurrentPage: (sessionId, pageId) => api.post('/knowledge/exploration/update-current-page', {
+    session_id: sessionId,
+    page_id: pageId
+  }),
+  
+  // 获取 App 知识图谱
+  getAppGraph: (appId) => api.get(`/knowledge/exploration/graph/${appId}`),
+  
+  // 查找路径
+  findPath: (appId, fromPage, toPage) => api.post('/knowledge/exploration/find-path', {
+    app_id: appId,
+    from_page: fromPage,
+    to_page: toPage
+  }),
+  
+  // 获取页面跳转关系
+  getPageTransitions: (pageId) => api.get(`/knowledge/exploration/page/${pageId}/transitions`),
+  
+  // 获取活跃会话列表
+  listSessions: () => api.get('/knowledge/exploration/sessions')
+}
+
 // ===== LLM 配置 API =====
 export const llmApi = {
   // 供应商管理
@@ -163,7 +197,7 @@ export const llmApi = {
   // 用量统计
   getUsageStats: (hours = 24, providerId) => api.get('/llm/usage/stats', { params: { hours, provider_id: providerId } }),
   getUsageTrend: (hours = 24, interval = 'hour') => api.get('/llm/usage/trend', { params: { hours, interval } }),
-  getUsageByModel: (hours = 24) => api.get('/llm/usage/by-model', { params: { hours } })
+  getUsageByModel: (hours = 24, detailed = false) => api.get('/llm/usage/by-model', { params: { hours, detailed } })
 }
 
 // ===== 系统 API =====

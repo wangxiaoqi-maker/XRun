@@ -51,9 +51,9 @@ class LLMProvider(Base):
     success_rate = Column(Float, default=100.0, comment="成功率")
     avg_latency = Column(Float, default=0.0, comment="平均延迟(秒)")
     
-    # 时间
-    created_at = Column(DateTime, default=func.now())
-    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+    # 时间（使用本地时间）
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
     
     def to_dict(self, include_key=False):
         data = {
@@ -102,6 +102,9 @@ class LLMModel(Base):
     input_price = Column(Float, default=0.0, comment="输入价格")
     output_price = Column(Float, default=0.0, comment="输出价格")
     
+    # 图标
+    icon = Column(String(500), nullable=True, comment="模型图标URL")
+    
     # 状态
     status = Column(SQLEnum(ModelStatus), default=ModelStatus.ENABLED)
     is_default = Column(Boolean, default=False, comment="是否默认模型")
@@ -109,9 +112,9 @@ class LLMModel(Base):
     # 额外配置
     config = Column(JSON, comment="额外配置参数")
     
-    # 时间
-    created_at = Column(DateTime, default=func.now())
-    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+    # 时间（使用本地时间）
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
     
     def to_dict(self):
         return {
@@ -125,6 +128,7 @@ class LLMModel(Base):
             "supports_function_call": self.supports_function_call,
             "input_price": self.input_price,
             "output_price": self.output_price,
+            "icon": self.icon,
             "status": self.status.value if self.status else "enabled",
             "is_default": self.is_default,
             "config": self.config,
@@ -162,8 +166,8 @@ class LLMUsageLog(Base):
     # 费用
     cost = Column(Float, default=0.0, comment="本次调用费用")
     
-    # 时间
-    created_at = Column(DateTime, default=func.now(), index=True)
+    # 时间（使用本地时间）
+    created_at = Column(DateTime, default=datetime.now, index=True)
     
     def to_dict(self):
         return {

@@ -32,6 +32,15 @@ class PageAnalysis(KnowledgeBase):
     page_type = Column(String(50), default='unknown', index=True, comment="页面类型：login/home/list/detail/form")
     page_description = Column(Text, comment="页面功能描述")
     
+    # 页面特征签名（用于去重判断，基于页面结构而非截图）
+    page_signature = Column(String(64), index=True, comment="页面特征签名（用于判断是否是同一个页面）")
+    
+    # 页面深度（从首页的导航深度）
+    depth = Column(Integer, default=0, comment="从首页的导航深度")
+    
+    # 访问次数
+    visit_count = Column(Integer, default=1, comment="被访问次数")
+    
     # ========== 截图信息（不存储截图文件，只保留 hash 用于去重）==========
     screenshot_hash = Column(String(64), index=True, comment="截图 MD5 哈希（用于去重判断）")
     device_udid = Column(String(100), comment="设备 UDID")
@@ -85,6 +94,9 @@ class PageAnalysis(KnowledgeBase):
             "elements_count": self.elements_count,
             "confidence_score": float(self.confidence_score) if self.confidence_score else 0.0,
             "processing_time": float(self.processing_time) if self.processing_time else 0.0,
+            "page_signature": self.page_signature,
+            "depth": self.depth,
+            "visit_count": self.visit_count,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }

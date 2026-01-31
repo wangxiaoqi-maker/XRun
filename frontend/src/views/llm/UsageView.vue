@@ -59,44 +59,49 @@
       </div>
     </div>
 
-    <!-- 供应商列表 -->
-    <div class="providers-list">
+    <!-- 模型用量列表 -->
+    <div class="models-grid">
       <div 
-        v-for="provider in stats.by_provider" 
-        :key="provider.provider_id"
-        class="provider-row"
-        @click="$router.push('/llm/providers')"
+        v-for="model in modelUsageList" 
+        :key="model.model_id"
+        class="model-card"
       >
-        <div class="provider-icon">
-          <el-icon :size="24"><Cpu /></el-icon>
+        <div class="card-header">
+          <div class="model-icon">
+            <img v-if="model.model_icon || model.provider_icon" :src="model.model_icon || model.provider_icon" :alt="model.model_name" />
+            <el-icon v-else :size="20"><Cpu /></el-icon>
+          </div>
+          <div class="model-info">
+            <div class="model-name">{{ model.model_name }}</div>
+            <div class="model-code">{{ model.model_code }}</div>
+          </div>
+          <div class="provider-tag">{{ model.provider_name }}</div>
         </div>
-        <div class="provider-info">
-          <div class="name">{{ provider.provider_name }}</div>
-          <div class="code">{{ provider.provider_code }}</div>
-        </div>
-        <div class="provider-stats">
-          <div class="stat">
-            <span class="value">{{ provider.requests }}</span>
+        
+        <div class="card-stats">
+          <div class="stat-item">
+            <span class="value">{{ model.requests }}</span>
             <span class="label">请求数</span>
           </div>
-          <div class="stat">
-            <span class="value">{{ formatTokens(provider.tokens) }}</span>
+          <div class="stat-item">
+            <span class="value">{{ formatTokens(model.tokens) }}</span>
             <span class="label">Tokens</span>
           </div>
-          <div class="stat">
-            <span class="value" :class="provider.success_rate >= 90 ? 'success' : 'warning'">
-              {{ provider.success_rate }}% 成功率
-            </span>
+        </div>
+        
+        <div class="card-footer">
+          <div class="rate" :class="model.success_rate >= 90 ? 'success' : 'warning'">
+            <el-icon><CircleCheck /></el-icon>
+            {{ model.success_rate }}%
           </div>
-          <div class="stat">
-            <span class="value">{{ provider.avg_latency_ms }}ms</span>
-            <span class="label">延迟</span>
+          <div class="latency">
+            <el-icon><Clock /></el-icon>
+            {{ (model.avg_latency_ms / 1000).toFixed(1) }}s
           </div>
         </div>
-        <el-icon class="arrow"><ArrowRight /></el-icon>
       </div>
       
-      <div v-if="stats.by_provider?.length === 0" class="empty-state">
+      <div v-if="modelUsageList.length === 0" class="empty-state">
         <el-icon :size="48"><DataLine /></el-icon>
         <p>暂无数据</p>
       </div>
@@ -106,7 +111,7 @@
 
 <script setup>
 import { ref, onMounted, watch, nextTick } from 'vue'
-import { Refresh, Search, Cpu, ArrowRight, DataLine } from '@element-plus/icons-vue'
+import { Refresh, Search, Cpu, ArrowRight, DataLine, CircleCheck, Clock } from '@element-plus/icons-vue'
 import { llmApi } from '@/api'
 import * as echarts from 'echarts'
 
@@ -123,6 +128,7 @@ const stats = ref({
 
 const trend = ref([])
 const tokenByModel = ref([])
+const modelUsageList = ref([])
 
 const trendChartRef = ref(null)
 const tokenPieRef = ref(null)
@@ -135,15 +141,17 @@ let tokenTrendChart = null
 async function loadData() {
   loading.value = true
   try {
-    const [statsRes, trendRes, modelRes] = await Promise.all([
+    const [statsRes, trendRes, modelRes, modelDetailRes] = await Promise.all([
       llmApi.getUsageStats(timeRange.value),
       llmApi.getUsageTrend(timeRange.value, timeRange.value > 24 ? 'day' : 'hour'),
-      llmApi.getUsageByModel(timeRange.value)
+      llmApi.getUsageByModel(timeRange.value),
+      llmApi.getUsageByModel(timeRange.value, true)  // 详细模式
     ])
     
     stats.value = statsRes.data
     trend.value = trendRes.data.data || []
     tokenByModel.value = modelRes.data.data || []
+    modelUsageList.value = modelDetailRes.data.data || []
     
     await nextTick()
     renderCharts()
@@ -380,76 +388,130 @@ onMounted(() => {
   }
 }
 
-.providers-list {
+.models-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
 }
 
-.provider-row {
+.model-card {
   background: white;
   border-radius: 12px;
-  padding: 20px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  cursor: pointer;
+  padding: 16px;
   transition: all 0.2s;
   
   &:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   }
   
-  .provider-icon {
-    width: 48px;
-    height: 48px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 10px;
+  .card-header {
     display: flex;
     align-items: center;
-    justify-content: center;
-    color: white;
-  }
-  
-  .provider-info {
-    min-width: 100px;
+    gap: 12px;
+    margin-bottom: 16px;
     
-    .name {
-      font-weight: 600;
-      color: #1e293b;
+    .model-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      flex-shrink: 0;
+      overflow: hidden;
+      
+      img {
+        width: 28px;
+        height: 28px;
+        object-fit: contain;
+      }
     }
     
-    .code {
-      font-size: 12px;
-      color: #94a3b8;
-    }
-  }
-  
-  .provider-stats {
-    flex: 1;
-    display: flex;
-    gap: 24px;
-    
-    .stat {
-      .value {
-        font-size: 15px;
+    .model-info {
+      flex: 1;
+      min-width: 0;
+      
+      .model-name {
         font-weight: 600;
         color: #1e293b;
-        
-        &.success { color: #10b981; }
-        &.warning { color: #f59e0b; }
+        font-size: 14px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      
+      .model-code {
+        font-size: 11px;
+        color: #94a3b8;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+    
+    .provider-tag {
+      background: #f1f5f9;
+      color: #64748b;
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+  }
+  
+  .card-stats {
+    display: flex;
+    gap: 24px;
+    padding: 12px 0;
+    border-top: 1px solid #f1f5f9;
+    border-bottom: 1px solid #f1f5f9;
+    
+    .stat-item {
+      flex: 1;
+      
+      .value {
+        display: block;
+        font-size: 18px;
+        font-weight: 600;
+        color: #1e293b;
       }
       
       .label {
         display: block;
         font-size: 11px;
         color: #94a3b8;
+        margin-top: 2px;
       }
     }
   }
   
-  .arrow {
-    color: #cbd5e1;
+  .card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+    font-size: 13px;
+    
+    .rate, .latency {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: #64748b;
+      
+      .el-icon {
+        font-size: 14px;
+      }
+    }
+    
+    .rate.success {
+      color: #10b981;
+    }
+    
+    .rate.warning {
+      color: #f59e0b;
+    }
   }
 }
 

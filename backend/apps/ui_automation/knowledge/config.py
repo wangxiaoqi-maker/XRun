@@ -13,21 +13,29 @@ from functools import lru_cache
 class EmbeddingConfig(BaseSettings):
     """Embedding 模型配置 - 支持多种模型切换"""
     
-    # Embedding 提供商：openai / dashscope / local
-    EMBEDDING_PROVIDER: Literal["openai", "dashscope", "local"] = "openai"
+    # Embedding 提供商：openai / dashscope / ollama / local
+    EMBEDDING_PROVIDER: Literal["openai", "dashscope", "ollama", "local"] = "openai"
     
     # 模型名称
     EMBEDDING_MODEL: str = "text-embedding-3-small"
     
     # 向量维度（需与模型匹配）
-    # text-embedding-3-small: 1536
-    # text-embedding-3-large: 3072
-    # text-embedding-v3 (dashscope): 1024
-    # bge-base-zh-v1.5: 768
+    # OpenAI:
+    #   text-embedding-3-small: 1536
+    #   text-embedding-3-large: 3072
+    # DashScope:
+    #   text-embedding-v3: 1024
+    # Ollama:
+    #   nomic-embed-text: 768 (推荐，轻量)
+    #   mxbai-embed-large: 1024
+    #   bge-m3: 1024 (中文最佳)
+    #   snowflake-arctic-embed: 1024
     EMBEDDING_DIMENSION: int = 1536
     
     # API 配置（从环境变量读取）
     EMBEDDING_API_KEY: Optional[str] = None
+    # OpenAI/DashScope: API 地址
+    # Ollama: 服务地址，默认 http://localhost:11434
     EMBEDDING_BASE_URL: Optional[str] = None
     
     # 批量处理配置

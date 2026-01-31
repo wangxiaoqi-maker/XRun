@@ -127,7 +127,8 @@ class KnowledgeService:
                     "confidence_score": float(existing_page.confidence_score),
                     "is_new_page": False,
                     "is_cached": True,
-                    "processing_time": 0.0
+                    "processing_time": 0.0,
+                    "usage": {}  # 缓存结果无新 token 消耗
                 }
         
         # 3. 调用视觉模型分析
@@ -183,7 +184,8 @@ class KnowledgeService:
             "confidence_score": float(page.confidence_score) if page.confidence_score else 0.0,
             "is_new_page": True,
             "is_cached": False,
-            "processing_time": float(page.processing_time) if page.processing_time else 0.0
+            "processing_time": float(page.processing_time) if page.processing_time else 0.0,
+            "usage": analysis_result.get("usage", {})
         }
     
     async def _save_page_analysis(

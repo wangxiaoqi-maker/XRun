@@ -254,6 +254,103 @@ class LocalEmbeddingProvider(BaseEmbeddingProvider):
         raise NotImplementedError("本地 Embedding 模型暂未实现")
 
 
+class OllamaEmbeddingProvider(BaseEmbeddingProvider):
+    """
+    Ollama 本地 Embedding 提供商
+    
+    支持模型：
+    - nomic-embed-text (768 维) - 轻量快速，推荐
+    - mxbai-embed-large (1024 维)
+    - bge-m3 (1024 维) - 中文效果最佳
+    - snowflake-arctic-embed (1024 维)
+    
+    使用前需要：
+    1. 安装 Ollama: brew install ollama
+    2. 启动服务: ollama serve
+    3. 拉取模型: ollama pull nomic-embed-text
+    """
+    
+    def __init__(self, config: EmbeddingConfig):
+        super().__init__(config)
+        self._base_url = config.EMBEDDING_BASE_URL or "http://localhost:11434"
+    
+    async def initialize(self) -> None:
+        """初始化 Ollama 连接"""
+        if self._initialized:
+            return
+        
+        try:
+            import httpx
+            
+            # 测试连接
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(f"{self._base_url}/api/tags")
+                if response.status_code != 200:
+                    raise Exception(f"Ollama 服务未启动或无法连接: {response.status_code}")
+                
+                # 检查模型是否已安装
+                models = response.json().get("models", [])
+                model_names = [m.get("name", "").split(":")[0] for m in models]
+                
+                if self.model_name not in model_names and f"{self.model_name}:latest" not in [m.get("name") for m in models]:
+                    logger.warning(f"⚠️ 模型 {self.model_name} 未安装，请运行: ollama pull {self.model_name}")
+            
+            self._initialized = True
+            logger.info(f"✅ Ollama Embedding 初始化成功: {self.model_name} @ {self._base_url}")
+        except ImportError:
+            raise ImportError("请安装 httpx: pip install httpx")
+        except Exception as e:
+            logger.error(f"❌ Ollama Embedding 初始化失败: {e}")
+            raise
+    
+    async def generate(self, text: str) -> List[float]:
+        """生成单个文本向量"""
+        if not self._initialized:
+            await self.initialize()
+        
+        try:
+            import httpx
+            
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                response = await client.post(
+                    f"{self._base_url}/api/embeddings",
+                    json={
+                        "model": self.model_name,
+                        "prompt": text
+                    }
+                )
+                
+                if response.status_code != 200:
+                    raise Exception(f"Ollama API 错误: {response.status_code} - {response.text}")
+                
+                result = response.json()
+                embedding = result.get("embedding", [])
+                
+                if not embedding:
+                    raise Exception("Ollama 返回空向量")
+                
+                return embedding
+                
+        except Exception as e:
+            logger.error(f"Ollama Embedding 生成失败: {e}")
+            raise
+    
+    async def generate_batch(self, texts: List[str]) -> List[List[float]]:
+        """批量生成文本向量（Ollama 不支持批量，逐个处理）"""
+        if not self._initialized:
+            await self.initialize()
+        
+        if not texts:
+            return []
+        
+        results = []
+        for text in texts:
+            embedding = await self.generate(text)
+            results.append(embedding)
+        
+        return results
+
+
 class EmbeddingProviderFactory:
     """
     Embedding 提供商工厂（工厂模式 - Factory）
@@ -265,6 +362,7 @@ class EmbeddingProviderFactory:
         "openai": OpenAIEmbeddingProvider,
         "dashscope": DashScopeEmbeddingProvider,
         "local": LocalEmbeddingProvider,
+        "ollama": OllamaEmbeddingProvider,
     }
     
     @classmethod

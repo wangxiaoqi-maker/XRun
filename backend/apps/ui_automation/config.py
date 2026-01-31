@@ -12,8 +12,8 @@ class Settings(BaseSettings):
     APP_NAME: str = "UI Automation Platform"
     DEBUG: bool = True
     
-    # 数据库
-    DATABASE_URL: str = "sqlite+aiosqlite:///./data/app.db"
+    # 数据库（支持 MySQL: mysql+aiomysql://user:pass@host:3306/db）
+    DATABASE_URL: str = "sqlite+aiosqlite:///./data/app.db"  # 默认使用 SQLite
     
     # Sonic 配置
     SONIC_ENABLED: bool = True

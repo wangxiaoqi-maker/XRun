@@ -4,11 +4,12 @@
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 from typing import Optional, List
-from datetime import datetime, timedelta
-from sqlalchemy import select, func, and_, desc
+from datetime import datetime, timedelta, timezone
+from sqlalchemy import select, func, and_, desc, case, Integer
 from sqlalchemy.orm import selectinload
 
 from apps.ui_automation.database import get_session
+from apps.ui_automation.config import settings
 from apps.ui_automation.models.llm_config import (
     LLMProvider, LLMModel, LLMUsageLog,
     ModelType, ModelStatus
@@ -47,6 +48,7 @@ class ModelCreate(BaseModel):
     supports_function_call: bool = False
     input_price: float = 0.0
     output_price: float = 0.0
+    icon: Optional[str] = None
     config: Optional[dict] = None
 
 
@@ -59,6 +61,7 @@ class ModelUpdate(BaseModel):
     supports_function_call: Optional[bool] = None
     input_price: Optional[float] = None
     output_price: Optional[float] = None
+    icon: Optional[str] = None
     status: Optional[str] = None
     is_default: Optional[bool] = None
     config: Optional[dict] = None
@@ -239,6 +242,7 @@ async def create_model(data: ModelCreate):
             supports_function_call=data.supports_function_call,
             input_price=data.input_price,
             output_price=data.output_price,
+            icon=data.icon,
             config=data.config
         )
         session.add(model)
@@ -307,7 +311,7 @@ async def get_usage_stats(
 ):
     """获取用量统计概览"""
     async with get_session() as session:
-        since = datetime.utcnow() - timedelta(hours=hours)
+        since = datetime.now() - timedelta(hours=hours)
         
         conditions = [LLMUsageLog.created_at >= since]
         if provider_id:
@@ -376,13 +380,20 @@ async def get_usage_trend(
 ):
     """获取用量趋势"""
     async with get_session() as session:
-        since = datetime.utcnow() - timedelta(hours=hours)
+        since = datetime.now() - timedelta(hours=hours)
         
-        # 按时间分组统计
+        # 按时间分组统计（MySQL 用 DATE_FORMAT，SQLite 用 strftime）
+        is_mysql = "mysql" in (settings.DATABASE_URL or "")
         if interval == "hour":
-            time_format = func.strftime('%Y-%m-%d %H:00', LLMUsageLog.created_at)
+            if is_mysql:
+                time_format = func.date_format(LLMUsageLog.created_at, '%Y-%m-%d %H:00')
+            else:
+                time_format = func.strftime('%Y-%m-%d %H:00', LLMUsageLog.created_at)
         else:
-            time_format = func.strftime('%Y-%m-%d', LLMUsageLog.created_at)
+            if is_mysql:
+                time_format = func.date_format(LLMUsageLog.created_at, '%Y-%m-%d')
+            else:
+                time_format = func.strftime('%Y-%m-%d', LLMUsageLog.created_at)
         
         result = await session.execute(
             select(
@@ -411,40 +422,89 @@ async def get_usage_trend(
 
 
 @router.get("/usage/by-model")
-async def get_usage_by_model(hours: int = Query(24)):
-    """按模型统计用量（用于饼图）"""
+async def get_usage_by_model(hours: int = Query(24), detailed: bool = Query(False)):
+    """按模型统计用量"""
     async with get_session() as session:
-        since = datetime.utcnow() - timedelta(hours=hours)
+        since = datetime.now() - timedelta(hours=hours)
         
-        result = await session.execute(
-            select(
-                LLMUsageLog.model_id,
-                func.sum(LLMUsageLog.total_tokens).label("tokens")
+        if detailed:
+            # 详细模式：返回请求数、tokens、延迟、成功率等
+            result = await session.execute(
+                select(
+                    LLMUsageLog.model_id,
+                    LLMUsageLog.provider_id,
+                    func.count(LLMUsageLog.id).label("requests"),
+                    func.sum(LLMUsageLog.total_tokens).label("tokens"),
+                    func.avg(LLMUsageLog.latency_ms).label("avg_latency"),
+                    func.sum(func.cast(LLMUsageLog.success, Integer)).label("success_count")
+                )
+                .where(LLMUsageLog.created_at >= since)
+                .group_by(LLMUsageLog.model_id, LLMUsageLog.provider_id)
+                .order_by(desc("tokens"))
             )
-            .where(LLMUsageLog.created_at >= since)
-            .group_by(LLMUsageLog.model_id)
-            .order_by(desc("tokens"))
-        )
-        
-        usage_data = result.all()
-        
-        # 获取模型名称
-        model_ids = [row[0] for row in usage_data]
-        models_result = await session.execute(
-            select(LLMModel).where(LLMModel.id.in_(model_ids))
-        )
-        models_map = {m.id: m for m in models_result.scalars().all()}
-        
-        return {
-            "data": [
-                {
-                    "model_id": row[0],
-                    "model_name": models_map.get(row[0]).name if row[0] in models_map else "Unknown",
-                    "tokens": row[1] or 0
-                }
-                for row in usage_data
-            ]
-        }
+            usage_data = result.all()
+            
+            # 获取模型和供应商信息
+            model_ids = list(set(row[0] for row in usage_data))
+            provider_ids = list(set(row[1] for row in usage_data))
+            
+            models_result = await session.execute(
+                select(LLMModel).where(LLMModel.id.in_(model_ids))
+            )
+            models_map = {m.id: m for m in models_result.scalars().all()}
+            
+            providers_result = await session.execute(
+                select(LLMProvider).where(LLMProvider.id.in_(provider_ids))
+            )
+            providers_map = {p.id: p for p in providers_result.scalars().all()}
+            
+            return {
+                "data": [
+                    {
+                        "model_id": row[0],
+                        "model_name": models_map.get(row[0]).name if row[0] in models_map else "Unknown",
+                        "model_code": models_map.get(row[0]).model_id if row[0] in models_map else "unknown",
+                        "model_icon": models_map.get(row[0]).icon if row[0] in models_map else None,
+                        "provider_id": row[1],
+                        "provider_name": providers_map.get(row[1]).name if row[1] in providers_map else "Unknown",
+                        "provider_icon": providers_map.get(row[1]).icon if row[1] in providers_map else None,
+                        "requests": row[2] or 0,
+                        "tokens": row[3] or 0,
+                        "avg_latency_ms": round(row[4] or 0, 1),
+                        "success_rate": round((row[5] / row[2] * 100) if row[2] > 0 else 0, 1)
+                    }
+                    for row in usage_data
+                ]
+            }
+        else:
+            # 简单模式：仅用于饼图
+            result = await session.execute(
+                select(
+                    LLMUsageLog.model_id,
+                    func.sum(LLMUsageLog.total_tokens).label("tokens")
+                )
+                .where(LLMUsageLog.created_at >= since)
+                .group_by(LLMUsageLog.model_id)
+                .order_by(desc("tokens"))
+            )
+            usage_data = result.all()
+            
+            model_ids = [row[0] for row in usage_data]
+            models_result = await session.execute(
+                select(LLMModel).where(LLMModel.id.in_(model_ids))
+            )
+            models_map = {m.id: m for m in models_result.scalars().all()}
+            
+            return {
+                "data": [
+                    {
+                        "model_id": row[0],
+                        "model_name": models_map.get(row[0]).name if row[0] in models_map else "Unknown",
+                        "tokens": row[1] or 0
+                    }
+                    for row in usage_data
+                ]
+            }
 
 
 # ============ Utility: Record Usage ============

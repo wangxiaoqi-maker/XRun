@@ -114,6 +114,18 @@
         <el-form-item label="API Key" prop="api_key">
           <el-input v-model="form.api_key" type="password" show-password placeholder="从供应商控制台获取" />
         </el-form-item>
+        <el-form-item label="图标">
+          <div class="icon-input-wrapper">
+            <el-input v-model="form.icon" placeholder="图标 URL 或留空使用默认" />
+            <div class="icon-preview" v-if="form.icon">
+              <img :src="form.icon" :alt="form.name" @error="form.icon = ''" />
+            </div>
+            <div class="icon-preview default" v-else>
+              <el-icon :size="20"><Cpu /></el-icon>
+            </div>
+          </div>
+          <div class="form-tip">支持 PNG/SVG 图标链接</div>
+        </el-form-item>
         <el-form-item label="状态" v-if="editingProvider">
           <el-switch v-model="form.enabled" active-text="启用" inactive-text="禁用" />
         </el-form-item>
@@ -157,10 +169,16 @@
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="120">
+          <el-table-column label="操作" width="100" align="center">
             <template #default="{ row }">
-              <el-button text type="primary" size="small" @click="editModel(row)">编辑</el-button>
-              <el-button text type="danger" size="small" @click="deleteModel(row)">删除</el-button>
+              <div class="table-actions">
+                <el-tooltip content="编辑" placement="top">
+                  <el-button link type="primary" :icon="Edit" @click="editModel(row)" />
+                </el-tooltip>
+                <el-tooltip content="删除" placement="top">
+                  <el-button link type="danger" :icon="Delete" @click="deleteModel(row)" />
+                </el-tooltip>
+              </div>
             </template>
           </el-table-column>
         </el-table>
@@ -168,7 +186,7 @@
     </el-dialog>
 
     <!-- 添加/编辑模型对话框 - 简化版 -->
-    <el-dialog v-model="modelDialogVisible" :title="editingModel ? '编辑模型' : '添加模型'" width="420px">
+    <el-dialog v-model="modelDialogVisible" :title="editingModel ? '编辑模型' : '添加模型'" width="460px">
       <el-form :model="modelForm" label-width="90px" ref="modelFormRef">
         <el-form-item label="模型ID" required>
           <el-input v-model="modelForm.model_id" placeholder="如：doubao-1-5-thinking-vision-pro-250428" />
@@ -177,9 +195,23 @@
         <el-form-item label="显示名称">
           <el-input v-model="modelForm.name" placeholder="可选，如：豆包视觉Pro" />
         </el-form-item>
+        <el-form-item label="图标">
+          <div class="icon-input-wrapper">
+            <el-input v-model="modelForm.icon" placeholder="图标 URL（可选）" />
+            <div class="icon-preview" v-if="modelForm.icon">
+              <img :src="modelForm.icon" :alt="modelForm.name" @error="modelForm.icon = ''" />
+            </div>
+            <div class="icon-preview default" v-else>
+              <el-icon :size="18"><Cpu /></el-icon>
+            </div>
+          </div>
+        </el-form-item>
         <el-form-item label="支持视觉">
           <el-switch v-model="modelForm.supports_vision" />
           <span class="switch-tip">开启后可用于 AI 页面分析</span>
+        </el-form-item>
+        <el-form-item label="状态" v-if="editingModel">
+          <el-switch v-model="modelForm.enabled" active-text="启用" inactive-text="禁用" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -236,7 +268,9 @@ const modelForm = ref({
   model_type: 'chat',
   max_tokens: 4096,
   supports_vision: false,
-  supports_function_call: false
+  supports_function_call: false,
+  icon: '',
+  enabled: true
 })
 
 const enabledCount = computed(() => providers.value.filter(p => p.status === 'enabled').length)
@@ -287,6 +321,7 @@ async function submitForm() {
       code: code,
       base_url: form.value.base_url,
       api_key: form.value.api_key || undefined,
+      icon: form.value.icon || undefined,
       status: form.value.enabled ? 'enabled' : 'disabled'
     }
     
@@ -332,7 +367,7 @@ async function manageModels(provider) {
 function showAddModelDialog() {
   editingModel.value = null
   modelForm.value = {
-    name: '', model_id: '', supports_vision: false
+    name: '', model_id: '', supports_vision: false, icon: '', enabled: true
   }
   modelDialogVisible.value = true
 }
@@ -342,7 +377,9 @@ function editModel(model) {
   modelForm.value = {
     name: model.name || '',
     model_id: model.model_id || '',
-    supports_vision: model.supports_vision || false
+    supports_vision: model.supports_vision || false,
+    icon: model.icon || '',
+    enabled: model.status === 'enabled'
   }
   modelDialogVisible.value = true
 }
@@ -362,7 +399,9 @@ async function submitModelForm() {
       model_type: modelForm.value.supports_vision ? 'vision' : 'chat',
       supports_vision: modelForm.value.supports_vision,
       supports_function_call: true,  // 默认支持
-      max_tokens: 4096  // 默认值
+      max_tokens: 4096,  // 默认值
+      icon: modelForm.value.icon || undefined,
+      status: modelForm.value.enabled ? 'enabled' : 'disabled'
     }
     
     if (editingModel.value) {
@@ -634,12 +673,58 @@ onMounted(() => {
   .models-header {
     margin-bottom: 16px;
   }
+  
+  .table-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    
+    .el-button {
+      padding: 4px;
+      font-size: 16px;
+    }
+  }
 }
 
 .form-tip {
   font-size: 12px;
   color: #94a3b8;
   margin-top: 4px;
+}
+
+.icon-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  
+  .el-input {
+    flex: 1;
+  }
+  
+  .icon-preview {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+    
+    img {
+      width: 24px;
+      height: 24px;
+      object-fit: contain;
+    }
+    
+    &.default {
+      color: #94a3b8;
+    }
+  }
 }
 
 .switch-tip {

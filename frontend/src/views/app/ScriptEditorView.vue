@@ -51,6 +51,11 @@
             <span class="update-time">上次更新: {{ lastAnalyzeTime }}</span>
           </div>
           <div class="header-actions">
+            <!-- 当前模型显示 -->
+            <div v-if="currentModelName" class="current-model-badge">
+              <el-icon :size="12"><Cpu /></el-icon>
+              <span>{{ currentModelName }}</span>
+            </div>
             <el-button text :disabled="!mirrorRef?.connected" @click="clearAnalysis" title="清空">
               <el-icon><Delete /></el-icon>
             </el-button>
@@ -103,7 +108,7 @@
           @device-connected="onDeviceConnected"
         >
           <!-- 元素框选 Overlay (仅教学模式 + 有分析结果) -->
-          <template #overlay="{ deviceWidth: dw, deviceHeight: dh }">
+          <template #overlay="{ deviceWidth: dw, deviceHeight: dh, imgRect }">
             <ElementOverlay
               v-if="editorMode === 'teach' && mirrorRef?.connected && analysisElements.length > 0"
               class="element-overlay-layer"
@@ -112,6 +117,7 @@
               :selected-id="selectedElementId"
               :device-width="dw"
               :device-height="dh"
+              :img-rect="imgRect"
               @hover="hoveredElementId = $event"
               @leave="hoveredElementId = null"
               @click="selectedElementId = $event.id"
@@ -137,6 +143,13 @@
           :hovered-id="hoveredElementId"
           :analyzing="analyzing"
           :saving="savingToKnowledge"
+          :processing-time="analysisResult?.processing_time || 0"
+          :usage="analysisResult?.usage || {}"
+          :screenshot="analysisScreenshot"
+          :current-model-name="currentModelName"
+          :exploration-enabled="explorationEnabled"
+          :exploration-stats="explorationStats"
+          :current-page-id="currentPageId"
           @update:page-summary="pageSummary = $event"
           @hover="hoveredElementId = $event"
           @leave="hoveredElementId = null"
@@ -144,6 +157,7 @@
           @add-element="onAddElement"
           @save="saveToKnowledge"
           @cancel="clearAnalysis"
+          @element-click="onElementClickForExploration"
         />
         
         <!-- 执行模式步骤列表 -->
@@ -344,7 +358,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick, watchEffect } from 'vue'
+import { ref, nextTick, watchEffect, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 // 定义组件名称，用于 keep-alive 缓存
@@ -354,13 +368,13 @@ defineOptions({
 import { ElMessage } from 'element-plus'
 import { 
   ArrowLeft, VideoPlay, Check, Minus, Setting, Delete, Plus, Loading, Camera,
-  SwitchButton, CircleClose, Document, ChatLineSquare, MagicStick
+  SwitchButton, CircleClose, Document, ChatLineSquare, MagicStick, Cpu
 } from '@element-plus/icons-vue'
 import Draggable from 'vuedraggable'
 import DeviceMirror from '@/components/DeviceMirror.vue'
 import ElementOverlay from '@/components/ElementOverlay.vue'
 import AITeachingPanel from '@/components/AITeachingPanel.vue'
-import { deviceApi, knowledgeApi, llmApi } from '@/api'
+import { deviceApi, knowledgeApi, llmApi, explorationApi } from '@/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -388,6 +402,7 @@ const analyzing = ref(false)
 const savingToKnowledge = ref(false)
 const analysisResult = ref(null)
 const analysisElements = ref([])
+const analysisScreenshot = ref('') // 保存分析时的截图 base64
 const pageSummary = ref('')
 const hoveredElementId = ref(null)
 const selectedElementId = ref(null)
@@ -395,6 +410,16 @@ const lastAnalyzeTime = ref('刚刚')
 const deviceWidth = ref(1080)
 const deviceHeight = ref(2400)
 const connectedDevice = ref(null)
+
+// ========== 知识图谱探索状态 ==========
+const explorationEnabled = ref(true)  // 是否启用探索模式
+const explorationSession = ref(null)  // 当前探索会话
+const currentPageId = ref(null)       // 当前页面 ID
+const explorationStats = ref({        // 探索统计
+  pages_discovered: 0,
+  transitions_count: 0
+})
+const appGraph = ref(null)            // App 知识图谱
 
 // AI 分析配置弹窗
 const showAnalyzeConfig = ref(false)
@@ -405,6 +430,13 @@ const analyzeConfig = ref({
 })
 const visionModels = ref([])  // 支持视觉的模型列表
 const loadingModels = ref(false)
+
+// 当前选中的模型名称
+const currentModelName = computed(() => {
+  if (!analyzeConfig.value.modelId) return ''
+  const model = visionModels.value.find(m => m.id === analyzeConfig.value.modelId)
+  return model?.name || model?.model_id || ''
+})
 
 const actionOptions = [
   { value: '点击 (Click)', action: 'click' },
@@ -427,12 +459,150 @@ function saveScript() { isSaved.value = true; ElMessage.success('保存成功') 
 function toggleRecord() { isRecording.value = !isRecording.value }
 function screenshot() { /* Implement screenshot */ }
 function onActionRecorded(action) { console.log("Recorded", action) }
-function onDeviceConnected(device) { 
+async function onDeviceConnected(device) { 
   connectedDevice.value = device
   ElMessage.success('设备已连接')
   if (device?.resolution) {
     const [w, h] = device.resolution.split('x').map(Number)
     if (w && h) { deviceWidth.value = w; deviceHeight.value = h }
+  }
+  
+  // 启动探索会话
+  if (explorationEnabled.value && device) {
+    await startExplorationSession(device)
+  }
+}
+
+// 启动探索会话
+async function startExplorationSession(device) {
+  try {
+    // 获取 app_id（基于应用名称）
+    const appName = device.name || '未知应用'
+    
+    const res = await explorationApi.startExploration({
+      app_id: appName,  // 这里使用应用名称作为临时 ID
+      device_udid: device.udid,
+      mode: 'manual'
+    })
+    
+    if (res.data.success) {
+      explorationSession.value = {
+        session_id: res.data.session_id,
+        app_id: appName
+      }
+      console.log('[探索] 探索会话已开始:', res.data.session_id)
+    }
+  } catch (e) {
+    console.error('[探索] 启动探索会话失败:', e)
+  }
+}
+
+// 结束探索会话
+async function endExplorationSession() {
+  if (!explorationSession.value?.session_id) return
+  
+  try {
+    const res = await explorationApi.endExploration(explorationSession.value.session_id)
+    if (res.data.success) {
+      console.log('[探索] 探索会话已结束:', res.data)
+      explorationStats.value = {
+        pages_discovered: res.data.pages_discovered || 0,
+        transitions_count: res.data.transitions_count || 0
+      }
+    }
+    explorationSession.value = null
+    currentPageId.value = null
+  } catch (e) {
+    console.error('[探索] 结束探索会话失败:', e)
+  }
+}
+
+// 更新探索会话的当前页面
+async function updateExplorationCurrentPage(pageId) {
+  if (!explorationSession.value?.session_id || !pageId) return
+  
+  try {
+    await explorationApi.updateCurrentPage(explorationSession.value.session_id, pageId)
+    console.log('[探索] 更新当前页面:', pageId)
+  } catch (e) {
+    console.error('[探索] 更新当前页面失败:', e)
+  }
+}
+
+// 记录页面跳转（当用户点击元素后页面发生变化时调用）
+async function recordPageTransition(triggerElement, actionType = 'click') {
+  if (!explorationSession.value?.session_id || !currentPageId.value) {
+    console.log('[探索] 未开启探索会话或当前页面未知，跳过跳转记录')
+    return null
+  }
+  
+  try {
+    // 获取新页面截图
+    const wdaPort = mirrorRef.value?.wdaPort || 0
+    const screenshotRes = await deviceApi.screenshotBase64(
+      connectedDevice.value.udid,
+      connectedDevice.value.platform,
+      wdaPort
+    )
+    
+    if (!screenshotRes.data?.screenshot) {
+      console.error('[探索] 获取跳转后截图失败')
+      return null
+    }
+    
+    // 记录跳转
+    const res = await explorationApi.recordTransition({
+      session_id: explorationSession.value.session_id,
+      trigger_element: {
+        id: triggerElement.id,
+        name: triggerElement.element_name || triggerElement.name,
+        midscene_locator: triggerElement.midscene_locator
+      },
+      action_type: actionType,
+      to_page_screenshot: screenshotRes.data.screenshot,
+      model_id: analyzeConfig.value.modelId || undefined
+    })
+    
+    if (res.data.success) {
+      console.log('[探索] 跳转记录成功:', res.data)
+      
+      // 更新统计
+      if (res.data.session_stats) {
+        explorationStats.value = res.data.session_stats
+      }
+      
+      // 更新当前页面
+      if (res.data.to_page?.id) {
+        currentPageId.value = res.data.to_page.id
+      }
+      
+      // 提示用户
+      if (res.data.is_new_page) {
+        ElMessage.success(`发现新页面: ${res.data.to_page?.name || '未知页面'}`)
+      }
+      
+      return res.data
+    }
+    
+    return null
+  } catch (e) {
+    console.error('[探索] 记录跳转失败:', e)
+    return null
+  }
+}
+
+// 加载 App 知识图谱
+async function loadAppGraph() {
+  if (!explorationSession.value?.app_id) return
+  
+  try {
+    const res = await explorationApi.getAppGraph(explorationSession.value.app_id)
+    if (res.data.success) {
+      appGraph.value = res.data.data
+      console.log('[探索] 加载知识图谱:', appGraph.value)
+    }
+  } catch (e) {
+    console.error('[探索] 加载知识图谱失败:', e)
   }
 }
 
@@ -480,13 +650,16 @@ async function doAnalyze() {
     const screenshotRes = await deviceApi.screenshotBase64(connectedDevice.value.udid, connectedDevice.value.platform, wdaPort)
     if (!screenshotRes.data?.screenshot) throw new Error('获取截图失败')
     
+    // 保存截图用于元素切图显示
+    analysisScreenshot.value = screenshotRes.data.screenshot
+    
     const requestData = {
       image_data: screenshotRes.data.screenshot,
       app_name: connectedDevice.value.name || '未知应用',
       platform: connectedDevice.value.platform,
       device_udid: connectedDevice.value.udid,
       device_resolution: connectedDevice.value.resolution,
-      skip_duplicate: true,
+      skip_duplicate: false,  // 测试新 prompt
       context_hint: analyzeConfig.value.contextHint || undefined,
       provider_id: analyzeConfig.value.providerId || undefined,
       model_id: analyzeConfig.value.modelId || undefined
@@ -498,6 +671,13 @@ async function doAnalyze() {
     analysisElements.value = result.data.elements || []
     pageSummary.value = result.data.page_description || ''
     lastAnalyzeTime.value = '刚刚'
+    
+    // 更新探索会话的当前页面
+    if (explorationSession.value?.session_id && result.data.page_id) {
+      currentPageId.value = result.data.page_id
+      await updateExplorationCurrentPage(result.data.page_id)
+    }
+    
     ElMessage.success(`识别到 ${analysisElements.value.length} 个可测试元素`)
   } catch (e) {
     console.error('AI 分析失败:', e)
@@ -534,6 +714,39 @@ function clearAnalysis() {
 
 function onRemoveElement(id) {
   analysisElements.value = analysisElements.value.filter(e => e.id !== id)
+}
+
+// 元素点击处理（用于探索模式）
+async function onElementClickForExploration(element) {
+  if (!explorationEnabled.value || !explorationSession.value) return
+  
+  console.log('[探索] 元素被点击:', element.element_name || element.name)
+  
+  // 在设备上执行点击操作
+  if (connectedDevice.value && element.bbox) {
+    try {
+      // 计算点击坐标（bbox 是百分比，需要转换为像素）
+      const bbox = element.bbox
+      const centerX = ((bbox[0] + bbox[2] / 2) / 100) * deviceWidth.value
+      const centerY = ((bbox[1] + bbox[3] / 2) / 100) * deviceHeight.value
+      
+      // 执行点击
+      if (connectedDevice.value.platform === 'ios') {
+        await deviceApi.iosNativeTap(connectedDevice.value.udid, centerX, centerY)
+      } else {
+        await deviceApi.tap(connectedDevice.value.udid, centerX, centerY, connectedDevice.value.platform)
+      }
+      
+      // 等待页面稳定
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      
+      // 记录跳转
+      await recordPageTransition(element, 'click')
+      
+    } catch (e) {
+      console.error('[探索] 点击元素失败:', e)
+    }
+  }
 }
 
 function onAddElement() {
@@ -981,7 +1194,7 @@ button { outline: none; }
   min-height: 0;
   min-width: 0; /* 防止内容撑开 */
   background: #f8fafc;
-  padding: 0;
+  padding: 16px;
   border-radius: 0 0 8px 0;
 }
 
@@ -1009,43 +1222,39 @@ button { outline: none; }
     position: relative;
     display: flex;
     align-items: center;
-    height: 48px; /* 减小高度，由 64px -> 48px */
+    height: 48px;
     padding: 0 24px;
     background: #ffffff;
-    border-radius: 12px;
-    
-    border: 1px solid transparent; 
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    border-left: 3px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     transition: all 0.2s;
     cursor: default;
     
     &:hover {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+        border-color: #d1d5db;
+        border-left-color: #d1d5db;
         .hover-actions, .config-icon { opacity: 1; }
     }
     
-    /* Running: Blue Border + Blue Glow */
+    /* 执行中 - 左边蓝色 */
     &.status-running {
-        border-color: #3b82f6;
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
-        z-index: 5;
+        border-left-color: #3b82f6;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.12);
+    }
+    
+    /* 执行成功 - 左边绿色 */
+    &.status-success {
+        border-left-color: #10b981;
     }
 }
 
-/* Left Colored Strip: Rounded on left side to match card */
+/* Left Colored Strip: 已废弃，改用 border-left */
 .status-strip {
-    position: absolute;
-    left: 0;
-    top: 4px; 
-    bottom: 4px; 
-    width: 4px; 
-    border-radius: 0 4px 4px 0; /* 左侧贴边，右侧圆角 */
-    background: transparent;
+    display: none;
 }
-
-.status-running .status-strip { background: #3b82f6; } 
-.status-success .status-strip { background: #10b981; }
 
 /* Index */
 .step-index {
@@ -1201,6 +1410,23 @@ button { outline: none; }
   margin-right: auto; /* 把自己推到左边 */
   .page-name { font-size: 14px; font-weight: 600; color: #1e293b; }
   .update-time { font-size: 11px; color: #94a3b8; }
+}
+
+/* 当前模型徽章 */
+.current-model-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: #f1f5f9;
+  border-radius: 12px;
+  font-size: 11px;
+  color: #64748b;
+  margin-right: 8px;
+  
+  .el-icon {
+    color: #6366f1;
+  }
 }
 
 /* AI 分析按钮 */
