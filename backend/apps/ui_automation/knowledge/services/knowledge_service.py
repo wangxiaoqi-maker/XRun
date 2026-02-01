@@ -16,6 +16,7 @@ from ..models import AppInfo, PageAnalysis, PageElement
 from ..repositories import AppRepository, PageRepository, ElementRepository
 from .page_analyzer_service import PageAnalyzerService
 from .vector_service import VectorService
+from .minio_service import get_minio_service
 
 
 class KnowledgeService:
@@ -73,7 +74,8 @@ class KnowledgeService:
         context_hint: Optional[str] = None,
         skip_duplicate: bool = True,
         provider_id: Optional[str] = None,
-        model_id: Optional[str] = None
+        model_id: Optional[str] = None,
+        app_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         分析页面截图并存入知识库
@@ -82,7 +84,7 @@ class KnowledgeService:
         1. 检查截图是否已分析（去重）
         2. 调用视觉模型分析截图
         3. 存入关系型数据库
-        4. 存入向量数据库
+        4. 存入向量数据库（可选，默认不保存）
         
         Args:
             image_data: Base64 编码的截图
@@ -97,19 +99,18 @@ class KnowledgeService:
             model_id: 模型 ID（可选，从数据库配置）
             
         Returns:
-            分析结果，包含 page_id, page_name, elements 等
+            分析结果，包含 page_name, elements 等（不保存数据库，需用户手动确认后保存）
         """
-        # 1. 获取或创建 App
-        app, is_new_app = await self._app_repo.get_or_create(
-            app_name=app_name,
-            platform=platform,
-            package_name=package_name
-        )
-        
-        # 2. 检查截图是否已分析
+        # 1. 检查是否已分析过（去重）
         screenshot_hash = self.analyzer_service.calculate_image_hash(image_data)
         
         if skip_duplicate:
+            # 获取或创建 App（仅用于查询缓存）
+            app, _ = await self._app_repo.get_or_create(
+                app_name=app_name,
+                platform=platform,
+                package_name=package_name
+            )
             existing_page = await self._page_repo.get_by_screenshot_hash(
                 app_id=app.id,
                 screenshot_hash=screenshot_hash
@@ -127,11 +128,12 @@ class KnowledgeService:
                     "confidence_score": float(existing_page.confidence_score),
                     "is_new_page": False,
                     "is_cached": True,
+                    "is_saved": True,  # 已保存过
                     "processing_time": 0.0,
-                    "usage": {}  # 缓存结果无新 token 消耗
+                    "usage": {}
                 }
         
-        # 3. 调用视觉模型分析
+        # 2. 调用视觉模型分析（不保存数据库）
         analysis_result = await self.analyzer_service.analyze_screenshot(
             image_data=image_data,
             context_hint=context_hint,
@@ -139,7 +141,7 @@ class KnowledgeService:
             model_id=model_id
         )
         
-        # 3.5 记录 LLM 用量到数据库
+        # 3. 记录 LLM 用量
         if provider_id and model_id and analysis_result.get("usage"):
             try:
                 await self._record_llm_usage(
@@ -151,41 +153,38 @@ class KnowledgeService:
             except Exception as e:
                 logger.warning(f"记录 LLM 用量失败: {e}")
         
-        # 4. 存入关系型数据库
-        page = await self._save_page_analysis(
-            app=app,
-            analysis_result=analysis_result,
-            device_udid=device_udid,
-            device_resolution=device_resolution
-        )
-        
-        # 5. 存入向量数据库（可选，失败不影响主流程）
-        elements = await self._element_repo.list_by_page(page.id)
-        try:
-            await self._save_to_vector_db(
-                app_name=app_name,
-                page=page,
-                elements=elements,
-                platform=platform
-            )
-        except Exception as e:
-            logger.warning(f"向量数据库保存失败（已跳过）: {e}")
-        
-        # 6. 提交事务
-        await self.session.commit()
+        # 4. 返回分析结果（不保存，用户确认后手动保存）
+        # 生成临时元素 ID（保存时会替换为真实 ID）
+        elements = analysis_result.get("elements", [])
+        for i, elem in enumerate(elements):
+            elem["id"] = f"temp_{i}_{screenshot_hash[:8]}"
         
         return {
-            "page_id": page.id,
-            "page_name": page.page_name,
-            "page_type": page.page_type,
-            "page_description": page.page_description,
-            "elements": [e.to_dict() for e in elements],
+            "page_id": None,  # 未保存，无 page_id
+            "page_name": analysis_result.get("page_name", "Unknown"),
+            "page_type": analysis_result.get("page_type", "unknown"),
+            "page_description": analysis_result.get("page_description", ""),
+            "elements": elements,
             "elements_count": len(elements),
-            "confidence_score": float(page.confidence_score) if page.confidence_score else 0.0,
+            "confidence_score": analysis_result.get("confidence_score", 0.0),
             "is_new_page": True,
             "is_cached": False,
-            "processing_time": float(page.processing_time) if page.processing_time else 0.0,
-            "usage": analysis_result.get("usage", {})
+            "is_saved": False,  # 未保存
+            "processing_time": analysis_result.get("processing_time", 0.0),
+            "usage": analysis_result.get("usage", {}),
+            # 保存时需要的元数据
+            "save_meta": {
+                "app_id": app_id,  # 应用管理模块的应用 ID
+                "app_name": app_name,
+                "platform": platform,
+                "package_name": package_name,
+                "device_udid": device_udid,
+                "device_resolution": device_resolution,
+                "screenshot_hash": screenshot_hash,
+                "screenshot_base64": image_data,  # 保存截图到 MinIO
+                "context_hint": context_hint,  # 用户输入的上下文提示
+                "raw_result": analysis_result
+            }
         }
     
     async def _save_page_analysis(
@@ -193,17 +192,22 @@ class KnowledgeService:
         app: AppInfo,
         analysis_result: Dict[str, Any],
         device_udid: Optional[str],
-        device_resolution: Optional[str]
+        device_resolution: Optional[str],
+        context_hint: Optional[str] = None,
+        screenshot_url: Optional[str] = None,
+        page_id: Optional[str] = None
     ) -> PageAnalysis:
         """保存页面分析结果到关系型数据库"""
         # 创建页面记录
         page = PageAnalysis(
-            id=str(uuid.uuid4()),
+            id=page_id or str(uuid.uuid4()),
             app_id=app.id,
             page_name=analysis_result.get("page_name", "Unknown"),
             page_type=analysis_result.get("page_type", "unknown"),
             page_description=analysis_result.get("page_description", ""),
+            user_context=context_hint,  # 保存用户输入的上下文描述
             screenshot_hash=analysis_result.get("screenshot_hash", ""),
+            screenshot_url=screenshot_url,  # 保存截图 URL
             device_udid=device_udid,
             device_resolution=device_resolution,
             elements_count=len(analysis_result.get("elements", [])),
@@ -259,6 +263,13 @@ class KnowledgeService:
             )
             # 添加额外的过滤字段
             data["metadata"]["page_type"] = page.page_type
+            
+            # 如果有用户上下文，追加到描述中增强语义搜索
+            if page.user_context:
+                data["metadata"]["user_context"] = page.user_context
+                # 把用户上下文加入描述，提高搜索准确性
+                data["description"] = f"{data['description']} [页面说明: {page.user_context}]"
+            
             vector_data.append(data)
         
         # 批量写入向量库
@@ -342,19 +353,149 @@ class KnowledgeService:
     
     # ==================== 知识库管理相关 ====================
     
+    async def save_analysis_to_knowledge_base(
+        self,
+        analysis_result: Dict[str, Any],
+        save_to_vector: bool = True
+    ) -> Dict[str, Any]:
+        """
+        保存分析结果到知识库（关系型数据库 + 向量数据库 + MinIO）
+        
+        用户确认 AI 分析结果后手动触发
+        
+        Args:
+            analysis_result: AI 分析返回的结果（包含 _meta 元数据）
+            save_to_vector: 是否同时保存到向量库
+            
+        Returns:
+            保存结果，包含 page_id 和保存的元素数量
+        """
+        meta = analysis_result.get("save_meta", {})
+        if not meta:
+            raise ValueError("分析结果缺少元数据，无法保存。请重新进行 AI 分析")
+        
+        # 1. 获取或创建 App
+        app, _ = await self._app_repo.get_or_create(
+            app_name=meta["app_name"],
+            platform=meta["platform"],
+            package_name=meta.get("package_name")
+        )
+        
+        # 2. 上传截图到 MinIO（预先生成 page_id）
+        page_id = str(uuid.uuid4())
+        screenshot_url = None
+        screenshot_base64 = meta.get("screenshot_base64")
+        if screenshot_base64:
+            try:
+                minio_service = get_minio_service()
+                screenshot_url = minio_service.upload_screenshot(
+                    image_data=screenshot_base64,
+                    page_id=page_id
+                )
+                if screenshot_url:
+                    logger.info(f"✅ 截图已上传到 MinIO: {screenshot_url}")
+            except Exception as e:
+                logger.warning(f"截图上传失败（已跳过）: {e}")
+        
+        # 3. 保存到关系型数据库
+        page = await self._save_page_analysis(
+            app=app,
+            analysis_result=meta["raw_result"],
+            device_udid=meta.get("device_udid"),
+            device_resolution=meta.get("device_resolution"),
+            context_hint=meta.get("context_hint"),
+            screenshot_url=screenshot_url,
+            page_id=page_id
+        )
+        
+        # 3. 获取保存后的元素
+        elements = await self._element_repo.list_by_page(page.id)
+        
+        # 4. 生成元素切图（从截图中裁剪）
+        if screenshot_base64 and elements:
+            try:
+                from .crop_service import get_crop_service
+                crop_service = get_crop_service()
+                
+                crop_count = 0
+                for element in elements:
+                    if element.bbox:
+                        crop_url = crop_service.crop_element_from_base64(
+                            image_data=screenshot_base64,
+                            bbox=element.bbox,
+                            element_id=element.id
+                        )
+                        if crop_url:
+                            element.crop_image_url = crop_url
+                            crop_count += 1
+                
+                if crop_count > 0:
+                    logger.info(f"✅ 已生成 {crop_count} 个元素切图")
+            except Exception as e:
+                logger.warning(f"生成元素切图失败（已跳过）: {e}")
+        
+        # 5. 保存到向量数据库
+        if save_to_vector and elements:
+            try:
+                await self._save_to_vector_db(
+                    app_name=meta["app_name"],
+                    page=page,
+                    elements=elements,
+                    platform=meta["platform"]
+                )
+                logger.info(f"✅ 已保存 {len(elements)} 个元素到向量数据库")
+            except Exception as e:
+                logger.warning(f"向量数据库保存失败（已跳过）: {e}")
+        
+        # 6. 提交事务
+        await self.session.commit()
+        
+        # 7. 清除相关缓存
+        from .cache_service import invalidate_stats_cache, invalidate_pages_cache
+        await invalidate_stats_cache()
+        await invalidate_pages_cache()
+        
+        logger.info(f"✅ 已保存页面到知识库: {page.page_name} ({len(elements)} 个元素)")
+        
+        return {
+            "page_id": page.id,
+            "page_name": page.page_name,
+            "elements_count": len(elements),
+            "saved_to_vector": save_to_vector
+        }
+    
     async def get_apps(
         self,
         platform: Optional[str] = None,
         offset: int = 0,
         limit: int = 100
     ) -> List[Dict[str, Any]]:
-        """获取应用列表"""
+        """
+        获取应用列表
+        
+        优化：使用缓存减少数据库查询（TTL 60秒）
+        """
+        from .cache_service import get_cache
+        
+        cache = get_cache()
+        cache_key = f"apps:list:{platform or 'all'}:{offset}:{limit}"
+        
+        # 尝试获取缓存
+        cached = await cache.get(cache_key)
+        if cached is not None:
+            return cached
+        
+        # 执行查询
         if platform:
             apps = await self._app_repo.list_by_platform(platform, offset, limit)
         else:
             apps = await self._app_repo.get_all(offset, limit)
         
-        return [app.to_dict() for app in apps]
+        result = [app.to_dict() for app in apps]
+        
+        # 缓存 60 秒
+        await cache.set(cache_key, result, ttl=60)
+        return result
     
     async def get_pages(
         self,
@@ -362,21 +503,72 @@ class KnowledgeService:
         platform: Optional[str] = None,
         page_type: Optional[str] = None,
         offset: int = 0,
-        limit: int = 50
+        limit: int = 50,
+        include_failed: bool = False,
+        deduplicate: bool = True
     ) -> List[Dict[str, Any]]:
-        """获取页面列表"""
-        if app_name:
-            pages = await self._page_repo.list_by_app_name(
-                app_name=app_name,
-                platform=platform,
-                page_type=page_type,
-                offset=offset,
-                limit=limit
-            )
-        else:
-            pages = await self._page_repo.get_all(offset, limit)
+        """
+        获取页面列表（优化版：SQL 层去重 + 缓存）
         
-        return [page.to_dict() for page in pages]
+        Args:
+            app_name: 应用名称过滤
+            platform: 平台过滤
+            page_type: 页面类型过滤
+            offset: 偏移量
+            limit: 数量限制
+            include_failed: 是否包含解析失败的页面（elements_count=0）
+            deduplicate: 是否去重（同名页面只保留最新的）
+        """
+        from .cache_service import get_cache
+        
+        # 仅对去重查询启用缓存（最常用场景）
+        if deduplicate:
+            cache = get_cache()
+            cache_key = f"pages:unique:{offset}:{limit}:{app_name or 'all'}:{include_failed}"
+            
+            # 尝试获取缓存
+            cached = await cache.get(cache_key)
+            if cached is not None:
+                return cached
+            
+            # 使用高效的 SQL 层去重查询
+            pages = await self._page_repo.get_unique_pages(
+                offset=offset,
+                limit=limit,
+                app_name=app_name,
+                include_failed=include_failed
+            )
+            result = [page.to_dict() for page in pages]
+            
+            # 缓存 15 秒（页面数据变化相对频繁）
+            await cache.set(cache_key, result, ttl=15)
+            return result
+        else:
+            # 不去重时使用原有逻辑（不缓存）
+            from ..models import PageAnalysis
+            
+            if app_name:
+                pages = await self._page_repo.list_by_app_name(
+                    app_name=app_name,
+                    platform=platform,
+                    page_type=page_type,
+                    offset=offset,
+                    limit=limit
+                )
+            else:
+                pages = await self._page_repo.get_all(
+                    offset=offset, 
+                    limit=limit, 
+                    order_by=PageAnalysis.created_at.desc()
+                )
+            
+            result = []
+            for page in pages:
+                if not include_failed and page.elements_count == 0:
+                    continue
+                result.append(page.to_dict())
+            
+            return result
     
     async def get_page_elements(
         self,
@@ -393,23 +585,34 @@ class KnowledgeService:
         return [e.to_dict() for e in elements]
     
     async def get_stats(self) -> Dict[str, Any]:
-        """获取知识库统计信息"""
-        # 关系型数据库统计
+        """
+        获取知识库统计信息
+        
+        优化：
+        - 使用缓存减少数据库查询（TTL 30秒）
+        - 单条 SQL 聚合查询代替多次查询
+        """
+        from .cache_service import get_cache
+        
+        cache = get_cache()
+        cache_key = "stats:global"
+        
+        # 尝试获取缓存
+        cached = await cache.get(cache_key)
+        if cached is not None:
+            return cached
+        
+        # 执行查询
         total_apps = await self._app_repo.count()
-        total_pages = await self._page_repo.count()
         total_elements = await self._element_repo.count()
+        total_pages = await self._page_repo.count_unique_pages()
+        recent_pages = await self._page_repo.get_recent_valid_pages(limit=5)
         
-        # 向量库统计
-        vector_stats = await self.vector_service.get_stats()
-        
-        # 最近分析
-        recent_pages = await self._page_repo.get_recent_pages(limit=5)
-        
-        return {
+        result = {
             "total_apps": total_apps,
             "total_pages": total_pages,
             "total_elements": total_elements,
-            "vector_stats": vector_stats,
+            "vector_stats": {"row_count": 0},
             "recent_analyses": [
                 {
                     "page_id": p.id,
@@ -417,23 +620,62 @@ class KnowledgeService:
                     "elements_count": p.elements_count,
                     "created_at": p.created_at.isoformat() if p.created_at else None
                 }
-                for p in recent_pages
-            ]
+                for p in recent_pages if p.elements_count > 0
+            ][:5]
         }
+        
+        # 缓存 30 秒
+        await cache.set(cache_key, result, ttl=30)
+        return result
+    
+    async def update_page(self, page_id: str, update_data: Dict[str, Any]) -> bool:
+        """
+        更新页面信息
+        
+        Args:
+            page_id: 页面 ID
+            update_data: 要更新的字段
+            
+        Returns:
+            是否更新成功
+        """
+        page = await self._page_repo.get_by_id(page_id)
+        if not page:
+            return False
+        
+        # 更新字段
+        for key, value in update_data.items():
+            if hasattr(page, key):
+                setattr(page, key, value)
+        
+        await self.session.commit()
+        return True
     
     async def delete_page(self, page_id: str) -> bool:
         """
         删除页面及其元素
         
-        同时删除关系型数据库和向量数据库中的数据
+        同时删除关系型数据库、向量数据库和 MinIO 中的数据
         """
         # 删除向量数据
         await self.vector_service.delete_by_page(page_id)
+        
+        # 删除 MinIO 截图
+        try:
+            minio_service = get_minio_service()
+            minio_service.delete_screenshot(page_id)
+        except Exception as e:
+            logger.warning(f"删除 MinIO 截图失败（已跳过）: {e}")
         
         # 删除关系型数据（元素会级联删除）
         success = await self._page_repo.delete(page_id)
         
         await self.session.commit()
+        
+        # 清除缓存
+        from .cache_service import invalidate_stats_cache, invalidate_pages_cache
+        await invalidate_stats_cache()
+        await invalidate_pages_cache()
         
         return success
     
@@ -451,6 +693,55 @@ class KnowledgeService:
         
         # 删除关系型数据（页面和元素会级联删除）
         success = await self._app_repo.delete(app_id)
+        
+        await self.session.commit()
+        
+        # 清除缓存
+        from .cache_service import invalidate_stats_cache, invalidate_pages_cache, invalidate_apps_cache
+        await invalidate_stats_cache()
+        await invalidate_pages_cache()
+        await invalidate_apps_cache()
+        
+        return success
+    
+    async def update_element(self, element_id: str, update_data: dict) -> bool:
+        """
+        更新元素信息
+        
+        Args:
+            element_id: 元素 ID
+            update_data: 要更新的字段
+            
+        Returns:
+            是否更新成功
+        """
+        element = await self._element_repo.get_by_id(element_id)
+        if not element:
+            return False
+        
+        # 更新字段
+        for key, value in update_data.items():
+            if hasattr(element, key):
+                setattr(element, key, value)
+        
+        await self.session.commit()
+        return True
+    
+    async def delete_element(self, element_id: str) -> bool:
+        """
+        删除单个元素
+        
+        Args:
+            element_id: 元素 ID
+            
+        Returns:
+            是否删除成功
+        """
+        # 删除向量数据
+        await self.vector_service.delete_element(element_id)
+        
+        # 删除关系型数据
+        success = await self._element_repo.delete(element_id)
         
         await self.session.commit()
         

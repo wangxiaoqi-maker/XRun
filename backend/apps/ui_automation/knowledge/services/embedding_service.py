@@ -332,11 +332,14 @@ class OllamaEmbeddingProvider(BaseEmbeddingProvider):
                 return embedding
                 
         except Exception as e:
-            logger.error(f"Ollama Embedding 生成失败: {e}")
+            error_msg = str(e) if str(e) else f"{type(e).__name__}"
+            logger.error(f"Ollama Embedding 生成失败: {error_msg}")
             raise
     
     async def generate_batch(self, texts: List[str]) -> List[List[float]]:
-        """批量生成文本向量（Ollama 不支持批量，逐个处理）"""
+        """批量生成文本向量（Ollama 不支持批量，逐个处理，添加间隔避免内存溢出）"""
+        import asyncio
+        
         if not self._initialized:
             await self.initialize()
         
@@ -344,9 +347,12 @@ class OllamaEmbeddingProvider(BaseEmbeddingProvider):
             return []
         
         results = []
-        for text in texts:
+        for i, text in enumerate(texts):
             embedding = await self.generate(text)
             results.append(embedding)
+            # 每处理 5 个文本休息 0.5 秒，让 Ollama 释放内存
+            if (i + 1) % 5 == 0 and i < len(texts) - 1:
+                await asyncio.sleep(0.5)
         
         return results
 

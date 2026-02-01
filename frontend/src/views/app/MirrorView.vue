@@ -229,6 +229,9 @@
 </template>
 
 <script setup>
+// 定义组件名称，用于 keep-alive 缓存控制
+defineOptions({ name: 'MirrorView' })
+
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { Search, Refresh, Platform, Iphone, Back, Monitor, Upload, Delete, VideoPause } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'

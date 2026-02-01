@@ -5,6 +5,72 @@ const api = axios.create({
   timeout: 30000
 })
 
+// 请求拦截器 - 自动添加 Token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('xrun_token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => Promise.reject(error)
+)
+
+// 响应拦截器 - 处理 401 跳转登录
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('xrun_token')
+      localStorage.removeItem('xrun_user')
+      // 如果不在登录页，跳转到登录
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login'
+      }
+    }
+    return Promise.reject(error)
+  }
+)
+
+// ===== 认证 API =====
+export const authApi = {
+  login: (data) => api.post('/auth/login', data),
+  register: (data) => api.post('/auth/register', data),
+  getMe: () => api.get('/auth/me'),
+  updateMe: (data) => api.put('/auth/me', data),
+  changePassword: (data) => api.post('/auth/change-password', data),
+  // 管理员
+  listUsers: (params) => api.get('/auth/users', { params }),
+  deleteUser: (userId) => api.delete(`/auth/users/${userId}`)
+}
+
+// ===== 项目 API =====
+export const projectApi = {
+  list: () => api.get('/projects'),
+  get: (id) => api.get(`/projects/${id}`),
+  create: (data) => api.post('/projects', data),
+  update: (id, data) => api.put(`/projects/${id}`, data),
+  delete: (id) => api.delete(`/projects/${id}`),
+  // 成员管理
+  listMembers: (projectId) => api.get(`/projects/${projectId}/members`),
+  addMember: (projectId, userId, role = 'member') => 
+    api.post(`/projects/${projectId}/members`, { user_id: userId, role }),
+  removeMember: (projectId, userId) => api.delete(`/projects/${projectId}/members/${userId}`),
+  updateMemberRole: (projectId, userId, role) => 
+    api.put(`/projects/${projectId}/members/${userId}`, { role }),
+  getAvailableUsers: (projectId) => api.get(`/projects/${projectId}/available-users`)
+}
+
+// ===== 应用 API =====
+export const appApi = {
+  list: (params) => api.get('/apps', { params }),
+  get: (id) => api.get(`/apps/${id}`),
+  create: (data) => api.post('/apps', data),
+  update: (id, data) => api.put(`/apps/${id}`, data),
+  delete: (id) => api.delete(`/apps/${id}`)
+}
+
 // ===== 设备 API =====
 export const deviceApi = {
   // 获取设备列表
@@ -138,11 +204,26 @@ export const knowledgeApi = {
   // 获取统计信息
   getStats: () => api.get('/ai/stats'),
   
+  // 更新页面信息
+  updatePage: (pageId, data) => api.put(`/ai/pages/${pageId}`, data),
+  
   // 删除页面
   deletePage: (pageId) => api.delete(`/ai/pages/${pageId}`),
   
   // 删除应用
-  deleteApp: (appId) => api.delete(`/ai/apps/${appId}`)
+  deleteApp: (appId) => api.delete(`/ai/apps/${appId}`),
+  
+  // 更新元素
+  updateElement: (elementId, data) => api.put(`/ai/elements/${elementId}`, data),
+  
+  // 删除元素
+  deleteElement: (elementId) => api.delete(`/ai/elements/${elementId}`),
+  
+  // 保存到知识库（数据库 + 向量库）
+  saveToKnowledgeBase: (analysisResult, saveToVector = true) => api.post('/ai/save-to-knowledge-base', {
+    analysis_result: analysisResult,
+    save_to_vector: saveToVector
+  }, { timeout: 120000 })
 }
 
 // ===== 知识图谱探索 API =====

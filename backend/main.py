@@ -13,7 +13,8 @@ from contextlib import asynccontextmanager
 import os
 
 # 导入各个模块的路由
-from apps.ui_automation.api import devices, cases, execution, ai_config, llm_config
+from apps.ui_automation.api import devices, cases, execution, ai_config, llm_config, auth, project
+from apps.ui_automation.api import app as app_router
 from apps.ui_automation.knowledge.api import router as knowledge_router
 from apps.ui_automation.knowledge.api import exploration_router
 
@@ -33,12 +34,23 @@ async def lifespan(app: FastAPI):
         await conn.run_sync(KnowledgeBase.metadata.create_all)
     print("✓ 知识库数据表初始化完成")
     
-    # 初始化 LLM 配置表
+    # 初始化 LLM 配置表、用户表、项目表和应用表
     from apps.ui_automation.models.llm_config import LLMProvider, LLMModel, LLMUsageLog
+    from apps.ui_automation.models.user import User
+    from apps.ui_automation.models.project import Project, ProjectMember
+    from apps.ui_automation.models.app import App
     from apps.ui_automation.database import Base as MainBase
     async with engine.begin() as conn:
         await conn.run_sync(MainBase.metadata.create_all)
-    print("✓ LLM 配置数据表初始化完成")
+    print("✓ 数据表初始化完成")
+    
+    # 初始化管理员账号
+    from apps.ui_automation.database import AsyncSessionLocal
+    from apps.ui_automation.services.auth_service import AuthService
+    async with AsyncSessionLocal() as session:
+        auth_service = AuthService(session)
+        await auth_service.init_admin_user()
+    print("✓ 用户认证模块初始化完成")
 
     # 创建必要目录
     os.makedirs("../data/screenshots", exist_ok=True)
@@ -95,6 +107,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 路由 - 认证模块
+app.include_router(auth.router, prefix="/api", tags=["认证"])
+
+# 路由 - 项目管理模块
+app.include_router(project.router, prefix="/api", tags=["项目管理"])
+
+# 路由 - 应用管理模块
+app.include_router(app_router.router, prefix="/api", tags=["应用管理"])
 
 # 路由 - UI 自动化模块
 app.include_router(devices.router, prefix="/api/devices", tags=["设备管理"])

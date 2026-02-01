@@ -330,6 +330,15 @@ class VectorService:
             logger.error(f"删除页面向量失败: {e}")
             raise
     
+    async def delete_element(self, element_id: str) -> None:
+        """
+        删除单个元素向量
+        
+        Args:
+            element_id: 元素 ID
+        """
+        await self.delete_by_ids([element_id])
+    
     async def delete_by_ids(self, ids: List[str]) -> None:
         """
         按 ID 批量删除元素

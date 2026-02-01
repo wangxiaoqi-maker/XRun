@@ -22,6 +22,7 @@ class ElementInfo(BaseModel):
     position_area: Optional[str] = Field(None, description="位置区域")
     position_in_container: Optional[str] = Field(None, description="容器内位置")
     bbox: Optional[List[float]] = Field(None, description="元素位置坐标 [left%, top%, width%, height%]")
+    crop_image_url: Optional[str] = Field(None, description="元素切图 URL")
     relative_positions: Optional[List[Dict[str, Any]]] = Field(None, description="相对位置关系")
     is_navigation: bool = Field(False, description="是否是导航元素")
     target_page_name: Optional[str] = Field(None, description="跳转目标页面")
@@ -39,9 +40,11 @@ class PageSummary(BaseModel):
     """页面摘要"""
     id: str = Field(..., description="页面 ID")
     app_id: str = Field(..., description="应用 ID")
+    app_name: Optional[str] = Field(None, description="应用名称")
     page_name: str = Field(..., description="页面名称")
     page_type: str = Field(..., description="页面类型")
     page_description: Optional[str] = Field(None, description="页面描述")
+    screenshot_url: Optional[str] = Field(None, description="截图 URL")
     elements_count: int = Field(0, description="元素数量")
     confidence_score: float = Field(0.0, description="置信度分数")
     created_at: Optional[datetime] = Field(None, description="创建时间")
@@ -72,6 +75,16 @@ class PageAnalyzeRequest(BaseModel):
         ..., 
         description="Base64 编码的截图数据",
         min_length=100
+    )
+    app_id: Optional[str] = Field(
+        None,
+        description="应用管理模块的应用 ID",
+        max_length=36
+    )
+    project_id: Optional[str] = Field(
+        None,
+        description="项目 ID",
+        max_length=36
     )
     app_name: str = Field(
         ..., 
@@ -141,7 +154,7 @@ class UsageInfo(BaseModel):
 
 class PageAnalyzeResponse(BaseModel):
     """页面分析响应"""
-    page_id: str = Field(..., description="页面 ID")
+    page_id: Optional[str] = Field(None, description="页面 ID（未保存时为 None）")
     page_name: str = Field(..., description="AI 生成的页面名称")
     page_type: str = Field(..., description="页面类型")
     page_description: Optional[str] = Field(None, description="页面描述")
@@ -150,6 +163,7 @@ class PageAnalyzeResponse(BaseModel):
     confidence_score: float = Field(0.0, description="置信度分数")
     is_new_page: bool = Field(True, description="是否是新页面")
     is_cached: bool = Field(False, description="是否使用缓存")
+    is_saved: bool = Field(False, description="是否已保存到知识库")
     processing_time: float = Field(0.0, description="处理耗时（秒）")
     usage: Optional[UsageInfo] = Field(None, description="Token 用量")
 

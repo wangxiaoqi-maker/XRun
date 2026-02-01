@@ -239,65 +239,9 @@
               </template>
             </draggable>
             
-            <!-- Inline Add Form Area -->
+            <!-- 智能步骤输入 -->
             <div class="add-step-wrapper">
-              <!-- Trigger Button -->
-              <div 
-                v-if="!showInlineAdd" 
-                class="add-trigger-btn" 
-                @click="toggleInlineAdd"
-              >
-                <el-icon class="icon-plus"><Plus /></el-icon>
-                <span class="placeholder-text">添加步骤...</span>
-              </div>
-              
-              <!-- Inline Form -->
-              <div v-else class="inline-add-form">
-                <div class="form-row">
-                  <div class="form-item" style="flex: 0 0 140px;">
-                    <el-select v-model="inlineForm.action" placeholder="操作类型" @change="onActionChange">
-                       <el-option 
-                        v-for="opt in actionOptions" 
-                        :key="opt.action"
-                        :label="opt.value"
-                        :value="opt.action"
-                      />
-                    </el-select>
-                  </div>
-                  
-                  <template v-if="['schemeUrl', 'schemeRouter'].includes(inlineForm.action)">
-                      <div class="form-item" style="flex: 1">
-                        <el-input 
-                            v-model="inlineForm.url" 
-                            :placeholder="inlineForm.action === 'schemeUrl' ? '请输入 Scheme URL' : '请输入路由 Path'"
-                            clearable
-                            ref="inlineFormInput" 
-                        />
-                      </div>
-                  </template>
-                  
-                  <template v-else>
-                      <div class="form-item" style="flex: 1">
-                        <el-input 
-                          v-model="inlineForm.target" 
-                          placeholder="操作目标"
-                          ref="inlineFormInput" 
-                          clearable
-                        />
-                      </div>
-                      
-                      <div class="form-item" style="flex: 1" v-if="['input', 'wait', 'assert'].includes(inlineForm.action)">
-                        <el-input v-model="inlineForm.value" placeholder="值 / 参数" clearable />
-                      </div>
-                  </template>
-                </div>
-                
-                <div class="form-footer">
-                   <div style="flex: 1"></div>
-                   <el-button size="small" @click="cancelInlineAdd">取消</el-button>
-                   <el-button size="small" type="primary" color="#1e293b" @click="confirmInlineAdd">确定</el-button>
-                </div>
-              </div>
+              <SmartStepInput @add-step="onSmartAddStep" />
             </div>
             
           </div>
@@ -314,6 +258,32 @@
     :close-on-click-modal="false"
   >
     <el-form label-width="80px" :disabled="analyzing">
+      <el-form-item label="选择应用" required>
+        <el-select 
+          v-model="analyzeConfig.appId" 
+          placeholder="请选择应用"
+          style="width: 100%"
+          :loading="loadingApps"
+        >
+          <el-option 
+            v-for="app in appList" 
+            :key="app.id" 
+            :label="app.name"
+            :value="app.id"
+          >
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <img 
+                v-if="app.icon_url" 
+                :src="app.icon_url" 
+                style="width: 20px; height: 20px; border-radius: 4px;"
+              />
+              <span>{{ app.name }}</span>
+              <el-tag size="small" type="info">{{ app.platform }}</el-tag>
+            </div>
+          </el-option>
+        </el-select>
+        <div class="form-tip">选择当前分析的应用，用于关联页面和元素</div>
+      </el-form-item>
       <el-form-item label="视觉模型">
         <el-select 
           v-model="analyzeConfig.modelId" 
@@ -350,7 +320,7 @@
     </el-form>
     <template #footer>
       <el-button @click="showAnalyzeConfig = false">取消</el-button>
-      <el-button type="primary" @click="doAnalyze" :loading="analyzing">
+      <el-button type="primary" @click="doAnalyze" :loading="analyzing" :disabled="!analyzeConfig.appId">
         开始分析
       </el-button>
     </template>
@@ -374,7 +344,11 @@ import Draggable from 'vuedraggable'
 import DeviceMirror from '@/components/DeviceMirror.vue'
 import ElementOverlay from '@/components/ElementOverlay.vue'
 import AITeachingPanel from '@/components/AITeachingPanel.vue'
-import { deviceApi, knowledgeApi, llmApi, explorationApi } from '@/api'
+import SmartStepInput from '@/components/SmartStepInput.vue'
+import { deviceApi, knowledgeApi, llmApi, explorationApi, appApi } from '@/api'
+import { useProjectStore } from '@/stores/project'
+
+const projectStore = useProjectStore()
 
 const route = useRoute()
 const router = useRouter()
@@ -424,12 +398,15 @@ const appGraph = ref(null)            // App 知识图谱
 // AI 分析配置弹窗
 const showAnalyzeConfig = ref(false)
 const analyzeConfig = ref({
+  appId: '',
   providerId: '',
   modelId: '',
   contextHint: ''
 })
 const visionModels = ref([])  // 支持视觉的模型列表
 const loadingModels = ref(false)
+const appList = ref([])  // 应用列表
+const loadingApps = ref(false)
 
 // 当前选中的模型名称
 const currentModelName = computed(() => {
@@ -628,6 +605,27 @@ async function loadVisionModels() {
   }
 }
 
+// 加载应用列表（按当前项目筛选）
+async function loadAppList() {
+  loadingApps.value = true
+  try {
+    const params = {}
+    if (projectStore.currentProject?.id) {
+      params.project_id = projectStore.currentProject.id
+    }
+    const res = await appApi.list(params)
+    appList.value = res.data || []
+    // 如果有应用且未选择，默认选第一个
+    if (appList.value.length > 0 && !analyzeConfig.value.appId) {
+      analyzeConfig.value.appId = appList.value[0].id
+    }
+  } catch (e) {
+    console.error('加载应用列表失败:', e)
+  } finally {
+    loadingApps.value = false
+  }
+}
+
 // 打开分析配置弹窗
 function openAnalyzeConfig() {
   if (!mirrorRef.value?.connected || !connectedDevice.value) {
@@ -635,6 +633,7 @@ function openAnalyzeConfig() {
     return
   }
   loadVisionModels()
+  loadAppList()
   showAnalyzeConfig.value = true
 }
 
@@ -653,13 +652,18 @@ async function doAnalyze() {
     // 保存截图用于元素切图显示
     analysisScreenshot.value = screenshotRes.data.screenshot
     
+    // 获取选中的应用信息
+    const selectedApp = appList.value.find(a => a.id === analyzeConfig.value.appId)
+    
     const requestData = {
       image_data: screenshotRes.data.screenshot,
-      app_name: connectedDevice.value.name || '未知应用',
-      platform: connectedDevice.value.platform,
+      app_id: analyzeConfig.value.appId || undefined,
+      project_id: projectStore.currentProject?.id || undefined,
+      app_name: selectedApp?.name || connectedDevice.value.name || '未知应用',
+      platform: selectedApp?.platform || connectedDevice.value.platform,
       device_udid: connectedDevice.value.udid,
       device_resolution: connectedDevice.value.resolution,
-      skip_duplicate: false,  // 测试新 prompt
+      skip_duplicate: false,
       context_hint: analyzeConfig.value.contextHint || undefined,
       provider_id: analyzeConfig.value.providerId || undefined,
       model_id: analyzeConfig.value.modelId || undefined
@@ -754,9 +758,31 @@ function onAddElement() {
 }
 
 async function saveToKnowledge() {
+  if (!analysisResult.value) {
+    ElMessage.warning('请先进行 AI 分析')
+    return
+  }
+  
+  // 如果已保存过，提示用户
+  if (analysisResult.value.is_saved) {
+    ElMessage.info('该分析结果已保存到知识库')
+    return
+  }
+  
   savingToKnowledge.value = true
   try {
-    ElMessage.success('已保存到知识库')
+    const res = await knowledgeApi.saveToKnowledgeBase(analysisResult.value)
+    if (res.data?.success) {
+      ElMessage.success(res.data.message || '已保存到知识库')
+      // 更新状态，标记已保存
+      analysisResult.value.is_saved = true
+      analysisResult.value.page_id = res.data.page_id
+    } else {
+      ElMessage.warning(res.data?.message || '保存失败')
+    }
+  } catch (e) {
+    console.error('保存到知识库失败:', e)
+    ElMessage.error(e.response?.data?.detail || '保存到知识库失败')
   } finally {
     savingToKnowledge.value = false
   }
@@ -898,6 +924,22 @@ function confirmInlineAdd() {
         steps.value.push(newStep)
     }
     cancelInlineAdd()
+    isSaved.value = false
+}
+
+// 智能步骤输入处理
+function onSmartAddStep(stepData) {
+    const newStep = {
+        id: Date.now(),
+        action: stepData.action,
+        actionLabel: stepData.actionLabel,
+        target: stepData.prompt,
+        value: '',
+        midsceneCommand: stepData.midsceneCommand,
+        status: 'pending',
+        duration: 0
+    }
+    steps.value.push(newStep)
     isSaved.value = false
 }
 
@@ -1273,13 +1315,17 @@ button { outline: none; }
     font-size: 12px;
     font-weight: 600;
 }
-/* Tag Colors - Muted backgrounds, strong text */
+/* Tag Colors */
 .wait { background: #f3f4f6; color: #4b5563; }
 .swipe { background: #fff7ed; color: #c2410c; }
 .click { background: #eff6ff; color: #2563eb; }
 .input { background: #f5f3ff; color: #7c3aed; }
 .assert { background: #ecfdf5; color: #059669; }
 .schemeUrl, .schemeRouter { background: #eef2ff; color: #4338ca; }
+.screenshot { background: #fef3c7; color: #92400e; }
+.ai_act, .ai_query, .ai_assert { background: #e0e7ff; color: #4338ca; }
+.launch { background: #fce7f3; color: #be185d; }
+.home, .back { background: #f3f4f6; color: #374151; }
 
 /* Content */
 .step-content {

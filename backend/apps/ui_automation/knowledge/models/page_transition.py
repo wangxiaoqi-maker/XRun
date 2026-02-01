@@ -2,11 +2,11 @@
 页面跳转关系模型
 """
 import uuid
-from datetime import datetime
 from sqlalchemy import Column, String, DateTime, Text, Boolean, ForeignKey, Index, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from .base import KnowledgeBase
+from ..utils.timezone import beijing_now_naive
 
 
 class PageTransition(KnowledgeBase):
@@ -53,8 +53,8 @@ class PageTransition(KnowledgeBase):
     is_confirmed = Column(Boolean, default=False, comment="是否已人工确认")
     confirmed_at = Column(DateTime, comment="确认时间")
     
-    # 时间戳
-    created_at = Column(DateTime, default=datetime.utcnow)
+    # 时间戳（北京时间 UTC+8）
+    created_at = Column(DateTime, default=beijing_now_naive)
     
     # 关系
     from_page = relationship("PageAnalysis", foreign_keys=[from_page_id])

@@ -10,6 +10,7 @@
 """
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from loguru import logger
 
@@ -39,20 +40,20 @@ def get_knowledge_service(session: AsyncSession = Depends(get_db)) -> KnowledgeS
 
 @router.post(
     "/analyze-page",
-    response_model=PageAnalyzeResponse,
     summary="分析页面截图",
-    description="分析 App 截图，提取可测试元素并存入知识库"
+    description="分析 App 截图，提取可测试元素（不保存，需用户确认后手动保存）"
 )
 async def analyze_page(
     request: PageAnalyzeRequest,
     service: KnowledgeService = Depends(get_knowledge_service)
-) -> PageAnalyzeResponse:
+):
     """
-    分析页面截图
+    分析页面截图（不保存数据库，需用户确认后手动保存）
     
     - 调用视觉大模型分析截图
     - 提取可交互元素
-    - 存入关系型数据库和向量数据库
+    - 返回分析结果供用户确认
+    - 用户确认后调用 /save-to-knowledge-base 保存
     """
     try:
         result = await service.analyze_page(
@@ -65,36 +66,12 @@ async def analyze_page(
             context_hint=request.context_hint,
             skip_duplicate=request.skip_duplicate,
             provider_id=request.provider_id,
-            model_id=request.model_id
+            model_id=request.model_id,
+            app_id=request.app_id
         )
         
-        # 转换元素为 ElementInfo
-        elements = [ElementInfo(**e) for e in result.get("elements", [])]
-        
-        # 构建 usage 信息
-        usage_data = result.get("usage", {})
-        usage = None
-        if usage_data:
-            from ..schemas.page_analysis import UsageInfo
-            usage = UsageInfo(
-                input_tokens=usage_data.get("input_tokens", 0),
-                output_tokens=usage_data.get("output_tokens", 0),
-                total_tokens=usage_data.get("total_tokens", 0)
-            )
-        
-        return PageAnalyzeResponse(
-            page_id=result["page_id"],
-            page_name=result["page_name"],
-            page_type=result["page_type"],
-            page_description=result.get("page_description"),
-            elements=elements,
-            elements_count=result["elements_count"],
-            confidence_score=result.get("confidence_score", 0.0),
-            is_new_page=result.get("is_new_page", True),
-            is_cached=result.get("is_cached", False),
-            processing_time=result.get("processing_time", 0.0),
-            usage=usage
-        )
+        # 直接返回完整结果（包含 _meta，用于后续保存）
+        return result
     except Exception as e:
         logger.error(f"页面分析失败: {e}")
         # 提取友好的错误信息
@@ -192,7 +169,9 @@ async def get_pages(
     platform: Optional[str] = Query(None, description="平台过滤"),
     page_type: Optional[str] = Query(None, description="页面类型过滤"),
     offset: int = Query(0, ge=0, description="偏移量"),
-    limit: int = Query(50, ge=1, le=200, description="数量限制"),
+    limit: int = Query(50, ge=1, le=500, description="数量限制"),
+    include_failed: bool = Query(False, description="是否包含解析失败的页面"),
+    deduplicate: bool = Query(True, description="是否去重（同名页面只保留最新的）"),
     service: KnowledgeService = Depends(get_knowledge_service)
 ) -> List[PageSummary]:
     """获取页面列表"""
@@ -202,7 +181,9 @@ async def get_pages(
             platform=platform,
             page_type=page_type,
             offset=offset,
-            limit=limit
+            limit=limit,
+            include_failed=include_failed,
+            deduplicate=deduplicate
         )
         return [PageSummary(**page) for page in pages]
     except Exception as e:
@@ -253,6 +234,105 @@ async def get_stats(
         raise HTTPException(status_code=500, detail=f"获取统计信息失败: {str(e)}")
 
 
+# ==================== 保存到知识库 ====================
+
+class SaveToKnowledgeRequest(BaseModel):
+    """保存到知识库请求"""
+    analysis_result: dict = Field(..., description="AI 分析返回的完整结果（包含 _meta）")
+    save_to_vector: bool = Field(True, description="是否同时保存到向量库")
+
+
+class SaveToKnowledgeResponse(BaseModel):
+    """保存到知识库响应"""
+    success: bool
+    message: str
+    page_id: Optional[str] = None
+    elements_count: int = 0
+
+
+@router.post(
+    "/save-to-knowledge-base",
+    response_model=SaveToKnowledgeResponse,
+    summary="保存到知识库",
+    description="将 AI 分析结果保存到数据库和向量库"
+)
+async def save_to_knowledge_base(
+    request: SaveToKnowledgeRequest,
+    service: KnowledgeService = Depends(get_knowledge_service)
+) -> SaveToKnowledgeResponse:
+    """
+    保存分析结果到知识库
+    
+    用户确认 AI 分析正确后手动触发：
+    1. 保存到关系型数据库（MySQL）
+    2. 保存到向量数据库（Milvus）用于语义搜索
+    """
+    try:
+        result = await service.save_analysis_to_knowledge_base(
+            analysis_result=request.analysis_result,
+            save_to_vector=request.save_to_vector
+        )
+        return SaveToKnowledgeResponse(
+            success=True,
+            message=f"成功保存 {result['elements_count']} 个元素到知识库",
+            page_id=result["page_id"],
+            elements_count=result["elements_count"]
+        )
+    except ValueError as e:
+        return SaveToKnowledgeResponse(
+            success=False,
+            message=str(e),
+            elements_count=0
+        )
+    except Exception as e:
+        logger.error(f"保存到知识库失败: {e}")
+        raise HTTPException(status_code=500, detail=f"保存到知识库失败: {str(e)}")
+
+
+# ==================== 更新操作 ====================
+
+class UpdatePageRequest(BaseModel):
+    """更新页面请求"""
+    page_name: Optional[str] = Field(None, description="页面名称")
+    page_description: Optional[str] = Field(None, description="页面描述")
+    page_type: Optional[str] = Field(None, description="页面类型")
+
+
+@router.put(
+    "/pages/{page_id}",
+    summary="更新页面信息",
+    description="更新页面的名称、描述、类型等信息"
+)
+async def update_page(
+    page_id: str,
+    request: UpdatePageRequest,
+    service: KnowledgeService = Depends(get_knowledge_service)
+):
+    """更新页面信息"""
+    try:
+        update_data = {}
+        if request.page_name is not None:
+            update_data["page_name"] = request.page_name
+        if request.page_description is not None:
+            update_data["page_description"] = request.page_description
+        if request.page_type is not None:
+            update_data["page_type"] = request.page_type
+        
+        if not update_data:
+            raise HTTPException(status_code=400, detail="没有要更新的字段")
+        
+        success = await service.update_page(page_id, update_data)
+        if success:
+            return {"success": True, "message": "更新成功"}
+        else:
+            raise HTTPException(status_code=404, detail="页面不存在")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"更新页面失败: {e}")
+        raise HTTPException(status_code=500, detail=f"更新页面失败: {str(e)}")
+
+
 # ==================== 删除操作 ====================
 
 @router.delete(
@@ -301,3 +381,69 @@ async def delete_app(
     except Exception as e:
         logger.error(f"删除应用失败: {e}")
         raise HTTPException(status_code=500, detail=f"删除应用失败: {str(e)}")
+
+
+# ==================== 元素操作 ====================
+
+class ElementUpdateRequest(BaseModel):
+    """元素更新请求"""
+    element_name: Optional[str] = Field(None, description="元素名称")
+    element_type: Optional[str] = Field(None, description="元素类型")
+    text_content: Optional[str] = Field(None, description="文字内容")
+    description: Optional[str] = Field(None, description="元素描述")
+    midscene_locator: Optional[str] = Field(None, description="Midscene 定位描述")
+    # 导航信息
+    is_navigation: Optional[bool] = Field(None, description="是否是导航元素")
+    target_page_name: Optional[str] = Field(None, description="跳转目标页面名称")
+
+
+@router.put(
+    "/elements/{element_id}",
+    summary="更新元素信息",
+    description="更新元素的名称、类型、描述等信息"
+)
+async def update_element(
+    element_id: str,
+    request: ElementUpdateRequest,
+    service: KnowledgeService = Depends(get_knowledge_service)
+):
+    """更新元素信息"""
+    try:
+        update_data = request.model_dump(exclude_none=True)
+        if not update_data:
+            raise HTTPException(status_code=400, detail="没有需要更新的字段")
+        
+        success = await service.update_element(element_id, update_data)
+        if success:
+            return {"success": True, "message": "更新成功"}
+        else:
+            raise HTTPException(status_code=404, detail="元素不存在")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"更新元素失败: {e}")
+        raise HTTPException(status_code=500, detail=f"更新元素失败: {str(e)}")
+
+
+@router.delete(
+    "/elements/{element_id}",
+    response_model=DeleteResponse,
+    summary="删除元素",
+    description="删除单个元素"
+)
+async def delete_element(
+    element_id: str,
+    service: KnowledgeService = Depends(get_knowledge_service)
+) -> DeleteResponse:
+    """删除元素"""
+    try:
+        success = await service.delete_element(element_id)
+        if success:
+            return DeleteResponse(success=True, message="元素删除成功")
+        else:
+            raise HTTPException(status_code=404, detail="元素不存在")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"删除元素失败: {e}")
+        raise HTTPException(status_code=500, detail=f"删除元素失败: {str(e)}")

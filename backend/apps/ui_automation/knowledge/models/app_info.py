@@ -2,11 +2,11 @@
 应用信息模型
 """
 import uuid
-from datetime import datetime
 from sqlalchemy import Column, String, DateTime, Text
 from sqlalchemy.orm import relationship
 
 from .base import KnowledgeBase
+from ..utils.timezone import beijing_now_naive
 
 
 class AppInfo(KnowledgeBase):
@@ -26,9 +26,9 @@ class AppInfo(KnowledgeBase):
     icon_path = Column(String(500), comment="应用图标路径")
     description = Column(Text, comment="应用描述")
     
-    # 时间戳
-    created_at = Column(DateTime, default=datetime.utcnow, comment="创建时间")
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment="更新时间")
+    # 时间戳（北京时间 UTC+8）
+    created_at = Column(DateTime, default=beijing_now_naive, comment="创建时间")
+    updated_at = Column(DateTime, default=beijing_now_naive, onupdate=beijing_now_naive, comment="更新时间")
     
     # 关系：一个应用有多个页面
     pages = relationship(

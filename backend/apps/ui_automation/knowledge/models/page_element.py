@@ -2,13 +2,13 @@
 页面元素模型
 """
 import uuid
-from datetime import datetime
 from decimal import Decimal
 from sqlalchemy import Column, String, DateTime, Text, Boolean, ForeignKey, Index, JSON
 from sqlalchemy.dialects.mysql import DECIMAL
 from sqlalchemy.orm import relationship
 
 from .base import KnowledgeBase
+from ..utils.timezone import beijing_now_naive
 
 
 class PageElement(KnowledgeBase):
@@ -51,6 +51,9 @@ class PageElement(KnowledgeBase):
     # 格式：[left%, top%, width%, height%]，均为百分比值
     bbox = Column(JSON, comment="元素位置坐标 [left%, top%, width%, height%]")
     
+    # 元素切图 URL（从页面截图中裁剪出的元素图片，用于以图找图定位）
+    crop_image_url = Column(String(500), comment="元素切图 URL（MinIO）")
+    
     # 相对位置关系（JSON 数组，存储与其他元素的关系）
     # 格式：[{"target": "付款码", "relation": "right_of", "description": "在付款码的右方"}, ...]
     relative_positions = Column(JSON, comment="相对位置关系")
@@ -81,8 +84,8 @@ class PageElement(KnowledgeBase):
     is_testable = Column(Boolean, default=True, index=True, comment="是否可测试")
     test_priority = Column(String(20), default='medium', comment="测试优先级：high/medium/low")
     
-    # ========== 时间戳 ==========
-    created_at = Column(DateTime, default=datetime.utcnow, comment="创建时间")
+    # ========== 时间戳（北京时间 UTC+8）==========
+    created_at = Column(DateTime, default=beijing_now_naive, comment="创建时间")
     
     # ========== 关系 ==========
     # 所属页面
@@ -123,6 +126,7 @@ class PageElement(KnowledgeBase):
             "position_area": self.position_area,
             "position_in_container": self.position_in_container,
             "bbox": self.bbox,
+            "crop_image_url": self.crop_image_url,
             "relative_positions": self.relative_positions,
             "is_navigation": self.is_navigation,
             "target_page_id": self.target_page_id,
@@ -192,8 +196,8 @@ class ElementRelation(KnowledgeBase):
     relation_description = Column(Text, comment="关系描述：扫一扫在付款码的右方")
     distance = Column(String(50), comment="距离描述：adjacent/near/far")
     
-    # 时间戳
-    created_at = Column(DateTime, default=datetime.utcnow)
+    # 时间戳（北京时间 UTC+8）
+    created_at = Column(DateTime, default=beijing_now_naive)
     
     # 关系
     source_element = relationship("PageElement", foreign_keys=[source_element_id])

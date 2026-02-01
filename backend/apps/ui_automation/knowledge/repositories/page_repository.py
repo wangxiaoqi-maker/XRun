@@ -216,3 +216,147 @@ class PageRepository(BaseRepository[PageAnalysis]):
         
         result = await self.session.execute(query)
         return list(result.scalars().all())
+    
+    async def count_valid_pages(self) -> int:
+        """
+        统计有效页面数量（elements_count > 0）
+        
+        Returns:
+            有效页面数量
+        """
+        result = await self.session.execute(
+            select(func.count())
+            .select_from(PageAnalysis)
+            .where(PageAnalysis.elements_count > 0)
+        )
+        return result.scalar() or 0
+    
+    async def count_unique_pages(self) -> int:
+        """
+        统计去重后的有效页面数量
+        同一应用下同名页面只计算一次
+        
+        Returns:
+            去重后的页面数量
+        """
+        # 使用 COUNT(DISTINCT) 统计唯一组合数
+        result = await self.session.execute(
+            select(func.count(func.distinct(
+                func.concat(PageAnalysis.app_id, '_', PageAnalysis.page_name)
+            )))
+            .select_from(PageAnalysis)
+            .where(PageAnalysis.elements_count > 0)
+        )
+        return result.scalar() or 0
+    
+    async def get_recent_valid_pages(self, limit: int = 5) -> List[PageAnalysis]:
+        """
+        获取最近的有效页面（elements_count > 0）
+        
+        Args:
+            limit: 数量限制
+            
+        Returns:
+            页面列表
+        """
+        result = await self.session.execute(
+            select(PageAnalysis)
+            .where(PageAnalysis.elements_count > 0)
+            .order_by(PageAnalysis.created_at.desc())
+            .limit(limit)
+        )
+        return list(result.scalars().all())
+    
+    async def get_unique_pages(
+        self,
+        offset: int = 0,
+        limit: int = 12,
+        app_name: Optional[str] = None,
+        include_failed: bool = False
+    ) -> List[PageAnalysis]:
+        """
+        获取去重后的页面列表（SQL层面去重，高效）
+        每个 (app_id, page_name) 组合只返回最新的一条
+        
+        性能优化：
+        - 使用索引友好的子查询
+        - 先获取最新 ID，再关联获取完整数据
+        - 避免在窗口函数中处理所有列
+        
+        Args:
+            offset: 偏移量
+            limit: 数量限制
+            app_name: 应用名称过滤
+            include_failed: 是否包含解析失败的页面
+            
+        Returns:
+            去重后的页面列表
+        """
+        from sqlalchemy import text
+        
+        # 构建过滤条件
+        inner_conditions = []
+        outer_conditions = ["1=1"]
+        params = {"offset": offset, "limit": limit}
+        
+        if not include_failed:
+            inner_conditions.append("elements_count > 0")
+        
+        if app_name:
+            outer_conditions.append("a.app_name = :app_name")
+            params["app_name"] = app_name
+        
+        inner_where = " AND ".join(inner_conditions) if inner_conditions else "1=1"
+        outer_where = " AND ".join(outer_conditions)
+        
+        # 优化查询：先用轻量查询获取最新 ID，再关联获取完整数据
+        sql = text(f"""
+            WITH latest_pages AS (
+                SELECT id, app_id, page_name, created_at,
+                       ROW_NUMBER() OVER (
+                           PARTITION BY app_id, page_name 
+                           ORDER BY created_at DESC
+                       ) as rn
+                FROM kb_page_analysis
+                WHERE {inner_where}
+            )
+            SELECT p.*, a.app_name
+            FROM kb_page_analysis p
+            INNER JOIN latest_pages lp ON p.id = lp.id AND lp.rn = 1
+            LEFT JOIN kb_app_info a ON p.app_id = a.id
+            WHERE {outer_where}
+            ORDER BY p.created_at DESC
+            LIMIT :limit OFFSET :offset
+        """)
+        
+        result = await self.session.execute(sql, params)
+        rows = result.fetchall()
+        
+        # 映射到 PageAnalysis 对象
+        pages = []
+        for row in rows:
+            page = PageAnalysis(
+                id=row.id,
+                app_id=row.app_id,
+                page_name=row.page_name,
+                page_type=row.page_type,
+                page_description=row.page_description,
+                user_context=row.user_context,
+                navigation_source=row.navigation_source,
+                screenshot_hash=row.screenshot_hash,
+                screenshot_url=row.screenshot_url,
+                device_udid=row.device_udid,
+                device_resolution=row.device_resolution,
+                elements_count=row.elements_count,
+                confidence_score=row.confidence_score,
+                processing_time=row.processing_time,
+                page_signature=row.page_signature,
+                depth=row.depth,
+                visit_count=row.visit_count,
+                created_at=row.created_at,
+                updated_at=row.updated_at
+            )
+            page._app_name = row.app_name
+            pages.append(page)
+        
+        return pages

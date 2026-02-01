@@ -1,16 +1,24 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 const routes = [
+  // 登录/注册页（无需认证）
+  { path: '/login', name: 'Login', component: () => import('../views/LoginView.vue'), meta: { title: '登录', public: true } },
+  { path: '/register', name: 'Register', component: () => import('../views/RegisterView.vue'), meta: { title: '注册', public: true } },
+  
   { path: '/', redirect: '/dashboard' },
   
   // 数据看板
   { path: '/dashboard', name: 'Dashboard', component: () => import('../views/DashboardView.vue'), meta: { title: '数据看板' } },
   
   // UI自动化
+  { path: '/ui/apps', name: 'AppManage', component: () => import('../views/ui/AppManageView.vue'), meta: { title: '应用管理' } },
   { path: '/ui/mirror', name: 'Mirror', component: () => import('../views/app/MirrorView.vue'), meta: { title: '真机调试' } },
   { path: '/ui/scripts', name: 'Scripts', component: () => import('../views/app/ScriptsView.vue'), meta: { title: '脚本管理' } },
   { path: '/ui/scripts/new', name: 'NewScript', component: () => import('../views/app/ScriptEditorView.vue'), meta: { title: '新建脚本' } },
   { path: '/ui/scripts/:id/edit', name: 'EditScript', component: () => import('../views/app/ScriptEditorView.vue'), meta: { title: '编辑脚本' } },
+  { path: '/ui/knowledge', name: 'PageKnowledge', component: () => import('../views/ui/PageKnowledgeView.vue'), meta: { title: '页面知识库' } },
+  { path: '/ui/knowledge/new', name: 'PageAnalysis', component: () => import('../views/ui/PageAnalysisView.vue'), meta: { title: '新增页面分析' } },
+  { path: '/ui/knowledge/:id', name: 'PageDetail', component: () => import('../views/ui/PageDetailView.vue'), meta: { title: '页面详情' } },
   { path: '/ui/tasks', name: 'Tasks', component: () => import('../views/app/TasksView.vue'), meta: { title: '任务管理' } },
   { path: '/ui/reports', name: 'Reports', component: () => import('../views/app/ReportView.vue'), meta: { title: '测试报告' } },
   { path: '/ui/demo', name: 'Demo', component: () => import('../views/DemoView.vue'), meta: { title: '样式预览' } },
@@ -27,11 +35,8 @@ const routes = [
   // 数据管理
   { path: '/data/factory', name: 'DataFactory', component: () => import('../views/PlaceholderView.vue'), meta: { title: '数据工厂' } },
   
-  // 测试计划
-  { path: '/plans', name: 'Plans', component: () => import('../views/PlaceholderView.vue'), meta: { title: '测试计划' } },
-  
   // 项目管理
-  { path: '/project/list', name: 'ProjectList', component: () => import('../views/PlaceholderView.vue'), meta: { title: '项目管理' } },
+  { path: '/project/manage', name: 'ProjectManage', component: () => import('../views/ProjectManageView.vue'), meta: { title: '项目管理' } },
   
   // 设置
   { path: '/settings', name: 'Settings', component: () => import('../views/SettingsView.vue'), meta: { title: '系统设置' } },
@@ -50,8 +55,22 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
+  // 设置页面标题
   document.title = `${to.meta.title || '自动化测试平台'}`
-  next()
+  
+  // 检查是否需要认证
+  const isPublic = to.meta.public === true
+  const token = localStorage.getItem('xrun_token')
+  
+  if (!isPublic && !token) {
+    // 需要认证但未登录，跳转到登录页
+    next({ name: 'Login', query: { redirect: to.fullPath } })
+  } else if (to.name === 'Login' && token) {
+    // 已登录访问登录页，跳转到首页
+    next({ path: '/' })
+  } else {
+    next()
+  }
 })
 
 export default router

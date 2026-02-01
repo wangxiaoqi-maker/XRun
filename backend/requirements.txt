@@ -36,6 +36,13 @@ autogen-ext>=0.4.0
 # 向量数据库
 pymilvus>=2.4.0
 
+# 对象存储
+minio>=7.2.0
+
+# 认证
+bcrypt>=4.0.0
+python-jose[cryptography]>=3.3.0
+
 # 图像处理
 Pillow>=10.0.0
 

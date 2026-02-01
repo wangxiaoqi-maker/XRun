@@ -166,7 +166,13 @@ async def update_current_page(
     session = service.get_session(request.session_id)
     
     if not session:
-        raise HTTPException(status_code=404, detail="探索会话不存在")
+        # 会话可能因服务重启丢失，返回警告而非错误
+        logger.warning(f"探索会话不存在: {request.session_id}，可能已过期")
+        return {
+            "success": False,
+            "message": "探索会话已过期，请重新开始探索",
+            "session_id": request.session_id
+        }
     
     session.current_page_id = request.page_id
     

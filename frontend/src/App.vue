@@ -1,6 +1,12 @@
 <template>
   <el-config-provider :locale="zhCn">
-    <div class="app-layout">
+    <!-- 等待路由就绪 -->
+    <template v-if="isRouterReady">
+      <!-- 公开页面（登录/注册）直接显示 -->
+      <router-view v-if="route.meta.public" />
+      
+      <!-- 主布局 - 仅已登录时显示 -->
+      <div v-else-if="userStore.isLoggedIn" class="app-layout">
       <!-- 第一行：白色主导航栏 -->
       <header class="main-header">
         <div class="header-left">
@@ -18,6 +24,35 @@
             </div>
             <span class="logo-text">测试平台</span>
           </div>
+          
+          <!-- 项目选择器 -->
+          <el-dropdown trigger="click" class="project-selector" @command="handleProjectSelect">
+            <div class="project-trigger">
+              <span class="project-icon">{{ projectStore.projectIcon }}</span>
+              <span class="project-name">{{ projectStore.projectName }}</span>
+              <el-icon class="project-arrow"><ArrowDown /></el-icon>
+            </div>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item 
+                  v-for="project in projectStore.projects" 
+                  :key="project.id"
+                  :command="project"
+                  :class="{ 'is-active': projectStore.currentProject?.id === project.id }"
+                >
+                  <span class="dropdown-project-icon">{{ project.icon }}</span>
+                  <span class="dropdown-project-name">{{ project.name }}</span>
+                </el-dropdown-item>
+                <el-dropdown-item v-if="userStore.isAdmin" divided command="__create__">
+                  <el-icon><Plus /></el-icon>
+                  <span>新建项目</span>
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+          
+          <!-- 分隔线 -->
+          <div class="header-divider"></div>
         </div>
         
         <!-- 主导航菜单 -->
@@ -41,8 +76,10 @@
             </span>
             <template #dropdown>
               <el-dropdown-menu>
+                <el-dropdown-item command="/ui/apps">应用管理</el-dropdown-item>
                 <el-dropdown-item command="/ui/mirror">真机调试</el-dropdown-item>
                 <el-dropdown-item command="/ui/scripts">脚本管理</el-dropdown-item>
+                <el-dropdown-item command="/ui/knowledge">页面知识库</el-dropdown-item>
                 <el-dropdown-item command="/ui/tasks">任务管理</el-dropdown-item>
                 <el-dropdown-item command="/ui/reports">测试报告</el-dropdown-item>
               </el-dropdown-menu>
@@ -94,17 +131,6 @@
             </template>
           </el-dropdown>
           
-
-          <!-- 测试计划 -->
-          <span 
-            class="nav-item" 
-            :class="{ active: currentNav === 'plan' }"
-            @click="navTo('/plans')"
-          >
-            <el-icon><Calendar /></el-icon>
-            <span>测试计划</span>
-          </span>
-          
           <!-- AI 中心 -->
           <el-dropdown trigger="click" @command="navTo" popper-class="nav-dropdown">
             <span class="nav-item" :class="{ active: currentNav === 'llm' }">
@@ -120,34 +146,31 @@
             </template>
           </el-dropdown>
           
-          <!-- 项目管理 -->
-          <el-dropdown trigger="click" @command="navTo" popper-class="nav-dropdown">
-            <span class="nav-item" :class="{ active: currentNav === 'project' }">
-              <el-icon><Folder /></el-icon>
-              <span>项目管理</span>
-              <el-icon class="arrow"><ArrowDown /></el-icon>
-            </span>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="/project/list">项目列表</el-dropdown-item>
-                <el-dropdown-item command="/project/members">成员管理</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
+          <!-- 项目管理（仅管理员可见） -->
+          <span 
+            v-if="userStore.isAdmin"
+            class="nav-item" 
+            :class="{ active: currentNav === 'project' }"
+            @click="navTo('/project/manage')"
+          >
+            <el-icon><Setting /></el-icon>
+            <span>项目管理</span>
+          </span>
         </nav>
         
         <!-- 右侧用户 -->
         <div class="header-right">
-          <el-dropdown trigger="click">
+          <el-dropdown trigger="click" @command="handleUserCommand">
             <div class="user-area">
-              <el-avatar :size="28" class="user-avatar">{{ username.charAt(0) }}</el-avatar>
-              <span class="user-name">{{ username }}</span>
+              <div class="user-avatar-cartoon" v-html="userStore.avatarSvg"></div>
+              <span class="user-name">{{ userStore.nickname }}</span>
               <el-icon><ArrowDown /></el-icon>
             </div>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item>个人中心</el-dropdown-item>
-                <el-dropdown-item divided>退出登录</el-dropdown-item>
+                <el-dropdown-item command="profile">个人中心</el-dropdown-item>
+                <el-dropdown-item v-if="userStore.isAdmin" command="users">用户管理</el-dropdown-item>
+                <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -186,28 +209,92 @@
         </router-view>
       </main>
     </div>
+    </template>
   </el-config-provider>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { ElMessageBox, ElMessage } from 'element-plus'
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 import { 
   ArrowDown, ArrowLeft, ArrowRight, Close,
   DataLine, Monitor, ChromeFilled, Connection, 
-  Coin, Iphone, Calendar, Folder, MagicStick
+  Coin, Iphone, Folder, MagicStick, Setting, Plus
 } from '@element-plus/icons-vue'
+import { useUserStore } from '@/stores/user'
+import { useProjectStore } from '@/stores/project'
 
 const route = useRoute()
 const router = useRouter()
 const tabsWrapper = ref(null)
+const userStore = useUserStore()
+const projectStore = useProjectStore()
 
-const username = ref('测试工程师')
+// 路由就绪状态
+const isRouterReady = ref(false)
+onMounted(async () => {
+  await router.isReady()
+  isRouterReady.value = true
+  // 加载项目列表
+  if (userStore.isLoggedIn) {
+    projectStore.loadProjects()
+  }
+})
+
 const currentPath = computed(() => route.path)
 
-// 需要缓存的页面组件名称（保持设备连接等状态）
-const cachedViews = ref(['ScriptEditorView', 'CaseEditorView', 'MirrorView'])
+// 项目选择处理
+function handleProjectSelect(command) {
+  if (command === '__create__') {
+    router.push('/project/manage?action=create')
+  } else {
+    projectStore.selectProject(command)
+  }
+}
+
+// 用户操作处理
+function handleUserCommand(command) {
+  switch (command) {
+    case 'profile':
+      router.push('/settings')
+      break
+    case 'users':
+      router.push('/settings?tab=users')
+      break
+    case 'logout':
+      ElMessageBox.confirm('确定要退出登录吗？', '提示', {
+        type: 'warning'
+      }).then(() => {
+        userStore.logout()
+        ElMessage.success('已退出登录')
+        router.push('/login')
+      }).catch(() => {})
+      break
+  }
+}
+
+// 缓存的页面组件名称（动态管理，关闭标签时清除）
+const cachedViews = ref([])
+
+// 路由路径到组件名的映射（用于缓存管理）
+// 这些组件会被 keep-alive 缓存，关闭标签时自动清除缓存
+const routeComponentMap = {
+  '/ui/scripts/new': 'ScriptEditorView',
+  '/ui/mirror': 'MirrorView',
+  '/ui/knowledge/new': 'PageAnalysisView',
+}
+
+// 根据路由获取组件名（支持动态路由如 /ui/scripts/:id/edit）
+function getComponentName(path) {
+  // 精确匹配
+  if (routeComponentMap[path]) return routeComponentMap[path]
+  // 模糊匹配（处理 /ui/scripts/:id/edit 这类路由）
+  if (path.includes('/scripts/') && path.includes('/edit')) return 'ScriptEditorView'
+  // 页面详情不需要缓存
+  return null
+}
 
 const currentNav = computed(() => {
   const path = route.path
@@ -231,10 +318,19 @@ const openTabs = ref([
 const showTabsArrow = computed(() => openTabs.value.length > 6)
 
 watch(() => route.path, (newPath) => {
+  // 公开页面（登录、注册等）不添加到标签栏
+  if (route.meta?.public) return
+  
   const title = route.meta?.title || '页面'
   const exists = openTabs.value.find(t => t.path === newPath)
   if (!exists && newPath !== '/') {
     openTabs.value.push({ path: newPath, title })
+  }
+  
+  // 添加到缓存（如果是需要缓存的组件）
+  const componentName = getComponentName(newPath)
+  if (componentName && !cachedViews.value.includes(componentName)) {
+    cachedViews.value.push(componentName)
   }
 }, { immediate: true })
 
@@ -250,6 +346,16 @@ function closeTab(tab) {
   const idx = openTabs.value.findIndex(t => t.path === tab.path)
   if (idx > -1 && openTabs.value.length > 1) {
     openTabs.value.splice(idx, 1)
+    
+    // 从缓存中移除组件（确保组件完全销毁重置状态）
+    const componentName = getComponentName(tab.path)
+    if (componentName) {
+      const cacheIdx = cachedViews.value.indexOf(componentName)
+      if (cacheIdx > -1) {
+        cachedViews.value.splice(cacheIdx, 1)
+      }
+    }
+    
     if (tab.path === route.path) {
       const nextTab = openTabs.value[Math.max(0, idx - 1)]
       if (nextTab) router.push(nextTab.path)
@@ -324,7 +430,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-right: 24px;
+  margin-right: 16px;
   flex-shrink: 0;
   
   .logo-icon {
@@ -346,6 +452,65 @@ body {
     white-space: nowrap;
   }
 }
+
+// 分隔线
+.header-divider {
+  width: 1px;
+  height: 20px;
+  background: #e2e8f0;
+  margin: 0 8px;
+}
+
+// 项目选择器
+.project-selector {
+  margin-right: 8px;
+  
+  .project-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    
+    &:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+  }
+  
+  .project-icon {
+    font-size: 16px;
+  }
+  
+  .project-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1e293b;
+    max-width: 70px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .project-arrow {
+    font-size: 12px;
+    color: #64748b;
+  }
+}
+
+// 项目下拉菜单样式
+.dropdown-project-icon {
+  margin-right: 8px;
+}
+
+.dropdown-project-name {
+  flex: 1;
+}
+
 
 .main-nav {
   flex: 1;
@@ -420,15 +585,31 @@ body {
     
     &:hover { background: #f5f7fa; }
     
-    .user-avatar {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: #fff;
-      font-size: 12px;
+    .user-avatar-cartoon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      overflow: hidden;
+      flex-shrink: 0;
+      background: #f1f5f9;
+    }
+    
+    .user-avatar-cartoon :deep(svg) {
+      width: 100%;
+      height: 100%;
     }
     
     .user-name {
       color: var(--text-color);
       font-size: 14px;
+    }
+    
+    .role-tag {
+      margin-left: 4px;
+      height: 18px;
+      line-height: 16px;
+      padding: 0 6px;
+      font-size: 10px;
     }
     
     .el-icon {

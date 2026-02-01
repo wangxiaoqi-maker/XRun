@@ -74,6 +74,28 @@ class MilvusConfig(BaseSettings):
         extra = "ignore"
 
 
+class MinIOConfig(BaseSettings):
+    """MinIO 对象存储配置"""
+    
+    # MinIO 连接配置
+    MINIO_ENDPOINT: str = "95.40.86.68:9000"  # API 端口是 9000，不是 9001
+    MINIO_ACCESS_KEY: str = "xrun_minio"
+    MINIO_SECRET_KEY: str = "xrun_admin"
+    MINIO_SECURE: bool = False  # 是否使用 HTTPS
+    
+    # 存储桶配置
+    MINIO_BUCKET: str = "screenshots"
+    
+    # 访问 URL 前缀（用于前端访问图片）
+    MINIO_PUBLIC_URL: str = "http://95.40.86.68:9000"
+    
+    class Config:
+        env_prefix = ""
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+        extra = "ignore"
+
+
 class AnalyzerConfig(BaseSettings):
     """页面分析器配置"""
     
@@ -105,6 +127,12 @@ def get_embedding_config() -> EmbeddingConfig:
 def get_milvus_config() -> MilvusConfig:
     """获取 Milvus 配置（单例）"""
     return MilvusConfig()
+
+
+@lru_cache()
+def get_minio_config() -> MinIOConfig:
+    """获取 MinIO 配置（单例）"""
+    return MinIOConfig()
 
 
 @lru_cache()
