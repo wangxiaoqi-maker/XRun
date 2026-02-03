@@ -38,6 +38,14 @@ class AppInfo(KnowledgeBase):
         lazy="dynamic"
     )
     
+    # 关系：一个应用有多个功能模块
+    modules = relationship(
+        "PageModule",
+        back_populates="app",
+        cascade="all, delete-orphan",
+        lazy="dynamic"
+    )
+    
     def __repr__(self):
         return f"<AppInfo(id={self.id}, name={self.app_name}, platform={self.platform})>"
     

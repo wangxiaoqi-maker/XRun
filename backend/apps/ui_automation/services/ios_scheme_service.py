@@ -24,7 +24,7 @@ class IOSSchemeService:
             return False, "WDA URL 未配置"
 
         # 1. 尝试创建一个新的 Session
-        # WDA 需要先握手
+        # WDA 先握手
         try:
             session_resp = requests.post(
                 f"{self.base_url}/session",

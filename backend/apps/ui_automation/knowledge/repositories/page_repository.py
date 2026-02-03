@@ -320,7 +320,7 @@ class PageRepository(BaseRepository[PageAnalysis]):
                 FROM kb_page_analysis
                 WHERE {inner_where}
             )
-            SELECT p.*, a.app_name
+            SELECT p.*, a.app_name, a.platform
             FROM kb_page_analysis p
             INNER JOIN latest_pages lp ON p.id = lp.id AND lp.rn = 1
             LEFT JOIN kb_app_info a ON p.app_id = a.id
@@ -357,6 +357,7 @@ class PageRepository(BaseRepository[PageAnalysis]):
                 updated_at=row.updated_at
             )
             page._app_name = row.app_name
+            page._platform = row.platform
             pages.append(page)
         
         return pages

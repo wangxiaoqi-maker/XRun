@@ -296,6 +296,8 @@ class UpdatePageRequest(BaseModel):
     page_name: Optional[str] = Field(None, description="页面名称")
     page_description: Optional[str] = Field(None, description="页面描述")
     page_type: Optional[str] = Field(None, description="页面类型")
+    module_id: Optional[str] = Field(None, description="所属模块 ID")
+    is_common: Optional[bool] = Field(None, description="是否为公共组件")
 
 
 @router.put(
@@ -317,6 +319,11 @@ async def update_page(
             update_data["page_description"] = request.page_description
         if request.page_type is not None:
             update_data["page_type"] = request.page_type
+        if request.module_id is not None:
+            # 空字符串表示取消关联
+            update_data["module_id"] = request.module_id if request.module_id else None
+        if request.is_common is not None:
+            update_data["is_common"] = request.is_common
         
         if not update_data:
             raise HTTPException(status_code=400, detail="没有要更新的字段")
@@ -447,3 +454,78 @@ async def delete_element(
     except Exception as e:
         logger.error(f"删除元素失败: {e}")
         raise HTTPException(status_code=500, detail=f"删除元素失败: {str(e)}")
+
+
+# ==================== 知识图谱 / 跳转关系 ====================
+
+@router.get(
+    "/apps/{app_id}/graph",
+    summary="获取应用知识图谱",
+    description="获取应用的页面跳转关系图谱，包含节点（页面）和边（跳转关系）"
+)
+async def get_app_graph(
+    app_id: str,
+    service: KnowledgeService = Depends(get_knowledge_service)
+):
+    """
+    获取应用知识图谱
+    
+    返回：
+    - nodes: 页面列表（id, name, type, depth, elements_count）
+    - edges: 跳转关系列表（from, to, trigger, locator）
+    - stats: 统计信息
+    """
+    try:
+        result = await service.get_page_transitions(app_id)
+        return result
+    except Exception as e:
+        logger.error(f"获取知识图谱失败: {e}")
+        raise HTTPException(status_code=500, detail=f"获取知识图谱失败: {str(e)}")
+
+
+class FindPathRequest(BaseModel):
+    """查找导航路径请求"""
+    from_page: str = Field(..., description="起始页面名称（支持模糊匹配）")
+    to_page: str = Field(..., description="目标页面名称（支持模糊匹配）")
+
+
+@router.post(
+    "/apps/{app_id}/find-path",
+    summary="查找导航路径",
+    description="查找从页面 A 到页面 B 的操作路径，用于自动生成用例的前置步骤"
+)
+async def find_navigation_path(
+    app_id: str,
+    request: FindPathRequest,
+    service: KnowledgeService = Depends(get_knowledge_service)
+):
+    """
+    查找导航路径（BFS 最短路径）
+    
+    返回操作步骤列表，每步包含：
+    - page: 当前页面名称
+    - action: 要执行的操作（如 "点击「转账」"）
+    - locator: Midscene 定位器
+    """
+    try:
+        path = await service.find_navigation_path(
+            app_id=app_id,
+            from_page_name=request.from_page,
+            to_page_name=request.to_page
+        )
+        
+        if path is None:
+            return {
+                "found": False,
+                "message": f"未找到从「{request.from_page}」到「{request.to_page}」的路径",
+                "path": []
+            }
+        
+        return {
+            "found": True,
+            "path": path,
+            "steps_count": len(path)
+        }
+    except Exception as e:
+        logger.error(f"查找导航路径失败: {e}")
+        raise HTTPException(status_code=500, detail=f"查找导航路径失败: {str(e)}")

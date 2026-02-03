@@ -20,72 +20,100 @@ from ..config import AnalyzerConfig, get_analyzer_config
 # ============== Prompt 模板 ==============
 
 MOBILE_UI_ANALYSIS_PROMPT = """
-你是一个拥有像素级眼力的**高级 UI 自动化感知引擎**。你的任务是将移动端页面截图转化为机器可读的结构化数据。
-你的输出将被用于下游的自动化测试框架（Midscene），因此**准确性**和**定位描述的唯一性**至关重要。
+你是一个专业的 **移动端 UI 元素检测引擎**，为 Midscene 自动化测试框架提供元素识别。
 
-# 核心任务：全量元素穷举
-请像扫描仪一样，从屏幕左上角开始，至右下角，**穷举所有**用户可以交互的元素。
-**宁可多识别一个，不可漏掉一个。**
+# 核心任务
+精确识别截图中所有可交互元素，生成可用于 Midscene aiTap/aiInput 等方法的定位器。
 
-# 扫描策略 (必须严格执行)
-1.  **全局扫描**：先识别页面的整体结构（顶部导航、中部内容流、底部 Tab 栏）。
-2.  **局部细查**：
-    -   **顶部导航栏**：必须识别返回键、标题、右侧所有功能图标（如：客服、设置、分享）。
-    -   **金刚区/九宫格**：必须将每个图标+文字识别为**独立**的元素，**严禁**将整个九宫格画成一个大框。
-    -   **列表/Feed流**：识别每一个列表项（Container），同时识别列表项内部的按钮（如“去完成”、“购买”）。
-    -   **浮层/弹窗**：如果有弹窗，优先识别弹窗上的元素（关闭按钮、确认按钮）。
-    -   **底部 Tab**：识别所有 Tab 图标及其文字。
+# bbox 坐标规则 [极其重要]
+格式：**[left%, top%, width%, height%]**，值为 **0-100 的百分比**
 
-# 元素定义标准
--   **可交互**：点击、长按、滑动、输入。
--   **信息展示**：关键的业务数据（如余额数值、订单状态）也视为元素。
--   **视觉完整**：bbox 必须**紧紧包裹**元素的可见边缘，不要包含多余的空白背景。
+计算公式（图片尺寸 W x H 像素）：
+- left% = 元素左边缘 ÷ W × 100
+- top% = 元素上边缘 ÷ H × 100
+- width% = 元素宽度 ÷ W × 100
+- height% = 元素高度 ÷ H × 100
 
-## bbox 坐标格式
-[left, top, width, height] - 像素坐标（我会告知图片尺寸）或百分比(0-100)
+质量要求：
+- 所有值在 0-100 范围内
+- left% + width% ≤ 100，top% + height% ≤ 100
+- bbox 紧密包裹元素，不包含多余空白
 
-## 输出格式（严格 JSON）
+# midscene_locator 定位器规则 [核心]
+定位器用于 Midscene 的 aiTap('定位器') 等方法，必须是**清晰、唯一、中文**的自然语言描述。
+
+**定位器构成**（按优先级组合）：
+1. **位置** + **文字内容**：`底部导航栏的"首页"Tab`、`顶部的"返回"按钮`
+2. **位置** + **视觉特征**：`左上角的红色返回箭头`、`右上角的蓝色设置图标`
+3. **位置** + **功能描述**：`搜索框右侧的搜索按钮`、`用户头像下方的编辑按钮`
+4. **相对位置**：`"余额"文字右侧的刷新图标`、`列表第一项的"去完成"按钮`
+
+**好的定位器示例**：
+- `页面底部导航栏的"我的"Tab图标` ✓
+- `顶部导航栏左侧的返回箭头按钮` ✓
+- `九宫格区域中的"转账"功能入口` ✓
+- `搜索输入框` ✓
+- `"余额"数值右侧的眼睛图标` ✓
+- `红色的"立即购买"按钮` ✓
+
+**差的定位器示例**：
+- `button_1` ✗ (无意义的英文编号)
+- `首页` ✗ (太模糊，不知道是Tab还是其他)
+- `icon` ✗ (没有任何描述)
+
+# 扫描策略
+从上到下、从左到右扫描：
+1. **顶部导航栏**：返回按钮、标题、搜索图标、设置图标、更多按钮
+2. **中部内容区**：
+   - 九宫格/金刚区：每个图标+文字是**独立**元素
+   - 卡片/Banner：可点击的整个卡片区域
+   - 列表项：每行的按钮、链接、右侧箭头
+   - 输入框、开关、选择器
+3. **底部 Tab 栏**：每个 Tab 是**独立**元素（图标+文字）
+
+# 输出格式（严格 JSON）
 ```json
 {
-  "page_name": "页面名称",
-  "page_type": "home|profile|list|detail|form|settings|unknown",
-  "page_description": "简短描述",
+  "page_name": "页面中文名称",
+  "page_type": "home|list|detail|form|settings|profile|unknown",
+  "page_description": "一句话描述页面功能",
+  "confidence_score": 0.85,
   "elements": [
     {
       "name": "元素语义名称",
-      "type": "button|icon_button|link|tab|card|banner|text_input|switch|nav_item|list_item",
-      "text_content": "元素文字",
-      "description": "简短视觉描述",
-      "bbox": [100, 200, 80, 40],
+      "type": "button|icon_button|tab|card|text_input|link|switch|list_item|banner",
+      "text_content": "元素上的可见文字",
+      "description": "视觉描述：颜色、形状、图标特征",
+      "bbox": [10.5, 2.3, 8.2, 4.1],
       "area": "顶部|中部|底部",
-      "midscene_locator": "区域+位置+视觉特征+文字的唯一定位描述",
+      "midscene_locator": "页面底部导航栏的"首页"Tab图标",
+      "confidence_score": 0.9,
       "is_navigation": true,
-      "target_page": "目标页面名称"
+      "target_page": "首页"
     }
   ]
 }
 ```
 
-## 导航元素识别规则
-**特别重要**：识别会导致页面跳转的元素，设置 `is_navigation: true` 并推测 `target_page`
-- **Tab 栏**：底部导航 Tab（首页、我的、发现等）→ 跳转到对应 Tab 页面
-- **返回按钮**：左上角返回箭头 → 跳转到"上一页"
-- **功能入口**：九宫格图标、列表项 → 跳转到对应功能页面
-- **链接/按钮**：带箭头、"查看更多"、"去完成"等 → 跳转到详情页
-- **卡片**：可点击的卡片区域 → 跳转到卡片详情页
+# 置信度说明
+- **页面 confidence_score**：整体识别质量（0-1），基于元素识别完整度
+- **元素 confidence_score**：单个元素识别准确度（0-1）
+  - 0.9+ 高置信度：文字清晰、边界明确
+  - 0.7-0.9 中置信度：部分模糊但可识别
+  - <0.7 低置信度：猜测性识别
 
-`target_page` 命名规范：
-- 使用中文功能名称，如："转账页"、"账单详情页"、"设置页"、"上一页"
-- 如果无法确定目标，填写空字符串 ""
+# 导航元素标记
+设置 `is_navigation: true` + `target_page` 的情况：
+- 底部 Tab → `target_page: "首页/我的/发现..."`
+- 返回按钮 → `target_page: "上一页"`
+- 九宫格入口 → `target_page: "转账页/充值页/..."`
+- "查看更多"/"去完成" → `target_page: "详情页"`
 
-## 重要提示
-- 输出中文
-- **不要合并元素**：九宫格的每个图标是独立元素，不要合并成一个
-- **不要遗漏小元素**：角标、关闭按钮、箭头图标都要识别
-- **导航元素必须标识**：所有可能导致页面跳转的元素都要设置 is_navigation=true
-- 只输出 JSON，不要其他文字
-
-开始分析：
+# 必须遵守
+1. bbox 使用百分比（0-100），精确到小数点后1位
+2. midscene_locator 必须是**中文**自然语言描述
+3. 每个独立可点击区域都是一个元素，不要合并
+4. 只输出 JSON，不要任何其他文字
 """
 
 
@@ -95,6 +123,9 @@ class PageAnalyzerService:
     
     调用视觉大模型分析 App 截图，提取可测试元素
     """
+    
+    # 最大重试次数
+    MAX_RETRIES = 2
     
     def __init__(self, config: Optional[AnalyzerConfig] = None):
         self.config = config or get_analyzer_config()
@@ -210,7 +241,7 @@ class PageAnalyzerService:
         model_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        分析截图，提取页面信息和元素
+        分析截图，提取页面信息和元素（支持重试）
         
         Args:
             image_data: Base64 编码的截图
@@ -224,44 +255,139 @@ class PageAnalyzerService:
         await self.initialize(provider_id=provider_id, model_id=model_id)
         
         start_time = time.time()
+        last_error = None
         
-        try:
-            # 先解析图片获取尺寸（用于 prompt 和 bbox 转换）
-            image_size = self._get_image_size(image_data)
-            if image_size:
-                self._image_width, self._image_height = image_size
-                logger.info(f"截图尺寸: {self._image_width}x{self._image_height}")
+        # 先解析图片获取尺寸
+        image_size = self._get_image_size(image_data)
+        if image_size:
+            self._image_width, self._image_height = image_size
+            logger.info(f"截图尺寸: {self._image_width}x{self._image_height}")
+        
+        # 重试循环
+        for attempt in range(self.MAX_RETRIES + 1):
+            try:
+                # 构建 Prompt（包含图片尺寸信息）
+                prompt = self._build_prompt(context_hint, image_size, attempt > 0)
+                
+                # 构建消息（多模态）
+                messages = self._build_messages(image_data, prompt)
+                
+                # 调用视觉模型
+                response = await self._call_vision_model(messages)
+                
+                # 解析响应
+                result = self._parse_response(response)
+                
+                # 验证结果质量
+                valid_elements = self._validate_and_filter_elements(result.get("elements", []))
+                
+                # 如果有效元素太少，且还有重试机会，则重试
+                if len(valid_elements) < 5 and attempt < self.MAX_RETRIES:
+                    logger.warning(f"第 {attempt + 1} 次分析只识别到 {len(valid_elements)} 个有效元素，尝试重试...")
+                    continue
+                
+                result["elements"] = valid_elements
+                
+                # 添加处理时间
+                result["processing_time"] = round(time.time() - start_time, 3)
+                result["screenshot_hash"] = self.calculate_image_hash(image_data)
+                result["retry_count"] = attempt
+                
+                # 添加 token 用量信息
+                if self._last_usage:
+                    result["usage"] = self._last_usage
+                
+                logger.info(
+                    f"页面分析完成: {result.get('page_name', 'Unknown')} - "
+                    f"{len(result.get('elements', []))} 个元素 - "
+                    f"{result['processing_time']}s (重试 {attempt} 次)"
+                )
+                
+                return result
+                
+            except Exception as e:
+                last_error = e
+                logger.warning(f"第 {attempt + 1} 次分析失败: {e}")
+                if attempt < self.MAX_RETRIES:
+                    logger.info(f"将在 1 秒后重试...")
+                    await self._async_sleep(1)
+        
+        # 所有重试都失败
+        logger.error(f"页面分析失败（已重试 {self.MAX_RETRIES} 次）: {last_error}")
+        raise last_error
+    
+    async def _async_sleep(self, seconds: float):
+        """异步睡眠"""
+        import asyncio
+        await asyncio.sleep(seconds)
+    
+    def _validate_and_filter_elements(self, elements: List[Dict]) -> List[Dict]:
+        """验证并过滤元素，移除无效的 bbox"""
+        valid_elements = []
+        
+        for element in elements:
+            bbox = element.get("bbox")
             
-            # 构建 Prompt（包含图片尺寸信息）
-            prompt = self._build_prompt(context_hint, image_size)
+            # 验证 bbox 格式
+            if not bbox or not isinstance(bbox, list) or len(bbox) != 4:
+                logger.debug(f"元素 '{element.get('name')}' bbox 格式无效，跳过")
+                continue
             
-            # 构建消息（多模态）
-            messages = self._build_messages(image_data, prompt)
-            
-            # 调用视觉模型
-            response = await self._call_vision_model(messages)
-            
-            # 解析响应
-            result = self._parse_response(response)
-            
-            # 添加处理时间
-            result["processing_time"] = round(time.time() - start_time, 3)
-            result["screenshot_hash"] = self.calculate_image_hash(image_data)
-            
-            # 添加 token 用量信息
-            if self._last_usage:
-                result["usage"] = self._last_usage
-            
-            logger.info(
-                f"页面分析完成: {result.get('page_name', 'Unknown')} - "
-                f"{len(result.get('elements', []))} 个元素 - "
-                f"{result['processing_time']}s"
-            )
-            
-            return result
-        except Exception as e:
-            logger.error(f"页面分析失败: {e}")
-            raise
+            try:
+                left, top, width, height = [float(v) for v in bbox]
+                
+                # 验证数值范围
+                if width <= 0 or height <= 0:
+                    logger.debug(f"元素 '{element.get('name')}' bbox 尺寸无效 ({width}x{height})，跳过")
+                    continue
+                
+                # 如果是像素值（>100），需要转换
+                if any(v > 100 for v in [left, top]) or left + width > 105 or top + height > 105:
+                    # 转换为百分比
+                    device_w = self._image_width or 1080
+                    device_h = self._image_height or 2400
+                    
+                    # 判断格式
+                    if width > left and height > top:
+                        # [left, top, right, bottom] 格式
+                        actual_width = width - left
+                        actual_height = height - top
+                    else:
+                        actual_width = width
+                        actual_height = height
+                    
+                    bbox = [
+                        round((left / device_w) * 100, 1),
+                        round((top / device_h) * 100, 1),
+                        round((actual_width / device_w) * 100, 1),
+                        round((actual_height / device_h) * 100, 1)
+                    ]
+                    element["bbox"] = bbox
+                    left, top, width, height = bbox
+                
+                # 最终验证
+                if left < 0 or top < 0 or left + width > 105 or top + height > 105:
+                    logger.debug(f"元素 '{element.get('name')}' bbox 超出范围，跳过")
+                    continue
+                
+                # 过滤太小的元素（可能是噪声）
+                if width < 0.5 or height < 0.5:
+                    logger.debug(f"元素 '{element.get('name')}' bbox 太小，跳过")
+                    continue
+                
+                # 过滤太大的元素（可能是整个页面）
+                if width > 95 and height > 95:
+                    logger.debug(f"元素 '{element.get('name')}' bbox 太大（可能是整页），跳过")
+                    continue
+                
+                valid_elements.append(element)
+                
+            except (ValueError, TypeError) as e:
+                logger.debug(f"元素 '{element.get('name')}' bbox 解析失败: {e}")
+                continue
+        
+        logger.info(f"bbox 验证: {len(elements)} -> {len(valid_elements)} 个有效元素")
+        return valid_elements
     
     def _get_image_size(self, image_data: str) -> Optional[Tuple[int, int]]:
         """解析图片获取尺寸"""
@@ -284,28 +410,37 @@ class PageAnalyzerService:
             logger.warning(f"获取图片尺寸失败: {e}")
             return None
     
-    def _build_prompt(self, context_hint: Optional[str] = None, image_size: Optional[Tuple[int, int]] = None) -> str:
+    def _build_prompt(self, context_hint: Optional[str] = None, image_size: Optional[Tuple[int, int]] = None, is_retry: bool = False) -> str:
         """构建分析 Prompt"""
         prompt = MOBILE_UI_ANALYSIS_PROMPT
         
-        # 添加图片尺寸信息，帮助 LLM 计算准确的 bbox
+        # 添加图片尺寸信息
         if image_size:
             width, height = image_size
             prompt += f"""
 
-## 重要：图片尺寸信息
-当前截图的实际像素尺寸为 **{width} x {height}** 像素。
-请基于此尺寸返回准确的 bbox 坐标（百分比）：
-- left% = 元素左边距 / {width} × 100
-- top% = 元素上边距 / {height} × 100  
-- width% = 元素宽度 / {width} × 100
-- height% = 元素高度 / {height} × 100
+## 当前图片尺寸
+图片尺寸为 **{width} x {height}** 像素。
 
-例如：如果一个元素在像素位置 (100, 200) 处，宽 150px，高 80px：
-- left = 100 / {width} × 100 = {round(100/width*100, 2)}%
-- top = 200 / {height} × 100 = {round(200/height*100, 2)}%
+bbox 计算示例：
+- 如果元素在像素位置 (100, 200)，宽 150px，高 80px
+- left% = 100 ÷ {width} × 100 = {round(100/width*100, 1)}
+- top% = 200 ÷ {height} × 100 = {round(200/height*100, 1)}
+- width% = 150 ÷ {width} × 100 = {round(150/width*100, 1)}
+- height% = 80 ÷ {height} × 100 = {round(80/height*100, 1)}
+- 结果: [{round(100/width*100, 1)}, {round(200/height*100, 1)}, {round(150/width*100, 1)}, {round(80/height*100, 1)}]
+"""
+        
+        # 重试时增加强调
+        if is_retry:
+            prompt += """
 
-请仔细观察每个元素的精确位置，不要估算！
+## ⚠️ 重要提醒（上次识别不完整）
+请特别注意：
+1. **底部 Tab 栏**：必须识别每个 Tab（首页、我的等）
+2. **顶部导航**：返回按钮、标题旁的图标
+3. **九宫格区域**：每个图标单独识别
+4. **bbox 精度**：确保坐标准确，不要估算
 """
         
         if context_hint:
@@ -655,10 +790,30 @@ class PageAnalyzerService:
         result.setdefault("page_name", "Unknown")
         result.setdefault("page_type", "unknown")
         result.setdefault("page_description", "")
-        result.setdefault("confidence_score", 0.0)
         result.setdefault("elements", [])
         result.setdefault("element_relations", [])
         result.setdefault("page_transitions", [])
+        
+        # 页面置信度处理
+        # 1. 优先使用 AI 返回的置信度
+        ai_confidence = result.get("confidence_score")
+        if ai_confidence and isinstance(ai_confidence, (int, float)) and 0 < ai_confidence <= 1:
+            result["confidence_score"] = float(ai_confidence)
+            logger.info(f"使用 AI 返回的页面置信度: {ai_confidence}")
+        else:
+            # 2. 根据元素数量估算置信度
+            element_count = len(result.get("elements", []))
+            if element_count >= 20:
+                result["confidence_score"] = 0.90
+            elif element_count >= 10:
+                result["confidence_score"] = 0.85
+            elif element_count >= 5:
+                result["confidence_score"] = 0.75
+            elif element_count > 0:
+                result["confidence_score"] = 0.60
+            else:
+                result["confidence_score"] = 0.0
+            logger.info(f"根据元素数量({element_count})估算页面置信度: {result['confidence_score']}")
         
         original_count = len(result["elements"])
         logger.info(f"规范化前元素数量: {original_count}")
@@ -695,11 +850,23 @@ class PageAnalyzerService:
             element.setdefault("position", {})
             element.setdefault("relative_positions", [])
             element.setdefault("navigation", {"is_navigation": False})
-            element.setdefault("midscene_locator", element.get("name", ""))
             element.setdefault("midscene_operations", ["aiTap"])
             element.setdefault("test_scenarios", [])
-            element.setdefault("confidence_score", 0.8)
             element.setdefault("test_priority", "medium")
+            
+            # 处理元素置信度
+            elem_confidence = element.get("confidence_score")
+            if not elem_confidence or not isinstance(elem_confidence, (int, float)) or elem_confidence <= 0:
+                element["confidence_score"] = 0.85  # 默认置信度
+            else:
+                element["confidence_score"] = min(float(elem_confidence), 1.0)
+            
+            # 处理 midscene_locator：确保是中文自然语言描述
+            locator = element.get("midscene_locator", "")
+            if not locator or self._is_poor_locator(locator):
+                # 自动生成一个合理的定位器
+                locator = self._generate_locator(element)
+            element["midscene_locator"] = locator
         
         logger.info(f"规范化后最终元素数量: {len(result['elements'])}")
         
@@ -831,6 +998,98 @@ class PageAnalyzerService:
             "is_testable": True,
             "test_priority": element_data.get("test_priority", "medium"),
         }
+    
+    def _is_poor_locator(self, locator: str) -> bool:
+        """检查定位器是否质量较差"""
+        if not locator:
+            return True
+        
+        locator_lower = locator.lower().strip()
+        
+        # 太短的定位器
+        if len(locator) < 3:
+            return True
+        
+        # 纯英文编号/ID 类型
+        poor_patterns = [
+            'button', 'icon', 'text', 'image', 'link', 'input',
+            'element', 'item', 'btn', 'img', 'txt'
+        ]
+        
+        # 如果定位器只是纯英文单词（无中文），且在差模式列表中
+        if locator_lower in poor_patterns:
+            return True
+        
+        # 带数字后缀的编号（如 button_1, icon_2）
+        import re
+        if re.match(r'^[a-z_]+[_\d]+$', locator_lower):
+            return True
+        
+        return False
+    
+    def _generate_locator(self, element: Dict[str, Any]) -> str:
+        """为元素生成合理的 Midscene 定位器"""
+        parts = []
+        
+        # 1. 位置信息
+        area = element.get("area", "")
+        area_map = {
+            "顶部": "页面顶部",
+            "中部": "页面中部",
+            "底部": "页面底部"
+        }
+        if area and area in area_map:
+            parts.append(area_map[area])
+        
+        # 2. 元素类型描述
+        type_desc = {
+            "button": "按钮",
+            "icon_button": "图标按钮",
+            "tab": "Tab",
+            "card": "卡片",
+            "text_input": "输入框",
+            "link": "链接",
+            "switch": "开关",
+            "list_item": "列表项",
+            "banner": "Banner"
+        }
+        elem_type = element.get("type", "button")
+        
+        # 3. 文字内容
+        text = element.get("text_content", "")
+        name = element.get("name", "")
+        description = element.get("description", "")
+        
+        # 组合定位器
+        left_quote = "\u201c"  # 中文左引号 "
+        right_quote = "\u201d"  # 中文右引号 "
+        
+        if text:
+            # 有文字的元素：使用 "位置 + 文字 + 类型"
+            type_name = type_desc.get(elem_type, "元素")
+            if parts:
+                return f"{parts[0]}的{left_quote}{text}{right_quote}{type_name}"
+            else:
+                return f"{left_quote}{text}{right_quote}{type_name}"
+        elif name:
+            # 无文字但有名称：使用 "位置 + 名称"
+            if parts:
+                return f"{parts[0]}的{name}"
+            else:
+                return name
+        elif description:
+            # 使用描述
+            if parts:
+                return f"{parts[0]}的{description}"
+            else:
+                return description
+        else:
+            # 兜底：使用类型 + 位置
+            type_name = type_desc.get(elem_type, "元素")
+            if parts:
+                return f"{parts[0]}的{type_name}"
+            else:
+                return type_name
     
     def _build_short_description(
         self,

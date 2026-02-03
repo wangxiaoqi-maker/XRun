@@ -99,7 +99,7 @@ const tasks = ref([
 ])
 
 function goToScripts() {
-  router.push('/app/scripts')
+  router.push('/ui/scripts')
 }
 
 function handleSearch() {

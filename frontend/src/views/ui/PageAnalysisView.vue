@@ -117,6 +117,7 @@
             placeholder="请选择被测应用" 
             style="width: 100%"
             filterable
+            @change="onAppChange"
           >
             <el-option
               v-for="app in appList"
@@ -142,10 +143,26 @@
             <el-option
               v-for="model in visionModels"
               :key="model.id"
-              :label="`${model.name} (${model.provider_name})`"
+              :label="`${model.name} (${model.provider?.name || '未知供应商'})`"
               :value="model.id"
             />
           </el-select>
+        </el-form-item>
+        <el-form-item label="所属模块（可选）">
+          <el-select 
+            v-model="analyzeConfig.moduleId" 
+            placeholder="选择业务模块" 
+            clearable
+            style="width: 100%"
+          >
+            <el-option
+              v-for="module in moduleList"
+              :key="module.id"
+              :label="module.module_name"
+              :value="module.id"
+            />
+          </el-select>
+          <div class="form-tip">将页面归类到指定模块，便于管理</div>
         </el-form-item>
         <el-form-item label="页面标题（可选）">
           <el-input
@@ -220,11 +237,15 @@ const analyzeConfig = ref({
   modelId: '',
   pageTitle: '',
   contextHint: '',
-  appId: ''
+  appId: '',
+  moduleId: ''
 })
 
 // 应用列表
 const appList = ref([])
+
+// 模块列表
+const moduleList = ref([])
 
 // 计算当前模型名称
 const currentModelName = computed(() => {
@@ -273,10 +294,33 @@ async function loadAppList() {
     // 如果有应用且未选择，默认选第一个
     if (appList.value.length > 0 && !analyzeConfig.value.appId) {
       analyzeConfig.value.appId = appList.value[0].id
+      // 加载该应用的模块
+      loadModuleList(appList.value[0].id)
     }
   } catch (e) {
     console.error('加载应用列表失败:', e)
   }
+}
+
+// 加载模块列表
+async function loadModuleList(appId) {
+  if (!appId) {
+    moduleList.value = []
+    return
+  }
+  try {
+    const res = await knowledgeApi.getModuleTree(appId)
+    moduleList.value = res.data?.modules || []
+  } catch (e) {
+    console.error('加载模块列表失败:', e)
+    moduleList.value = []
+  }
+}
+
+// 切换应用时加载模块
+function onAppChange(appId) {
+  analyzeConfig.value.moduleId = ''
+  loadModuleList(appId)
 }
 
 // 打开分析配置弹窗
@@ -330,6 +374,14 @@ async function startAnalyze() {
     analysisResult.value = result.data
     analysisElements.value = result.data.elements || []
     pageSummary.value = result.data.page_description || ''
+    
+    // 添加模块 ID（用于保存时关联）
+    if (analyzeConfig.value.moduleId) {
+      analysisResult.value.module_id = analyzeConfig.value.moduleId
+      if (analysisResult.value.save_meta) {
+        analysisResult.value.save_meta.module_id = analyzeConfig.value.moduleId
+      }
+    }
     
     // 如果用户指定了页面标题，覆盖 AI 识别的结果
     if (analyzeConfig.value.pageTitle) {
@@ -572,14 +624,20 @@ onMounted(() => {
   flex-direction: column;
   background: #f8fafc;
   overflow: hidden;
+}
+
+/* 确保底部操作栏可见 */
+.result-panel :deep(.ai-teaching-panel) {
+  height: 100%;
+  margin: 0;
   padding: 16px;
   padding-bottom: 0;
 }
 
-/* 确保底部操作栏可见 */
 .result-panel :deep(.panel-footer) {
   margin-left: -16px;
   margin-right: -16px;
+  margin-bottom: 0;
   border-bottom: none;
 }
 

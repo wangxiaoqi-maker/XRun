@@ -223,7 +223,42 @@ export const knowledgeApi = {
   saveToKnowledgeBase: (analysisResult, saveToVector = true) => api.post('/ai/save-to-knowledge-base', {
     analysis_result: analysisResult,
     save_to_vector: saveToVector
-  }, { timeout: 120000 })
+  }, { timeout: 120000 }),
+  
+  // ===== 模块管理 =====
+  // 获取模块树
+  getModuleTree: (appId) => api.get(`/knowledge/modules/tree/${appId}`),
+  
+  // 获取模块详情
+  getModule: (moduleId, includePages = false) => api.get(`/knowledge/modules/${moduleId}?include_pages=${includePages}`),
+  
+  // 创建模块
+  createModule: (data) => api.post('/knowledge/modules', data),
+  
+  // 更新模块
+  updateModule: (moduleId, data) => api.put(`/knowledge/modules/${moduleId}`, data),
+  
+  // 删除模块
+  deleteModule: (moduleId) => api.delete(`/knowledge/modules/${moduleId}`),
+  
+  // 分配页面到模块
+  assignPagesToModule: (moduleId, pageIds) => api.post(`/knowledge/modules/${moduleId}/assign-pages`, { page_ids: pageIds }),
+  
+  // 从模块移除页面
+  removePagesFromModule: (moduleId, pageIds) => api.post(`/knowledge/modules/${moduleId}/remove-pages`, { page_ids: pageIds }),
+  
+  // 按模块分组获取页面
+  getPagesByModule: (appId) => api.get(`/knowledge/modules/app/${appId}/pages-by-module`),
+  
+  // ===== 知识图谱 =====
+  // 获取应用知识图谱
+  getAppGraph: (appId) => api.get(`/ai/apps/${appId}/graph`),
+  
+  // 查找导航路径
+  findNavigationPath: (appId, fromPage, toPage) => api.post(`/ai/apps/${appId}/find-path`, {
+    from_page: fromPage,
+    to_page: toPage
+  })
 }
 
 // ===== 知识图谱探索 API =====

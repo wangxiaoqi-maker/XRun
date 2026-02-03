@@ -195,8 +195,11 @@
                   
                   <!-- 3. Content -->
                   <div class="step-content">
-                    <!-- Target (Bold) -->
-                    <span class="target-text" v-if="step.target">{{ step.target }}</span>
+                    <!-- Target with label -->
+                    <template v-if="step.target">
+                      <span class="param-label">{{ getParamLabel(step.action) }}</span>
+                      <span class="target-text">{{ step.target }}</span>
+                    </template>
                     
                     <!-- Value (Gray pill) -->
                     <span class="value-pill" v-if="step.value">{{ step.value }}</span>
@@ -943,6 +946,26 @@ function onSmartAddStep(stepData) {
     isSaved.value = false
 }
 
+// 根据动作类型获取参数标签
+function getParamLabel(action) {
+    const labels = {
+        click: '目标',
+        input: '内容',
+        swipe: '方向',
+        wait: '时长',
+        launch: '应用',
+        schemeUrl: 'URL',
+        schemeRouter: '路由',
+        ai_act: '指令',
+        ai_query: '查询',
+        ai_assert: '断言',
+        screenshot: '名称',
+        back: '',
+        home: ''
+    }
+    return labels[action] || '参数'
+}
+
 function editStep(index) {
     const step = steps.value[index]
     inlineForm.value = {
@@ -1238,6 +1261,18 @@ button { outline: none; }
   background: #f8fafc;
   padding: 16px;
   border-radius: 0 0 8px 0;
+  
+  /* AITeachingPanel 样式覆盖 */
+  :deep(.ai-teaching-panel) {
+    height: calc(100% + 32px);
+    margin: -16px;
+    padding: 16px;
+    padding-bottom: 0;
+  }
+  
+  :deep(.panel-footer) {
+    margin-bottom: 0;
+  }
 }
 
 .steps-container {
@@ -1308,12 +1343,13 @@ button { outline: none; }
 }
 
 /* Action Tag */
-.step-tag { width: 80px; display: flex; align-items: center; }
+.step-tag { min-width: 70px; display: flex; align-items: center; }
 .tag-badge {
     padding: 4px 10px;
     border-radius: 6px;
     font-size: 12px;
     font-weight: 600;
+    white-space: nowrap;
 }
 /* Tag Colors */
 .wait { background: #f3f4f6; color: #4b5563; }
@@ -1332,10 +1368,19 @@ button { outline: none; }
     flex: 1;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
     margin-left: 12px;
     
-    .target-text { font-weight: 600; color: #334155; font-size: 14px; }
+    .param-label {
+        background: #f1f5f9;
+        color: #64748b;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+    .target-text { font-weight: 500; color: #334155; font-size: 14px; }
     .value-pill {
         background: #f8fafc;
         color: #64748b;

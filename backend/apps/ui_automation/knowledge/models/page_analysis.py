@@ -3,7 +3,7 @@
 """
 import uuid
 from decimal import Decimal
-from sqlalchemy import Column, String, DateTime, Text, Integer, ForeignKey, Index, JSON
+from sqlalchemy import Column, String, DateTime, Text, Integer, ForeignKey, Index, JSON, Boolean
 from sqlalchemy.dialects.mysql import DECIMAL
 from sqlalchemy.orm import relationship
 
@@ -27,10 +27,22 @@ class PageAnalysis(KnowledgeBase):
         comment="关联的应用 ID"
     )
     
+    # 关联模块（按功能分组）
+    module_id = Column(
+        String(36),
+        ForeignKey('kb_page_module.id', ondelete='SET NULL'),
+        nullable=True,
+        index=True,
+        comment="所属功能模块 ID"
+    )
+    
     # ========== 页面信息 ==========
     page_name = Column(String(200), nullable=False, index=True, comment="AI 生成的页面名称")
     page_type = Column(String(50), default='unknown', index=True, comment="页面类型：login/home/list/detail/form")
     page_description = Column(Text, comment="页面功能描述（AI 生成）")
+    
+    # 公共组件标记（如密码键盘、通用弹窗等，可被多个模块复用）
+    is_common = Column(Boolean, default=False, index=True, comment="是否为公共组件")
     
     # 用户输入的上下文提示（如"点击财富tab后跳转到该页面"）
     user_context = Column(Text, comment="用户提供的上下文描述（页面来源、功能说明等）")
@@ -68,6 +80,9 @@ class PageAnalysis(KnowledgeBase):
     # 所属应用
     app = relationship("AppInfo", back_populates="pages")
     
+    # 所属模块
+    module = relationship("PageModule", back_populates="pages", foreign_keys=[module_id])
+    
     # 页面元素（一对多）
     elements = relationship(
         "PageElement",
@@ -92,13 +107,26 @@ class PageAnalysis(KnowledgeBase):
     
     def to_dict(self) -> dict:
         """转换为字典"""
+        # 获取平台信息（从缓存属性，避免在异步上下文中访问关系）
+        platform = getattr(self, '_platform', None)
+        app_name = getattr(self, '_app_name', None)
+        
+        # 获取模块信息（从缓存属性）
+        module_name = getattr(self, '_module_name', None)
+        module_path = getattr(self, '_module_path', None)
+        
         return {
             "id": self.id,
             "app_id": self.app_id,
-            "app_name": getattr(self, '_app_name', None) or (self.app.app_name if self.app else None),
+            "app_name": app_name,
+            "platform": platform,
+            "module_id": self.module_id,
+            "module_name": module_name,
+            "module_path": module_path,
             "page_name": self.page_name,
             "page_type": self.page_type,
             "page_description": self.page_description,
+            "is_common": self.is_common or False,
             "user_context": self.user_context,
             "navigation_source": self.navigation_source,
             "screenshot_hash": self.screenshot_hash,

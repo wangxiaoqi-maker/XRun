@@ -126,10 +126,12 @@
             <!-- 元素缩略图 -->
             <div class="element-thumb">
               <img 
-                v-if="getElementCrop(element)" 
-                :src="getElementCrop(element)" 
+                v-if="elementCrops[element.id]" 
+                :src="elementCrops[element.id]" 
                 class="thumb-image"
                 :alt="element.element_name"
+                loading="lazy"
+                decoding="async"
               />
               <div v-else class="thumb-placeholder">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -386,47 +388,73 @@ watch(() => props.screenshot, (newVal) => {
 // 元素切图缓存
 const elementCrops = ref({})
 
-// 生成所有元素的切图
+// 异步生成切图（分批处理，避免阻塞 UI）
+let cropTaskId = 0
 watch([screenshotImage, () => props.elements], () => {
+  // 取消之前的任务
+  cropTaskId++
+  const currentTaskId = cropTaskId
+  
   if (!screenshotImage.value || !props.elements.length) {
     elementCrops.value = {}
     return
   }
   
   const img = screenshotImage.value
+  const elements = [...props.elements]
   const crops = {}
+  let index = 0
   
-  for (const element of props.elements) {
-    if (!element.bbox || !element.id) continue
+  // 复用单个 canvas 提高性能
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+  const THUMB_SIZE = 96 // 缩略图尺寸
+  canvas.width = THUMB_SIZE
+  canvas.height = THUMB_SIZE
+  
+  function processBatch() {
+    if (currentTaskId !== cropTaskId) return // 任务已取消
     
-    const bbox = Array.isArray(element.bbox) ? element.bbox : null
-    if (!bbox || bbox.length !== 4) continue
+    const batchSize = 5 // 每批处理 5 个
+    const end = Math.min(index + batchSize, elements.length)
     
-    // bbox 格式: [left%, top%, width%, height%]
-    const [leftPct, topPct, widthPct, heightPct] = bbox
+    for (; index < end; index++) {
+      const element = elements[index]
+      if (!element.bbox || !element.id) continue
+      
+      const bbox = Array.isArray(element.bbox) ? element.bbox : null
+      if (!bbox || bbox.length !== 4) continue
+      
+      const [leftPct, topPct, widthPct, heightPct] = bbox
+      const x = Math.round((leftPct / 100) * img.width)
+      const y = Math.round((topPct / 100) * img.height)
+      const w = Math.round((widthPct / 100) * img.width)
+      const h = Math.round((heightPct / 100) * img.height)
+      
+      if (w <= 0 || h <= 0 || x < 0 || y < 0) continue
+      
+      try {
+        // 绘制到固定大小的缩略图
+        ctx.clearRect(0, 0, THUMB_SIZE, THUMB_SIZE)
+        ctx.drawImage(img, x, y, w, h, 0, 0, THUMB_SIZE, THUMB_SIZE)
+        // 使用 JPEG 格式，质量 0.6，大幅减小体积
+        crops[element.id] = canvas.toDataURL('image/jpeg', 0.6)
+      } catch (e) {
+        // 忽略裁剪失败
+      }
+    }
     
-    // 转换为像素坐标
-    const x = Math.round((leftPct / 100) * img.width)
-    const y = Math.round((topPct / 100) * img.height)
-    const w = Math.round((widthPct / 100) * img.width)
-    const h = Math.round((heightPct / 100) * img.height)
+    // 更新已处理的切图
+    elementCrops.value = { ...crops }
     
-    // 边界检查
-    if (w <= 0 || h <= 0 || x < 0 || y < 0) continue
-    
-    try {
-      const canvas = document.createElement('canvas')
-      canvas.width = w
-      canvas.height = h
-      const ctx = canvas.getContext('2d')
-      ctx.drawImage(img, x, y, w, h, 0, 0, w, h)
-      crops[element.id] = canvas.toDataURL('image/png')
-    } catch (e) {
-      // 忽略裁剪失败
+    // 继续处理剩余元素
+    if (index < elements.length) {
+      requestAnimationFrame(processBatch)
     }
   }
   
-  elementCrops.value = crops
+  // 开始异步处理
+  requestAnimationFrame(processBatch)
 }, { immediate: true })
 
 // 获取元素切图 URL
@@ -506,14 +534,14 @@ defineExpose({
 
 <style lang="scss" scoped>
 .ai-teaching-panel {
-  height: calc(100% + 32px); /* 补偿父容器的 padding */
-  margin: -16px; /* 抵消父容器 steps-panel 的 padding */
+  height: 100%;
   display: flex;
   flex-direction: column;
   background: #f8fafc;
   overflow: hidden;
   padding: 16px;
   padding-bottom: 0;
+  box-sizing: border-box;
 }
 
 // 分析中状态 - 工具调用日志风格
@@ -689,6 +717,7 @@ defineExpose({
   overflow-x: hidden;
   padding-right: 8px; /* 为滚动条留出空间 */
   margin-right: -8px;
+  -webkit-overflow-scrolling: touch; /* iOS 滚动优化 */
   
   // 自定义滚动条
   &::-webkit-scrollbar {
@@ -772,7 +801,6 @@ defineExpose({
   border-radius: 12px;
   border: 1px solid #e2e8f0;
   overflow: hidden;
-  transition: all 0.2s;
   
   &:hover {
     border-color: #a5b4fc;
@@ -1041,13 +1069,12 @@ defineExpose({
 
 // 底部操作栏 - 固定在底部，左右延伸到边缘
 .panel-footer {
-  height: 48px; /* 固定高度，与左侧对齐 */
+  height: 52px; /* 固定高度 */
+  min-height: 52px;
   padding: 0 16px;
   margin: auto -16px 0 -16px; /* margin-top: auto 贴底，左右延伸 */
   background: white;
-  border: 1px solid #e2e8f0;
-  border-left: none;
-  border-right: none;
+  border-top: 1px solid #e2e8f0;
   display: flex;
   align-items: center;
   justify-content: space-between;

@@ -5,14 +5,20 @@
 - 页面分析（PageAnalyzerService）
 - 关系型数据库存储（Repository）
 - 向量数据库存储（VectorService）
+
+架构说明：
+- 页面组织：通过 PageModule（功能模块）管理，如"转账模块"包含多个转账相关页面
+- 跳转关系：通过 PageTransition 记录，基于元素的 is_navigation 属性
+- 路径查找：find_navigation_path() 用于自动生成用例的前置步骤
 """
 import uuid
 from typing import Optional, List, Dict, Any
 from decimal import Decimal
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from loguru import logger
 
-from ..models import AppInfo, PageAnalysis, PageElement
+from ..models import AppInfo, PageAnalysis, PageElement, PageTransition
 from ..repositories import AppRepository, PageRepository, ElementRepository
 from .page_analyzer_service import PageAnalyzerService
 from .vector_service import VectorService
@@ -195,13 +201,15 @@ class KnowledgeService:
         device_resolution: Optional[str],
         context_hint: Optional[str] = None,
         screenshot_url: Optional[str] = None,
-        page_id: Optional[str] = None
+        page_id: Optional[str] = None,
+        module_id: Optional[str] = None
     ) -> PageAnalysis:
         """保存页面分析结果到关系型数据库"""
         # 创建页面记录
         page = PageAnalysis(
             id=page_id or str(uuid.uuid4()),
             app_id=app.id,
+            module_id=module_id,  # 关联模块
             page_name=analysis_result.get("page_name", "Unknown"),
             page_type=analysis_result.get("page_type", "unknown"),
             page_description=analysis_result.get("page_description", ""),
@@ -405,7 +413,8 @@ class KnowledgeService:
             device_resolution=meta.get("device_resolution"),
             context_hint=meta.get("context_hint"),
             screenshot_url=screenshot_url,
-            page_id=page_id
+            page_id=page_id,
+            module_id=meta.get("module_id")  # 从 meta 中获取模块 ID
         )
         
         # 3. 获取保存后的元素
@@ -463,6 +472,138 @@ class KnowledgeService:
             "elements_count": len(elements),
             "saved_to_vector": save_to_vector
         }
+    
+    # ==================== 跳转关系（基于模块结构） ====================
+    
+    async def get_page_transitions(self, app_id: str) -> Dict[str, Any]:
+        """
+        获取应用的所有跳转关系（用于知识图谱展示）
+        
+        Returns:
+            {
+                "nodes": [页面列表],
+                "edges": [跳转关系列表],
+                "stats": {统计信息}
+            }
+        """
+        # 获取应用下所有页面
+        pages_result = await self.session.execute(
+            select(PageAnalysis).where(PageAnalysis.app_id == app_id)
+        )
+        pages = pages_result.scalars().all()
+        
+        page_ids = [p.id for p in pages]
+        
+        # 获取所有跳转关系
+        transitions_result = await self.session.execute(
+            select(PageTransition).where(
+                PageTransition.from_page_id.in_(page_ids)
+            )
+        )
+        transitions = transitions_result.scalars().all()
+        
+        # 构建节点
+        nodes = [
+            {
+                "id": p.id,
+                "name": p.page_name,
+                "type": p.page_type,
+                "depth": p.depth or 0,
+                "elements_count": p.elements_count or 0
+            }
+            for p in pages
+        ]
+        
+        # 构建边
+        edges = [
+            {
+                "id": t.id,
+                "from": t.from_page_id,
+                "to": t.to_page_id,
+                "from_name": t.from_page_name,
+                "to_name": t.to_page_name,
+                "trigger": t.trigger_element_name,
+                "locator": t.trigger_element_locator,
+                "type": t.transition_type
+            }
+            for t in transitions
+        ]
+        
+        return {
+            "nodes": nodes,
+            "edges": edges,
+            "stats": {
+                "total_pages": len(pages),
+                "total_transitions": len(transitions),
+                "max_depth": max((p.depth or 0) for p in pages) if pages else 0
+            }
+        }
+    
+    async def find_navigation_path(
+        self,
+        app_id: str,
+        from_page_name: str,
+        to_page_name: str
+    ) -> Optional[List[Dict[str, Any]]]:
+        """
+        查找从页面 A 到页面 B 的导航路径（BFS）
+        
+        用于自动生成用例时，计算到达目标页面的前置步骤
+        
+        Returns:
+            操作路径列表，每项包含 {page, action, locator}
+        """
+        from collections import deque
+        
+        # 查找起始和目标页面
+        from_result = await self.session.execute(
+            select(PageAnalysis).where(
+                PageAnalysis.app_id == app_id,
+                PageAnalysis.page_name.like(f"%{from_page_name}%")
+            ).limit(1)
+        )
+        from_page = from_result.scalar_one_or_none()
+        
+        to_result = await self.session.execute(
+            select(PageAnalysis).where(
+                PageAnalysis.app_id == app_id,
+                PageAnalysis.page_name.like(f"%{to_page_name}%")
+            ).limit(1)
+        )
+        to_page = to_result.scalar_one_or_none()
+        
+        if not from_page or not to_page:
+            return None
+        
+        # BFS 搜索
+        queue = deque([(from_page.id, [])])
+        visited = {from_page.id}
+        
+        while queue:
+            current_id, path = queue.popleft()
+            
+            if current_id == to_page.id:
+                return path + [{"page": to_page.page_name, "action": None}]
+            
+            # 获取当前页面的所有出向跳转
+            transitions_result = await self.session.execute(
+                select(PageTransition).where(
+                    PageTransition.from_page_id == current_id
+                )
+            )
+            transitions = transitions_result.scalars().all()
+            
+            for trans in transitions:
+                if trans.to_page_id not in visited:
+                    visited.add(trans.to_page_id)
+                    new_path = path + [{
+                        "page": trans.from_page_name,
+                        "action": f"点击「{trans.trigger_element_name}」" if trans.trigger_element_name else "跳转",
+                        "locator": trans.trigger_element_locator
+                    }]
+                    queue.append((trans.to_page_id, new_path))
+        
+        return None
     
     async def get_apps(
         self,
