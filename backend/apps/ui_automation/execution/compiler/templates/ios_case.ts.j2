@@ -1,0 +1,181 @@
+{#
+iOS 用例模板
+
+基于官方示例: https://github.com/web-infra-dev/midscene/blob/main/packages/ios/tests/ai/ebay.test.ts
+支持功能:
+- WebDriverAgent 连接
+- 环境变量注入
+- 多模型配置
+- AI 上下文
+- 缓存配置
+- 报告生成
+#}
+// 自动生成 - 请勿手动修改
+// 用例: {{ case_name }}
+// 平台: iOS
+// 生成时间: {{ generated_at }}
+
+import { sleep } from '@midscene/core/utils';
+import { beforeAll, afterAll, describe, it, vi, expect } from 'vitest';
+import {
+  IOSAgent,
+  IOSDevice,
+  agentFromWebDriverAgent,
+  checkIOSEnvironment,
+} from '@midscene/ios';
+{% if enable_report_merger %}
+import { ReportMergingTool } from '@midscene/core/report';
+{% endif %}
+
+// 配置全局超时
+vi.setConfig({
+  testTimeout: {{ test_timeout_ms | default(240000) }},
+  hookTimeout: {{ hook_timeout_ms | default(240000) }},
+});
+
+describe('{{ case_name }}', () => {
+  let agent: IOSAgent | null = null;
+  let device: IOSDevice | null = null;
+{% if enable_report_merger %}
+  const reportMergingTool = new ReportMergingTool();
+{% endif %}
+
+  // ========== 参数化变量（从环境变量读取）==========
+{% for var in input_variables %}
+  const {{ var.name }} = process.env.VAR_{{ var.name | upper }} || '{{ var.default_value | default("") }}';
+{% endfor %}
+
+  beforeAll(async () => {
+    // iOS 环境检查
+    const envCheck = await checkIOSEnvironment();
+    if (!envCheck.available) {
+      console.warn(`iOS environment check failed: ${envCheck.error}`);
+      return;
+    }
+
+    // WDA 连接配置
+    const wdaHost = process.env.WDA_HOST || '{{ wda_host | default("localhost") }}';
+    const wdaPort = Number(process.env.WDA_PORT) || {{ wda_port | default(8100) }};
+
+    // 创建设备实例
+    device = new IOSDevice({
+      wdaHost,
+      wdaPort,
+      autoDismissKeyboard: {{ auto_dismiss_keyboard | default(true) | lower }},
+    });
+
+    // 连接设备
+    await device.connect();
+
+    // 创建 Agent
+    agent = new IOSAgent(device, {
+      // AI 上下文
+      aiActionContext: process.env.AI_CONTEXT || '{{ ai_context | default("如果出现权限弹窗，点击允许或同意。") }}',
+      
+      // 报告配置
+      generateReport: {{ generate_report | default(true) | lower }},
+{% if report_file_name %}
+      reportFileName: '{{ report_file_name }}',
+{% endif %}
+      
+      // 操作后等待
+      waitAfterAction: {{ wait_after_action_ms | default(300) }},
+      
+      // 规划限制
+      replanningCycleLimit: {{ replanning_cycle_limit | default(20) }},
+      
+{% if cache_id %}
+      // 缓存配置
+      cacheId: process.env.CACHE_ID || '{{ cache_id }}',
+{% endif %}
+      
+{% if model_config %}
+      // 模型配置
+      modelConfig: {
+        MIDSCENE_MODEL_NAME: process.env.MIDSCENE_MODEL_NAME || '{{ model_config.name | default("") }}',
+        MIDSCENE_MODEL_BASE_URL: process.env.MIDSCENE_MODEL_BASE_URL || '{{ model_config.base_url | default("") }}',
+        MIDSCENE_MODEL_API_KEY: process.env.MIDSCENE_MODEL_API_KEY || '',
+{% if model_config.family %}
+        MIDSCENE_MODEL_FAMILY: '{{ model_config.family }}',
+{% endif %}
+{% if model_config.planning_name %}
+        // 规划专用模型
+        MIDSCENE_PLANNING_MODEL_NAME: process.env.MIDSCENE_PLANNING_MODEL_NAME || '{{ model_config.planning_name }}',
+{% endif %}
+{% if model_config.insight_name %}
+        // 定位专用模型
+        MIDSCENE_INSIGHT_MODEL_NAME: process.env.MIDSCENE_INSIGHT_MODEL_NAME || '{{ model_config.insight_name }}',
+{% endif %}
+      },
+{% endif %}
+{% if custom_actions %}
+      // 自定义动作
+      customActions: [
+        // 由平台注入
+      ],
+{% endif %}
+    });
+
+{% if launch_target %}
+    // 启动应用
+    await agent.launch('{{ launch_target }}');
+    await sleep({{ launch_wait_ms | default(5000) }});
+{% endif %}
+  }, {{ hook_timeout_ms | default(240000) }});
+
+  afterAll(async () => {
+{% if cache_strategy == 'read-only' %}
+    // 清理缓存
+    if (agent) {
+      await agent.flushCache({ cleanUnusedCache: true });
+    }
+{% endif %}
+{% if enable_report_merger %}
+    // 报告合并（套件执行时使用）
+    if (agent && process.env.SUITE_EXECUTION_ID) {
+      reportMergingTool.append({
+        reportFilePath: agent.reportFile as string,
+        reportAttributes: {
+          testId: '{{ case_id }}',
+          testTitle: '{{ case_name }}',
+          testDescription: '{{ case_description | default("") }}',
+          testDuration: 0, // 由外部计算
+          testStatus: 'passed',
+        },
+      });
+    }
+{% endif %}
+    // 清理资源
+    if (device) {
+      await device.destroy();
+    }
+  });
+
+{% if data_driven %}
+  // ========== 数据驱动测试 ==========
+  const testData = {{ test_data | tojson }};
+  
+  it.each(testData)(
+    '{{ test_name }} - ${{ data_label_field | default("_index") }}',
+    async ({{ data_fields | join(", ") }}) => {
+      if (!agent) {
+        console.warn('Agent not initialized, skipping test');
+        return;
+      }
+      
+{{ steps | indent(6, true) }}
+    },
+    {{ step_timeout_ms | default(720000) }}
+  );
+{% else %}
+  // ========== 测试执行 ==========
+  it('{{ test_name | default(case_name) }}', async () => {
+    if (!agent) {
+      console.warn('Agent not initialized, skipping test');
+      return;
+    }
+
+{{ steps | indent(4, true) }}
+  }, {{ step_timeout_ms | default(720000) }});
+{% endif %}
+});

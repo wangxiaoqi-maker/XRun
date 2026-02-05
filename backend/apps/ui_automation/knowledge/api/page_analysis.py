@@ -529,3 +529,35 @@ async def find_navigation_path(
     except Exception as e:
         logger.error(f"查找导航路径失败: {e}")
         raise HTTPException(status_code=500, detail=f"查找导航路径失败: {str(e)}")
+
+
+@router.post("/apps/{app_id}/infer-transitions")
+async def infer_transitions(
+    app_id: str,
+    service: KnowledgeService = Depends(get_knowledge_service)
+):
+    """
+    批量推断应用的跳转边
+    
+    遍历所有页面的导航元素（is_navigation=True），
+    根据 target_page_name 自动创建 PageTransition 记录。
+    
+    用于：
+    1. 补全历史数据（已分析但未建立跳转关系的页面）
+    2. 新页面分析后重新计算跳转关系
+    
+    Returns:
+        - pages_processed: 处理的页面数
+        - transitions_created: 创建的跳转边数
+        - pending_targets: 未找到目标页面的元素列表
+    """
+    try:
+        result = await service.infer_all_transitions(app_id)
+        return {
+            "success": True,
+            "app_id": app_id,
+            **result
+        }
+    except Exception as e:
+        logger.error(f"批量推断跳转边失败: {e}")
+        raise HTTPException(status_code=500, detail=f"批量推断跳转边失败: {str(e)}")

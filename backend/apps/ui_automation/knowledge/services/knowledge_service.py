@@ -248,7 +248,204 @@ class KnowledgeService:
         
         logger.info(f"保存页面分析: {page.page_name} - {len(elements)} 个元素")
         
+        # 自动推断跳转边（基于元素的 is_navigation 和 target_page_name）
+        await self._infer_transitions_from_elements(app.id, page, elements)
+        
         return page
+    
+    async def _infer_transitions_from_elements(
+        self,
+        app_id: str,
+        from_page: PageAnalysis,
+        elements: List[PageElement]
+    ) -> int:
+        """
+        从元素中自动推断跳转边
+        
+        当元素的 is_navigation=True 且有 target_page_name 时，
+        尝试查找目标页面并创建 PageTransition 记录。
+        
+        Args:
+            app_id: 应用 ID
+            from_page: 当前页面
+            elements: 页面元素列表
+            
+        Returns:
+            创建的跳转边数量
+        """
+        created_count = 0
+        
+        for element in elements:
+            # 只处理导航元素
+            if not element.is_navigation or not element.target_page_name:
+                continue
+            
+            target_page_name = element.target_page_name
+            
+            # 查找目标页面（模糊匹配）
+            target_page = await self._find_page_by_name(app_id, target_page_name)
+            
+            if target_page:
+                # 更新元素的 target_page_id
+                element.target_page_id = target_page.id
+                
+                # 检查是否已存在相同的跳转
+                existing = await self.session.execute(
+                    select(PageTransition).where(
+                        PageTransition.from_page_id == from_page.id,
+                        PageTransition.to_page_id == target_page.id,
+                        PageTransition.trigger_element_id == element.id
+                    )
+                )
+                if existing.scalar_one_or_none():
+                    continue
+                
+                # 创建跳转边
+                transition = PageTransition(
+                    from_page_id=from_page.id,
+                    to_page_id=target_page.id,
+                    from_page_name=from_page.page_name,
+                    to_page_name=target_page.page_name,
+                    trigger_element_id=element.id,
+                    trigger_element_name=element.element_name,
+                    trigger_element_locator=element.midscene_locator,
+                    transition_type="click",
+                    transition_description=f"在「{from_page.page_name}」点击「{element.element_name}」，跳转到「{target_page.page_name}」",
+                    is_confirmed=False  # 自动推断的边，需要人工确认
+                )
+                self.session.add(transition)
+                created_count += 1
+                
+                logger.info(
+                    f"[跳转推断] {from_page.page_name} -> {target_page.page_name} "
+                    f"(触发: {element.element_name})"
+                )
+            else:
+                # 目标页面尚未分析，记录日志供后续处理
+                logger.debug(
+                    f"[跳转推断] 目标页面未找到: {target_page_name} "
+                    f"(来源: {from_page.page_name}, 触发: {element.element_name})"
+                )
+        
+        if created_count > 0:
+            await self.session.commit()
+            logger.info(f"[跳转推断] 共创建 {created_count} 条跳转边")
+        
+        return created_count
+    
+    async def _find_page_by_name(
+        self,
+        app_id: str,
+        page_name: str
+    ) -> Optional[PageAnalysis]:
+        """
+        根据页面名称查找页面（支持模糊匹配）
+        
+        匹配优先级：
+        1. 精确匹配
+        2. 包含匹配（目标名称包含在页面名称中）
+        3. 包含匹配（页面名称包含目标名称）
+        """
+        # 1. 精确匹配
+        result = await self.session.execute(
+            select(PageAnalysis).where(
+                PageAnalysis.app_id == app_id,
+                PageAnalysis.page_name == page_name
+            )
+        )
+        page = result.scalar_one_or_none()
+        if page:
+            return page
+        
+        # 2. 模糊匹配
+        result = await self.session.execute(
+            select(PageAnalysis).where(
+                PageAnalysis.app_id == app_id,
+                PageAnalysis.page_name.like(f"%{page_name}%")
+            ).limit(1)
+        )
+        return result.scalar_one_or_none()
+    
+    async def infer_all_transitions(self, app_id: str) -> Dict[str, Any]:
+        """
+        批量推断应用的所有跳转边
+        
+        遍历所有页面的导航元素，尝试创建跳转边。
+        用于补全历史数据。
+        
+        Returns:
+            {
+                "pages_processed": 处理的页面数,
+                "transitions_created": 创建的跳转边数,
+                "pending_targets": 未找到目标的元素列表
+            }
+        """
+        # 获取应用下所有页面
+        pages_result = await self.session.execute(
+            select(PageAnalysis).where(PageAnalysis.app_id == app_id)
+        )
+        pages = pages_result.scalars().all()
+        
+        total_created = 0
+        pending_targets = []
+        
+        for page in pages:
+            # 获取页面的导航元素
+            elements_result = await self.session.execute(
+                select(PageElement).where(
+                    PageElement.page_id == page.id,
+                    PageElement.is_navigation == True
+                )
+            )
+            nav_elements = elements_result.scalars().all()
+            
+            for element in nav_elements:
+                if not element.target_page_name:
+                    continue
+                
+                target_page = await self._find_page_by_name(app_id, element.target_page_name)
+                
+                if target_page and target_page.id != page.id:
+                    # 检查是否已存在
+                    existing = await self.session.execute(
+                        select(PageTransition).where(
+                            PageTransition.from_page_id == page.id,
+                            PageTransition.to_page_id == target_page.id
+                        )
+                    )
+                    if existing.scalar_one_or_none():
+                        continue
+                    
+                    # 创建跳转边
+                    transition = PageTransition(
+                        from_page_id=page.id,
+                        to_page_id=target_page.id,
+                        from_page_name=page.page_name,
+                        to_page_name=target_page.page_name,
+                        trigger_element_id=element.id,
+                        trigger_element_name=element.element_name,
+                        trigger_element_locator=element.midscene_locator,
+                        transition_type="click",
+                        transition_description=f"在「{page.page_name}」点击「{element.element_name}」，跳转到「{target_page.page_name}」",
+                        is_confirmed=False
+                    )
+                    self.session.add(transition)
+                    total_created += 1
+                else:
+                    pending_targets.append({
+                        "from_page": page.page_name,
+                        "element": element.element_name,
+                        "target_page_name": element.target_page_name
+                    })
+        
+        if total_created > 0:
+            await self.session.commit()
+        
+        return {
+            "pages_processed": len(pages),
+            "transitions_created": total_created,
+            "pending_targets": pending_targets
+        }
     
     async def _save_to_vector_db(
         self,

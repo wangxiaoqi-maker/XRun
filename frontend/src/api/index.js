@@ -172,7 +172,7 @@ export const executionApi = {
   }
 }
 
-// ===== AI 配置 API =====
+// ===== AI 配置 API（已废弃，保留向后兼容）=====
 export const aiConfigApi = {
   list: () => api.get('/ai-config'),
   get: (id) => api.get(`/ai-config/${id}`),
@@ -320,6 +320,129 @@ export const llmApi = {
 export const systemApi = {
   health: () => api.get('/health'),
   info: () => api.get('/')
+}
+
+// ===== 执行引擎 V2 API =====
+
+// 用例管理 V2
+export const caseV2Api = {
+  // 列表查询
+  list: (params) => api.get('/v2/cases', { params }),
+  
+  // 获取详情
+  get: (id) => api.get(`/v2/cases/${id}`),
+  
+  // 创建用例
+  create: (data) => api.post('/v2/cases', data),
+  
+  // 更新用例
+  update: (id, data) => api.put(`/v2/cases/${id}`, data),
+  
+  // 删除用例
+  delete: (id) => api.delete(`/v2/cases/${id}`),
+  
+  // 复制用例
+  duplicate: (id, newName) => api.post(`/v2/cases/${id}/duplicate`, null, { params: { new_name: newName } }),
+  
+  // 编译用例（预览生成的 TypeScript）
+  compile: (id, variables) => api.post(`/v2/cases/${id}/compile`, variables)
+}
+
+// 测试套件/目录 API
+export const suiteApi = {
+  // 获取套件列表
+  list: (params) => api.get('/v2/suites', { params }),
+  
+  // 获取套件树
+  tree: (projectId) => api.get('/v2/suites/tree', { params: { project_id: projectId } }),
+  
+  // 获取详情
+  get: (id) => api.get(`/v2/suites/${id}`),
+  
+  // 创建套件
+  create: (data) => api.post('/v2/suites', data),
+  
+  // 更新套件
+  update: (id, data) => api.put(`/v2/suites/${id}`, data),
+  
+  // 删除套件
+  delete: (id) => api.delete(`/v2/suites/${id}`)
+}
+
+// 执行配置 V2
+export const configV2Api = {
+  // 获取全局配置
+  getGlobal: () => api.get('/v2/config'),
+  
+  // 更新全局配置
+  updateGlobal: (data) => api.put('/v2/config', data),
+  
+  // 获取应用配置（合并全局）
+  getAppConfig: (appId) => api.get(`/v2/config/app/${appId}`),
+  
+  // 更新应用配置
+  updateAppConfig: (appId, data) => api.put(`/v2/config/app/${appId}`, data),
+  
+  // ===== 全局变量 =====
+  // 列表
+  listVariables: (scope = 'global', scopeId = null) => api.get('/v2/config/variables', { 
+    params: { scope, scope_id: scopeId } 
+  }),
+  
+  // 创建变量
+  createVariable: (data) => api.post('/v2/config/variables', data),
+  
+  // 更新变量
+  updateVariable: (id, data) => api.put(`/v2/config/variables/${id}`, data),
+  
+  // 删除变量
+  deleteVariable: (id) => api.delete(`/v2/config/variables/${id}`),
+  
+  // ===== 缓存配置 =====
+  // 获取缓存配置
+  getCacheConfig: (scope = 'global', scopeId = null) => api.get('/v2/config/cache', {
+    params: { scope, scope_id: scopeId }
+  }),
+  
+  // 更新缓存配置
+  updateCacheConfig: (data) => api.put('/v2/config/cache', data)
+}
+
+// 执行管理 V2
+export const executionV2Api = {
+  // 启动执行
+  run: (data) => api.post('/v2/executions', data),
+  
+  // 获取执行列表
+  list: (params) => api.get('/v2/executions', { params }),
+  
+  // 获取执行状态
+  get: (id) => api.get(`/v2/executions/${id}`),
+  
+  // 取消执行
+  cancel: (id) => api.post(`/v2/executions/${id}/cancel`),
+  
+  // WebSocket 实时日志
+  connectLogs: (executionId) => {
+    const wsUrl = `ws://${window.location.host}/api/v2/executions/${executionId}/logs`
+    return new WebSocket(wsUrl)
+  }
+}
+
+// ===== 元素搜索 API（知识库集成）=====
+export const elementSearchApi = {
+  // 按页面获取元素（用于元素选择器）
+  getElementsByPage: (pageId) => api.get(`/ai/pages/${pageId}/elements`),
+  
+  // 搜索元素（跨页面）
+  searchElements: (appId, keyword) => api.post('/ai/search-elements', {
+    app_id: appId,
+    query: keyword,
+    limit: 20
+  }),
+  
+  // 获取页面列表（用于筛选）
+  getPages: (appId) => api.get('/ai/pages', { params: { app_id: appId } })
 }
 
 export default api

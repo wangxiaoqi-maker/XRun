@@ -24,6 +24,16 @@ async def lifespan(app: FastAPI):
     """应用生命周期"""
     # 启动时
     print("🚀 XRun 后端服务启动中...")
+    
+    # 初始化 Redis（多进程数据共享）
+    from apps.ui_automation.services.redis_service import init_redis, close_redis
+    from apps.ui_automation.config import settings
+    await init_redis(
+        host=settings.REDIS_HOST,
+        port=settings.REDIS_PORT,
+        db=settings.REDIS_DB,
+        password=settings.REDIS_PASSWORD
+    )
 
     # 初始化数据库（主应用）
     from apps.ui_automation.database import init_db, engine
@@ -44,6 +54,15 @@ async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(MainBase.metadata.create_all)
     print("✓ 数据表初始化完成")
+    
+    # 初始化执行引擎数据库表
+    from apps.ui_automation.execution.models import (
+        TestCaseV2, ExecutionConfig, DataSet, 
+        ExecutionRecord, GlobalVariable, CacheConfig
+    )
+    async with engine.begin() as conn:
+        await conn.run_sync(MainBase.metadata.create_all)
+    print("✓ 执行引擎数据表初始化完成")
     
     # 初始化管理员账号
     from apps.ui_automation.database import AsyncSessionLocal
@@ -90,6 +109,10 @@ async def lifespan(app: FastAPI):
     if ios_service:
         await ios_service.stop()
         print("✓ iOS 设备监听服务已停止")
+    
+    # 关闭 Redis 连接
+    await close_redis()
+    print("✓ Redis 连接已关闭")
 
     print("👋 XRun 后端服务关闭")
 
@@ -131,6 +154,13 @@ app.include_router(module_router, prefix="/api/knowledge", tags=["功能模块�
 
 # 路由 - LLM 配置模块
 app.include_router(llm_config.router, prefix="/api", tags=["大模型配置"])
+
+# 路由 - 执行引擎 V2 模块
+from apps.ui_automation.execution.api import cases_router, config_router, execution_router, suites_router
+app.include_router(cases_router, prefix="/api/v2", tags=["用例管理 V2"])
+app.include_router(config_router, prefix="/api/v2", tags=["执行配置 V2"])
+app.include_router(execution_router, prefix="/api/v2", tags=["执行管理 V2"])
+app.include_router(suites_router, prefix="/api/v2", tags=["测试套件 V2"])
 
 # 静态文件
 os.makedirs("../data", exist_ok=True)

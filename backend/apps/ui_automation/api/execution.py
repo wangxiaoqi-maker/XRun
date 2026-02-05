@@ -1,5 +1,10 @@
 """
 执行 API
+
+改进：使用 Redis 解决多进程数据共享问题
+- 执行状态存储在 Redis 中，支持多实例部署
+- WebSocket 使用 Redis Pub/Sub 实现实时推送
+- 自动降级：Redis 不可用时回退到内存模式
 """
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, WebSocket
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,18 +16,17 @@ import json
 import yaml
 from datetime import datetime
 from pathlib import Path
+from loguru import logger
 
 from apps.ui_automation.database import get_db
 from apps.ui_automation.models.test_case import TestCase
 from apps.ui_automation.models.execution import Execution
-from apps.ui_automation.models.ai_config import AIConfig
+from apps.ui_automation.models.llm_config import LLMProvider, LLMModel, ModelStatus
 from apps.ui_automation.schemas.execution import ExecutionRequest, ExecutionResponse, ExecutionList
 from apps.ui_automation.config import settings
+from apps.ui_automation.services.redis_service import redis_service
 
 router = APIRouter()
-
-# 执行状态缓存
-execution_cache = {}
 
 def model_to_response(execution: Execution) -> ExecutionResponse:
     """模型转响应"""
@@ -41,21 +45,85 @@ def model_to_response(execution: Execution) -> ExecutionResponse:
         created_at=execution.created_at
     )
 
-async def get_active_ai_config(db: AsyncSession) -> dict:
-    """获取激活的 AI 配置"""
-    result = await db.execute(
-        select(AIConfig).where(AIConfig.is_active == True)
-    )
-    config = result.scalar_one_or_none()
+async def get_vision_model_config(db: AsyncSession, model_id: str = None) -> dict:
+    """
+    获取视觉模型配置（用于 Midscene 执行）
     
-    if config:
-        return {
-            "base_url": config.base_url,
-            "api_key": config.api_key,
-            "model_name": config.model_name,
-            "model_family": config.model_family
+    与 AI 分析页面使用相同的模型配置源：llm_providers + llm_models
+    
+    Args:
+        db: 数据库会话
+        model_id: 可选，指定使用的模型 ID。如果不指定，使用默认视觉模型
+    
+    Returns:
+        dict: 包含 base_url, api_key, model_name, model_family
+    """
+    from sqlalchemy import and_
+    
+    if model_id:
+        # 使用指定的模型
+        result = await db.execute(
+            select(LLMModel).where(LLMModel.id == model_id)
+        )
+        model = result.scalar_one_or_none()
+    else:
+        # 查找默认的视觉模型（is_default=True 且 supports_vision=True）
+        result = await db.execute(
+            select(LLMModel).where(
+                and_(
+                    LLMModel.supports_vision == True,
+                    LLMModel.status == ModelStatus.ENABLED,
+                    LLMModel.is_default == True
+                )
+            )
+        )
+        model = result.scalar_one_or_none()
+        
+        # 如果没有默认的，取第一个启用的视觉模型
+        if not model:
+            result = await db.execute(
+                select(LLMModel).where(
+                    and_(
+                        LLMModel.supports_vision == True,
+                        LLMModel.status == ModelStatus.ENABLED
+                    )
+                ).order_by(LLMModel.created_at.desc()).limit(1)
+            )
+            model = result.scalar_one_or_none()
+    
+    if not model:
+        return None
+    
+    # 获取供应商信息
+    provider_result = await db.execute(
+        select(LLMProvider).where(LLMProvider.id == model.provider_id)
+    )
+    provider = provider_result.scalar_one_or_none()
+    
+    if not provider or not provider.api_key:
+        return None
+    
+    # 尝试从 config 中提取 model_family
+    model_family = None
+    if model.config and isinstance(model.config, dict):
+        model_family = model.config.get("model_family")
+    
+    # 根据供应商代码推断 model_family（如果未配置）
+    if not model_family:
+        family_mapping = {
+            "qwen": "qwen2.5-vl",
+            "openai": "gpt-4o",
+            "zhipu": "glm-4v",
+            "doubao": "doubao",
         }
-    return None
+        model_family = family_mapping.get(provider.code)
+    
+    return {
+        "base_url": provider.base_url,
+        "api_key": provider.api_key,
+        "model_name": model.model_id,  # 使用 model_id（如 qwen-vl-max）
+        "model_family": model_family
+    }
 
 async def run_execution(
     execution_id: str,
@@ -64,17 +132,23 @@ async def run_execution(
     platform: str,
     ai_config: dict
 ):
-    """运行用例执行"""
+    """
+    运行用例执行
+    
+    改进：使用 Redis 存储状态，支持多进程共享
+    """
     from apps.ui_automation.database import AsyncSessionLocal
     
     logs = []
     start_time = datetime.now()
     
-    def log(msg: str):
+    async def log(msg: str):
+        """异步日志函数 - 同时写入 Redis 和控制台"""
         timestamp = datetime.now().strftime("%H:%M:%S")
         log_entry = f"[{timestamp}] {msg}"
         logs.append(log_entry)
-        execution_cache[execution_id]["logs"] = logs
+        # 追加日志到 Redis（自动发布事件）
+        await redis_service.append_execution_log(execution_id, log_entry)
         print(log_entry)
     
     async with AsyncSessionLocal() as db:
@@ -87,16 +161,21 @@ async def run_execution(
         execution.started_at = start_time
         await db.commit()
         
-        execution_cache[execution_id]["status"] = "running"
+        # 更新 Redis 状态
+        await redis_service.set_execution_status(
+            execution_id, 
+            status="running",
+            logs=logs
+        )
         
         try:
-            log(f"🚀 开始执行用例 (设备: {device_id})")
+            await log(f"🚀 开始执行用例 (设备: {device_id})")
             
             # 解析 YAML
             case_data = yaml.safe_load(case_yaml)
             steps = case_data.get("steps", [])
             
-            log(f"📋 共 {len(steps)} 个步骤")
+            await log(f"📋 共 {len(steps)} 个步骤")
             
             # 生成执行脚本并调用 Node.js 执行器
             script_content = generate_executor_script(
@@ -112,7 +191,7 @@ async def run_execution(
             script_path.parent.mkdir(parents=True, exist_ok=True)
             script_path.write_text(script_content)
             
-            log("📝 执行脚本已生成")
+            await log("📝 执行脚本已生成")
             
             # 创建 .env 文件给执行器
             env_content = ""
@@ -139,19 +218,19 @@ MIDSCENE_MODEL_FAMILY={ai_config.get('model_family', '')}
                 line = await process.stdout.readline()
                 if not line:
                     break
-                log(line.decode().strip())
+                await log(line.decode().strip())
             
             await process.wait()
             
             # 检查执行结果
             if process.returncode == 0:
                 execution.status = "success"
-                log("✅ 用例执行成功!")
+                await log("✅ 用例执行成功!")
             else:
                 stderr = await process.stderr.read()
                 execution.status = "failed"
                 execution.error_message = stderr.decode()
-                log(f"❌ 用例执行失败: {stderr.decode()}")
+                await log(f"❌ 用例执行失败: {stderr.decode()}")
             
             # 清理临时脚本
             script_path.unlink(missing_ok=True)
@@ -159,7 +238,7 @@ MIDSCENE_MODEL_FAMILY={ai_config.get('model_family', '')}
         except Exception as e:
             execution.status = "error"
             execution.error_message = str(e)
-            log(f"❌ 执行出错: {e}")
+            await log(f"❌ 执行出错: {e}")
         
         # 更新最终状态
         execution.finished_at = datetime.now()
@@ -175,8 +254,16 @@ MIDSCENE_MODEL_FAMILY={ai_config.get('model_family', '')}
         
         await db.commit()
         
-        execution_cache[execution_id]["status"] = execution.status
-        execution_cache[execution_id]["finished"] = True
+        # 更新 Redis 最终状态（自动发布完成事件）
+        await redis_service.set_execution_status(
+            execution_id,
+            status=execution.status,
+            logs=logs,
+            finished=True,
+            error_message=execution.error_message
+        )
+        
+        logger.info(f"执行完成: {execution_id} - {execution.status}")
 
 def generate_executor_script(
     steps: list,
@@ -370,10 +457,10 @@ async def run_case(
     if not case:
         raise HTTPException(status_code=404, detail="用例不存在")
     
-    # 获取 AI 配置
-    ai_config = await get_active_ai_config(db)
+    # 获取视觉模型配置（与 AI 分析使用相同的模型源）
+    ai_config = await get_vision_model_config(db)
     if not ai_config:
-        raise HTTPException(status_code=400, detail="未配置 AI 模型，请先在设置中配置")
+        raise HTTPException(status_code=400, detail="未配置视觉模型，请先在「模型供应商」页面添加支持视觉的大模型")
     
     # 创建执行记录
     execution = Execution(
@@ -388,12 +475,13 @@ async def run_case(
     await db.commit()
     await db.refresh(execution)
     
-    # 初始化缓存
-    execution_cache[execution.id] = {
-        "status": "pending",
-        "logs": [],
-        "finished": False
-    }
+    # 初始化 Redis 缓存（支持多进程共享）
+    await redis_service.set_execution_status(
+        execution.id,
+        status="pending",
+        logs=[],
+        finished=False
+    )
     
     # 后台执行
     background_tasks.add_task(
@@ -456,36 +544,89 @@ async def get_execution(execution_id: str, db: AsyncSession = Depends(get_db)):
 
 @router.websocket("/{execution_id}/logs")
 async def execution_logs_ws(websocket: WebSocket, execution_id: str):
-    """实时日志 WebSocket"""
+    """
+    实时日志 WebSocket
+    
+    改进：
+    1. Redis 可用时：使用 Pub/Sub 实时推送（延迟更低）
+    2. Redis 不可用时：降级为轮询模式
+    3. 支持多实例部署，任意实例都能接收日志
+    """
     await websocket.accept()
     
-    last_log_count = 0
+    logger.info(f"WebSocket 连接: {execution_id}")
     
     try:
-        while True:
-            if execution_id in execution_cache:
-                cache = execution_cache[execution_id]
-                
-                # 发送新日志
-                current_logs = cache.get("logs", [])
-                if len(current_logs) > last_log_count:
-                    for log in current_logs[last_log_count:]:
-                        await websocket.send_json({"type": "log", "data": log})
-                    last_log_count = len(current_logs)
-                
-                # 发送状态
-                await websocket.send_json({
-                    "type": "status",
-                    "data": cache.get("status", "unknown")
-                })
-                
-                # 执行完成
-                if cache.get("finished"):
-                    await websocket.send_json({"type": "finished"})
-                    break
+        # 首先发送已有的日志（处理连接时任务已开始的情况）
+        existing_logs = await redis_service.get_execution_logs(execution_id)
+        for log_entry in existing_logs:
+            await websocket.send_json({"type": "log", "data": log_entry})
+        
+        # 获取当前状态
+        status = await redis_service.get_execution_status(execution_id)
+        if status:
+            await websocket.send_json({
+                "type": "status",
+                "data": status.get("status", "unknown")
+            })
             
-            await asyncio.sleep(0.5)
-    except:
-        pass
+            # 如果已完成，直接返回
+            if status.get("finished"):
+                await websocket.send_json({"type": "finished"})
+                return
+        
+        # 使用 Redis Pub/Sub 订阅实时事件
+        if redis_service.is_connected:
+            # Redis 模式：Pub/Sub 实时推送
+            async with redis_service.execution_subscriber(execution_id) as subscriber:
+                async for event in subscriber:
+                    event_type = event.get("type")
+                    
+                    if event_type == "log":
+                        await websocket.send_json(event)
+                    elif event_type == "status_update":
+                        data = event.get("data", {})
+                        await websocket.send_json({
+                            "type": "status",
+                            "data": data.get("status", "unknown")
+                        })
+                        if data.get("finished"):
+                            await websocket.send_json({"type": "finished"})
+                            break
+                    elif event_type == "finished":
+                        await websocket.send_json({"type": "finished"})
+                        break
+        else:
+            # 降级模式：轮询
+            last_log_count = len(existing_logs)
+            while True:
+                status = await redis_service.get_execution_status(execution_id)
+                if status:
+                    # 发送新日志
+                    current_logs = await redis_service.get_execution_logs(execution_id)
+                    if len(current_logs) > last_log_count:
+                        for log_entry in current_logs[last_log_count:]:
+                            await websocket.send_json({"type": "log", "data": log_entry})
+                        last_log_count = len(current_logs)
+                    
+                    # 发送状态
+                    await websocket.send_json({
+                        "type": "status",
+                        "data": status.get("status", "unknown")
+                    })
+                    
+                    # 执行完成
+                    if status.get("finished"):
+                        await websocket.send_json({"type": "finished"})
+                        break
+                
+                await asyncio.sleep(0.3)
+                
+    except Exception as e:
+        logger.warning(f"WebSocket 错误: {e}")
     finally:
-        await websocket.close()
+        try:
+            await websocket.close()
+        except:
+            pass
+        logger.info(f"WebSocket 断开: {execution_id}")

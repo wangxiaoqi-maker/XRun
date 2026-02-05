@@ -1,0 +1,137 @@
+---
+description: XRun 项目特定规范 - UI 自动化测试平台架构约定
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# XRun 项目规范
+
+## 项目概述
+
+XRun 是一个基于 Midscene 的企业级 UI 自动化测试平台，支持：
+- Android/iOS 双平台
+- AI 驱动的元素定位和操作
+- 知识库管理（页面、元素、跳转关系）
+- 可视化用例编辑和执行
+
+## 架构约定
+
+### 后端架构 (FastAPI)
+```
+backend/apps/ui_automation/
+├── api/              # API 路由层
+├── models/           # 数据库模型
+├── schemas/          # Pydantic 模式
+├── services/         # 业务逻辑
+├── repositories/     # 数据访问层
+├── execution/        # 执行引擎模块
+│   ├── compiler/     # JSON -> TypeScript 编译器
+│   ├── runners/      # 执行器
+│   └── templates/    # Jinja2 模板
+└── knowledge/        # 知识库模块
+```
+
+### 前端架构 (Vue 3)
+```
+frontend/src/
+├── api/              # API 调用封装
+├── components/       # 通用组件
+├── composables/      # 组合式函数
+├── stores/           # Pinia 状态
+├── views/            # 页面视图
+│   ├── app/          # UI 自动化相关
+│   └── ui/           # 知识库相关
+└── types/            # TypeScript 类型
+```
+
+## 执行引擎规范
+
+### 用例 JSON 格式
+```typescript
+interface TestCase {
+  id: string
+  name: string
+  platform: 'android' | 'ios'
+  steps: Step[]
+  inputVariables?: Variable[]
+  config?: ExecutionConfig
+}
+
+interface Step {
+  id: string
+  type: StepType  // 'aiTap' | 'aiInput' | 'aiAct' | ...
+  locator?: string
+  elementRef?: ElementRef
+  options?: StepOptions
+  onError?: 'fail' | 'retry' | 'skip'
+  retryCount?: number
+}
+```
+
+### Midscene API 使用
+- 即时操作优先：`aiTap`, `aiInput`, `aiScroll` 比 `aiAct` 更快更可靠
+- 使用官方推荐的新签名格式：`aiInput(locate, { value, mode })`
+- 适当使用 `deepThink` 提高复杂元素定位精度
+- 使用 `cacheable` 启用 AI 缓存提升执行效率
+
+### 代码生成规范
+- 分平台模板：`android_case.ts.j2`, `ios_case.ts.j2`
+- 使用环境变量注入配置：`process.env.VAR_*`
+- 生成的测试文件使用 Vitest 框架
+
+## 知识库规范
+
+### PageElement 字段
+- `midscene_locator`: Midscene 定位描述（优先使用）
+- `description`: 简短描述（备用）
+- `bbox`: 元素位置坐标 [left%, top%, width%, height%]
+
+### 元素引用
+```typescript
+// 步骤中引用知识库元素
+{
+  type: 'aiTap',
+  elementRef: {
+    elementId: 'elem-001',
+    elementName: '登录按钮',
+    pageId: 'page-001',
+    pageName: '首页'
+  }
+}
+```
+
+## 数据库规范
+
+### 表命名
+- 主应用表: `snake_case` (如 `test_case_v2`)
+- 知识库表: `kb_` 前缀 (如 `kb_page_element`)
+
+### 字段规范
+- 主键: `VARCHAR(36)` UUID 格式
+- 时间戳: `DateTime`，使用北京时间
+- JSON 字段: 使用 `JSON` 类型，不使用 `TEXT`
+
+## API 规范
+
+### 版本控制
+- 新版 API 使用 `/api/v2/` 前缀
+- 保持旧版 API 兼容性
+
+### 响应格式
+```python
+class ApiResponse(BaseModel):
+    success: bool = True
+    data: Any = None
+    message: str = ""
+    error_code: str | None = None
+```
+
+### WebSocket
+- 执行日志推送: `/api/v2/executions/{id}/logs`
+- 使用 Redis Pub/Sub 实现多进程共享
+
+## 安全规范
+
+- 敏感配置使用环境变量
+- API Key 等凭证不提交到代码仓库
+- 使用 `.env` 文件管理本地配置

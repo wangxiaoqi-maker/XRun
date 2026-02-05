@@ -32,14 +32,30 @@
                <el-icon><Document /></el-icon>
              </div>
              <div class="script-text-group">
-               <span class="script-title">{{ scriptName }}</span>
+               <span class="script-title">{{ scriptName || '新建脚本' }}</span>
                <span class="script-subtitle">Last edited just now</span>
              </div>
           </div>
           <div class="header-actions">
             <el-button @click="saveScript" class="header-btn" plain size="default">保存</el-button>
-            <el-button type="primary" @click="runScript" :loading="isRunning" class="header-btn run-btn" size="default">
-              {{ isRunning ? 'Running...' : 'Run' }}
+            <el-button 
+              v-if="!isRunning"
+              type="primary" 
+              @click="runScript" 
+              class="header-btn run-btn" 
+              size="default"
+            >
+              Run
+            </el-button>
+            <el-button 
+              v-else
+              type="danger" 
+              @click="cancelExecution" 
+              class="header-btn stop-btn" 
+              size="default"
+            >
+              <el-icon class="is-loading" style="margin-right: 4px;"><Loading /></el-icon>
+              终止
             </el-button>
           </div>
         </template>
@@ -178,7 +194,8 @@
                   :class="[
                     { active: activeIndex === index },
                     step.status === 'running' ? 'status-running' : '',
-                    step.status === 'success' ? 'status-success' : ''
+                    step.status === 'success' ? 'status-success' : '',
+                    step.status === 'failed' ? 'status-failed' : ''
                   ]"
                   @click="activeIndex = index"
                 >
@@ -226,14 +243,18 @@
                         <div class="check-circle"><el-icon><Check /></el-icon></div>
                     </div>
                     
-                    <!-- Pending -->
-                    <div v-else class="status-box pending">
-                        <span>等待执行</span>
+                    <!-- Failed -->
+                    <div v-else-if="step.status === 'failed'" class="status-box failed">
+                        <span>失败</span>
+                        <div class="error-circle"><el-icon><CircleClose /></el-icon></div>
                     </div>
                     
-                    <!-- Hover Actions -->
-                    <div class="hover-actions">
-                        <el-button type="danger" link @click.stop="deleteStep(index)">
+                    <!-- Default: Show edit/delete actions (no "等待执行" text) -->
+                    <div v-else class="step-actions">
+                        <el-button type="primary" link size="small" @click.stop="editStep(index)">
+                            <el-icon><Edit /></el-icon>
+                        </el-button>
+                        <el-button type="danger" link size="small" @click.stop="deleteStep(index)">
                             <el-icon><Delete /></el-icon>
                         </el-button>
                     </div>
@@ -252,6 +273,48 @@
       </div>
     </div>
   </div>
+  
+  <!-- 步骤编辑弹框 -->
+  <el-dialog 
+    v-model="showInlineAdd" 
+    :title="editingIndex > -1 ? '编辑步骤' : '新增步骤'"
+    width="500px"
+    :close-on-click-modal="false"
+  >
+    <el-form label-width="80px">
+      <el-form-item label="操作类型">
+        <el-select v-model="inlineForm.action" style="width: 100%" @change="onActionChange">
+          <el-option 
+            v-for="opt in actionOptions" 
+            :key="opt.action" 
+            :label="opt.value" 
+            :value="opt.action"
+          />
+        </el-select>
+      </el-form-item>
+      
+      <el-form-item v-if="inlineForm.action === 'launch' || inlineForm.action === '启动'" label="Bundle ID">
+        <el-input v-model="inlineForm.target" placeholder="如: com.example.app" />
+      </el-form-item>
+      
+      <el-form-item v-else-if="inlineForm.action === 'schemeUrl' || inlineForm.action === 'schemeRouter'" label="Scheme URL">
+        <el-input v-model="inlineForm.url" placeholder="如: myapp://page?id=123" />
+      </el-form-item>
+      
+      <el-form-item v-else label="目标元素">
+        <el-input v-model="inlineForm.target" placeholder="输入元素描述或选择器" />
+      </el-form-item>
+      
+      <el-form-item v-if="inlineForm.action === 'input'" label="输入值">
+        <el-input v-model="inlineForm.value" placeholder="要输入的文本内容" />
+      </el-form-item>
+    </el-form>
+    
+    <template #footer>
+      <el-button @click="cancelInlineAdd">取消</el-button>
+      <el-button type="primary" @click="confirmInlineAdd">确定</el-button>
+    </template>
+  </el-dialog>
   
   <!-- AI 分析配置弹窗 -->
   <el-dialog 
@@ -328,10 +391,102 @@
       </el-button>
     </template>
   </el-dialog>
+  
+  <!-- 保存脚本对话框 -->
+  <el-dialog 
+    v-model="showSaveDialog" 
+    title="保存脚本" 
+    width="520px"
+    :close-on-click-modal="false"
+  >
+    <el-form :model="saveForm" label-width="100px" :rules="saveFormRules" ref="saveFormRef">
+      <el-form-item label="脚本名称" prop="name">
+        <el-input 
+          v-model="saveForm.name" 
+          placeholder="请输入脚本名称"
+          maxlength="100"
+          show-word-limit
+        />
+      </el-form-item>
+      
+      <el-form-item label="平台" prop="platform">
+        <el-radio-group v-model="saveForm.platform">
+          <el-radio-button value="ios">
+            <el-icon style="margin-right: 4px;"><Iphone /></el-icon>iOS
+          </el-radio-button>
+          <el-radio-button value="android">
+            <el-icon style="margin-right: 4px;"><Platform /></el-icon>Android
+          </el-radio-button>
+        </el-radio-group>
+      </el-form-item>
+      
+      <el-form-item label="关联应用">
+        <el-select 
+          v-model="saveForm.appId" 
+          placeholder="选择应用（可选）"
+          style="width: 100%"
+          clearable
+          filterable
+          :loading="loadingApps"
+        >
+          <el-option 
+            v-for="app in filteredAppList" 
+            :key="app.id" 
+            :label="app.name"
+            :value="app.id"
+          >
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <img 
+                v-if="app.icon_url" 
+                :src="app.icon_url" 
+                style="width: 20px; height: 20px; border-radius: 4px;"
+              />
+              <span>{{ app.name }}</span>
+            </div>
+          </el-option>
+        </el-select>
+      </el-form-item>
+      
+      <el-form-item label="描述">
+        <el-input 
+          v-model="saveForm.description" 
+          type="textarea"
+          :rows="3"
+          placeholder="脚本功能描述（可选）"
+          maxlength="500"
+          show-word-limit
+        />
+      </el-form-item>
+      
+      <el-form-item label="标签">
+        <el-select
+          v-model="saveForm.tags"
+          multiple
+          filterable
+          allow-create
+          default-first-option
+          placeholder="添加标签（可选）"
+          style="width: 100%"
+        >
+          <el-option label="冒烟测试" value="冒烟测试" />
+          <el-option label="回归测试" value="回归测试" />
+          <el-option label="功能测试" value="功能测试" />
+          <el-option label="支付流程" value="支付流程" />
+          <el-option label="登录注册" value="登录注册" />
+        </el-select>
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button @click="showSaveDialog = false">取消</el-button>
+      <el-button type="primary" @click="confirmSave" :loading="saving">
+        保存
+      </el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup>
-import { ref, nextTick, watchEffect, computed } from 'vue'
+import { ref, nextTick, watchEffect, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 // 定义组件名称，用于 keep-alive 缓存
@@ -341,14 +496,15 @@ defineOptions({
 import { ElMessage } from 'element-plus'
 import { 
   ArrowLeft, VideoPlay, Check, Minus, Setting, Delete, Plus, Loading, Camera,
-  SwitchButton, CircleClose, Document, ChatLineSquare, MagicStick, Cpu
+  SwitchButton, CircleClose, Document, ChatLineSquare, MagicStick, Cpu, Edit,
+  Iphone, Platform
 } from '@element-plus/icons-vue'
 import Draggable from 'vuedraggable'
 import DeviceMirror from '@/components/DeviceMirror.vue'
 import ElementOverlay from '@/components/ElementOverlay.vue'
 import AITeachingPanel from '@/components/AITeachingPanel.vue'
 import SmartStepInput from '@/components/SmartStepInput.vue'
-import { deviceApi, knowledgeApi, llmApi, explorationApi, appApi } from '@/api'
+import { deviceApi, knowledgeApi, llmApi, explorationApi, appApi, caseV2Api, executionV2Api } from '@/api'
 import { useProjectStore } from '@/stores/project'
 
 const projectStore = useProjectStore()
@@ -356,7 +512,7 @@ const projectStore = useProjectStore()
 const route = useRoute()
 const router = useRouter()
 
-const scriptName = ref('微信支付流程自动化')
+const scriptName = ref('')  // 新建时为空，由用户保存时填写
 const isSaved = ref(true)
 const isRecording = ref(false)
 const isRunning = ref(false)
@@ -388,6 +544,13 @@ const deviceWidth = ref(1080)
 const deviceHeight = ref(2400)
 const connectedDevice = ref(null)
 
+// ========== V2 执行引擎状态 ==========
+const useV2Engine = ref(true)  // 是否使用 V2 执行引擎
+const caseId = ref(null)  // V2 用例 ID
+const executionId = ref(null)  // V2 执行 ID
+const executionLogs = ref([])  // 执行日志
+let executionWs = null  // WebSocket 连接
+
 // ========== 知识图谱探索状态 ==========
 const explorationEnabled = ref(true)  // 是否启用探索模式
 const explorationSession = ref(null)  // 当前探索会话
@@ -410,6 +573,30 @@ const visionModels = ref([])  // 支持视觉的模型列表
 const loadingModels = ref(false)
 const appList = ref([])  // 应用列表
 const loadingApps = ref(false)
+
+// ========== 保存脚本对话框状态 ==========
+const showSaveDialog = ref(false)
+const saveFormRef = ref(null)
+const saving = ref(false)
+const saveForm = ref({
+  name: '',
+  platform: 'ios',
+  appId: '',
+  description: '',
+  tags: []
+})
+const saveFormRules = {
+  name: [{ required: true, message: '请输入脚本名称', trigger: 'blur' }],
+  platform: [{ required: true, message: '请选择平台', trigger: 'change' }]
+}
+
+// 根据平台筛选应用列表
+const filteredAppList = computed(() => {
+  if (!saveForm.value.platform) return appList.value
+  return appList.value.filter(app => 
+    app.platform?.toLowerCase() === saveForm.value.platform
+  )
+})
 
 // 当前选中的模型名称
 const currentModelName = computed(() => {
@@ -434,8 +621,153 @@ const inlineFormInput = ref(null)
 const inlineForm = ref({ action: 'click', target: '', value: '', url: '' })
 const editingIndex = ref(-1)
 
+// ========== 加载用例数据 ==========
+async function loadCaseData(id) {
+  try {
+    const res = await caseV2Api.get(id)
+    const caseData = res.data
+    
+    // 设置基本信息
+    caseId.value = caseData.id
+    scriptName.value = caseData.name || ''
+    
+    // 解析步骤数据
+    const stepsJson = caseData.stepsJson || caseData.steps_json || []
+    console.log('[编辑器] 原始步骤数据:', stepsJson)
+    
+    steps.value = stepsJson.map((step, index) => {
+      const action = mapV2TypeToAction(step.type) || step.action || 'click'
+      // 判断是否为 launch 相关的步骤（启动应用、scheme 跳转）
+      const isLaunchType = action === 'launch' || action === '启动' || action === 'schemeUrl' || action === 'schemeRouter' || step.type === 'launch'
+      
+      // 对于 launch 类型，URL 优先从 url/target/locator 中获取
+      const launchTarget = step.url || step.target || step.locator || step.value || ''
+      
+      return {
+        id: step.id || `step-${index}`,
+        action: action,
+        // target 映射：launch 类型使用专门的 URL，其他用 locator/prompt
+        target: isLaunchType ? launchTarget : (step.locator || step.prompt || step.target || ''),
+        value: step.value || '',
+        // scheme 跳转的 url 字段
+        url: isLaunchType ? launchTarget : (step.url || ''),
+        name: step.name || '',
+        // 保留 V2 特有字段
+        midsceneCommand: step.prompt || '',
+        actionLabel: step.name || '',
+        locator: step.locator || '',
+        status: null,
+        duration: 0
+      }
+    })
+    
+    // 设置其他信息
+    if (caseData.appId || caseData.app_id) {
+      analyzeConfig.value.appId = caseData.appId || caseData.app_id
+    }
+    
+    isSaved.value = true
+    console.log('[编辑器] 加载用例成功:', caseData.name, '步骤数:', steps.value.length)
+  } catch (e) {
+    console.error('加载用例数据失败:', e)
+    ElMessage.error('加载用例数据失败: ' + (e.response?.data?.detail || e.message))
+  }
+}
+
+// 组件挂载时检查路由参数
+onMounted(async () => {
+  const id = route.params.id
+  if (id && id !== 'new') {
+    // 编辑模式：加载已有用例
+    await loadCaseData(id)
+  }
+  
+  // 检查是否自动运行
+  if (route.query.autoRun === 'true') {
+    // 等待设备连接后自动执行
+    console.log('[编辑器] 检测到 autoRun 参数')
+  }
+})
+
 function goBack() { router.push('/ui/scripts') }
-function saveScript() { isSaved.value = true; ElMessage.success('保存成功') }
+
+async function saveScript() { 
+  if (!steps.value.length) {
+    ElMessage.warning('请先添加步骤')
+    return
+  }
+  
+  // 如果已有用例 ID，直接保存
+  if (caseId.value) {
+    const saved = await saveAsV2Case()
+    if (saved) {
+      isSaved.value = true
+      ElMessage.success('保存成功')
+    }
+    return
+  }
+  
+  // 新建用例：弹出保存对话框
+  // 先加载应用列表
+  await loadAppList()
+  
+  // 预填充表单（名称为空，让用户填写）
+  saveForm.value.name = scriptName.value || ''
+  saveForm.value.platform = (connectedDevice.value?.platform || 'ios').toLowerCase()
+  saveForm.value.appId = analyzeConfig.value.appId || ''
+  saveForm.value.description = ''
+  saveForm.value.tags = []
+  
+  showSaveDialog.value = true
+}
+
+// 确认保存（对话框）
+async function confirmSave() {
+  // 表单验证
+  if (!saveFormRef.value) return
+  const valid = await saveFormRef.value.validate().catch(() => false)
+  if (!valid) return
+  
+  saving.value = true
+  try {
+    // 更新脚本信息
+    scriptName.value = saveForm.value.name
+    
+    // 保存到 V2 用例
+    const saved = await saveAsV2CaseWithForm()
+    if (saved) {
+      isSaved.value = true
+      showSaveDialog.value = false
+      ElMessage.success('脚本保存成功')
+    }
+  } catch (e) {
+    ElMessage.error('保存失败: ' + (e.message || '未知错误'))
+  } finally {
+    saving.value = false
+  }
+}
+
+// 使用表单数据保存为 V2 用例
+async function saveAsV2CaseWithForm() {
+  const caseData = {
+    name: saveForm.value.name,
+    description: saveForm.value.description,
+    platform: saveForm.value.platform,
+    app_id: saveForm.value.appId,
+    steps_json: convertStepsToV2Format(),
+    launch_target: '',
+    tags: saveForm.value.tags
+  }
+  
+  try {
+    const res = await caseV2Api.create(caseData)
+    caseId.value = res.data.id
+    return res.data
+  } catch (e) {
+    console.error('保存 V2 用例失败:', e)
+    throw e
+  }
+}
 function toggleRecord() { isRecording.value = !isRecording.value }
 function screenshot() { /* Implement screenshot */ }
 function onActionRecorded(action) { console.log("Recorded", action) }
@@ -796,7 +1128,295 @@ function formatDuration(ms) {
     return ms + 'ms';
 }
 
-// Run Script
+// ========== V2 执行引擎方法 ==========
+
+// 将当前步骤转换为 V2 格式
+function convertStepsToV2Format() {
+  return steps.value.map((step, index) => {
+    const v2Type = mapActionToV2Type(step.action)
+    const v2Step = {
+      id: `step_${step.id || index}`,
+      type: v2Type,
+      name: step.actionLabel || step.name || step.action,
+      locator: step.target,
+      value: step.value,
+      prompt: step.midsceneCommand || step.target,
+      options: {}
+    }
+    
+    // 对于 launch 类型（启动应用、scheme 跳转），保存 url 和 target 字段
+    if (v2Type === 'launch' || step.action === 'schemeUrl' || step.action === 'schemeRouter' || step.action === 'launch' || step.action === '启动') {
+      const launchTarget = step.url || step.target || step.value || step.locator
+      v2Step.url = launchTarget
+      v2Step.target = launchTarget  // 确保 target 也有值
+      v2Step.locator = launchTarget
+    }
+    
+    return v2Step
+  })
+}
+
+// 映射 action 到 V2 步骤类型
+function mapActionToV2Type(action) {
+  const mapping = {
+    // 基础操作
+    'click': 'aiTap',
+    'input': 'aiInput',
+    'swipe': 'aiScroll',
+    'wait': 'sleep',
+    'assert': 'aiAssert',
+    // 启动/跳转
+    'schemeUrl': 'launch',
+    'schemeRouter': 'launch',
+    'launch': 'launch',
+    '启动': 'launch',  // 中文映射
+    // AI 操作
+    'ai_act': 'aiAct',
+    'ai_query': 'aiQuery',
+    'ai_assert': 'aiAssert',
+    // 系统操作
+    'back': 'back',
+    'home': 'home'
+  }
+  return mapping[action] || 'aiAct'
+}
+
+// 反向映射 V2 步骤类型到 action
+function mapV2TypeToAction(type) {
+  const mapping = {
+    'aiTap': 'click',
+    'aiInput': 'input',
+    'aiScroll': 'swipe',
+    'sleep': 'wait',
+    'aiAssert': 'assert',
+    'launch': 'launch',  // launch 保持不变（支持启动应用和 scheme 跳转）
+    'aiAct': 'ai_act',
+    'aiQuery': 'ai_query',
+    'back': 'back',
+    'home': 'home',
+    'aiWaitFor': 'wait',
+    'aiLocate': 'click'
+  }
+  return mapping[type] || 'ai_act'
+}
+
+// 加载时特殊处理 scheme 步骤的 url 字段
+function parseStepUrl(step) {
+  // 对于 launch/scheme 类型，url 可能在多个字段中
+  return step.url || step.target || step.locator || step.value || ''
+}
+
+// 保存为 V2 用例
+async function saveAsV2Case() {
+  if (!steps.value.length) {
+    ElMessage.warning('请先添加步骤')
+    return null
+  }
+  
+  // 获取平台（转为小写以匹配后端枚举）
+  const platform = (connectedDevice.value?.platform || 'android').toLowerCase()
+  const appId = analyzeConfig.value.appId || ''
+  
+  console.log('[V2 保存] platform:', platform, 'appId:', appId, 'steps:', steps.value.length)
+  
+  const caseData = {
+    name: scriptName.value || '自动化测试脚本',
+    description: '',
+    platform: platform,
+    app_id: appId,
+    steps_json: convertStepsToV2Format(),
+    launch_target: '',
+    tags: []
+  }
+  
+  try {
+    let res
+    if (caseId.value) {
+      res = await caseV2Api.update(caseId.value, caseData)
+    } else {
+      res = await caseV2Api.create(caseData)
+      caseId.value = res.data.id
+    }
+    return res.data
+  } catch (e) {
+    console.error('保存 V2 用例失败:', e)
+    ElMessage.error('保存用例失败: ' + (e.response?.data?.detail || e.message))
+    return null
+  }
+}
+
+// 使用 V2 引擎执行
+async function runWithV2Engine() {
+  if (!connectedDevice.value) {
+    ElMessage.warning('请先连接设备')
+    return
+  }
+  
+  // 先保存用例
+  const savedCase = await saveAsV2Case()
+  if (!savedCase) return
+  
+  isRunning.value = true
+  executionLogs.value = []
+  
+  // 重置所有步骤状态
+  steps.value.forEach((s, i) => {
+    s.status = 'pending'
+    s.duration = 0
+  })
+  
+  // 当前正在执行的步骤索引
+  let currentStepIndex = 0
+  
+  try {
+    // 获取 WDA 端口（iOS 设备需要）
+    const wdaPort = mirrorRef.value?.wdaPort || 8100
+    console.log('[V2 执行] WDA 端口:', wdaPort)
+    
+    // 启动执行
+    const res = await executionV2Api.run({
+      caseId: savedCase.id,
+      deviceId: connectedDevice.value.udid,
+      variables: {},
+      configOverrides: {
+        wda_port: wdaPort,
+        wda_host: 'localhost'
+      }
+    })
+    
+    executionId.value = res.data.executionId
+    ElMessage.info('执行已启动，正在编译...')
+    
+    // 连接 WebSocket 获取实时日志
+    connectExecutionWs(res.data.executionId)
+    
+  } catch (e) {
+    isRunning.value = false
+    ElMessage.error('启动执行失败: ' + (e.response?.data?.detail || e.message))
+  }
+}
+
+// 连接执行日志 WebSocket
+function connectExecutionWs(execId) {
+  if (executionWs) {
+    executionWs.close()
+  }
+  
+  // 当前正在执行的步骤索引
+  let currentStepIndex = -1
+  let stepStartTime = 0
+  
+  executionWs = executionV2Api.connectLogs(execId)
+  
+  executionWs.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data)
+      
+      if (data.type === 'log') {
+        executionLogs.value.push(data.message)
+        console.log('[V2 执行]', data.message)
+        
+        // 解析日志，更新步骤状态
+        const log = data.message
+        
+        // 检测步骤开始：匹配 "Step X:" 或 "[Step X]" 或 "执行步骤 X" 等模式
+        const stepStartMatch = log.match(/(?:Step|步骤)\s*(\d+)/i)
+        if (stepStartMatch) {
+          const stepNum = parseInt(stepStartMatch[1]) - 1  // 转为 0-based index
+          if (stepNum >= 0 && stepNum < steps.value.length && stepNum !== currentStepIndex) {
+            // 完成上一步
+            if (currentStepIndex >= 0 && currentStepIndex < steps.value.length) {
+              if (steps.value[currentStepIndex].status === 'running') {
+                steps.value[currentStepIndex].status = 'success'
+                steps.value[currentStepIndex].duration = Date.now() - stepStartTime
+              }
+            }
+            // 标记新步骤开始
+            currentStepIndex = stepNum
+            stepStartTime = Date.now()
+            steps.value[currentStepIndex].status = 'running'
+          }
+        }
+        
+        // 检测步骤失败
+        if (log.toLowerCase().includes('error') || log.toLowerCase().includes('failed') || log.includes('失败')) {
+          if (currentStepIndex >= 0 && currentStepIndex < steps.value.length) {
+            steps.value[currentStepIndex].status = 'failed'
+            steps.value[currentStepIndex].duration = Date.now() - stepStartTime
+          }
+        }
+        
+      } else if (data.type === 'status') {
+        const status = data.data.status
+        if (status === 'passed') {
+          // 完成最后一步
+          if (currentStepIndex >= 0 && currentStepIndex < steps.value.length) {
+            if (steps.value[currentStepIndex].status === 'running') {
+              steps.value[currentStepIndex].status = 'success'
+              steps.value[currentStepIndex].duration = Date.now() - stepStartTime
+            }
+          }
+          // 将所有 pending 步骤标记为 success
+          steps.value.forEach(s => {
+            if (s.status === 'pending' || s.status === 'running') {
+              s.status = 'success'
+            }
+          })
+          ElMessage.success('执行通过！')
+          isRunning.value = false
+        } else if (status === 'failed') {
+          // 标记当前步骤失败
+          if (currentStepIndex >= 0 && currentStepIndex < steps.value.length) {
+            steps.value[currentStepIndex].status = 'failed'
+            steps.value[currentStepIndex].duration = Date.now() - stepStartTime
+          }
+          ElMessage.error('执行失败：' + (data.data.error || ''))
+          isRunning.value = false
+        } else if (status === 'running') {
+          // 开始执行，标记第一个步骤
+          if (currentStepIndex < 0 && steps.value.length > 0) {
+            currentStepIndex = 0
+            stepStartTime = Date.now()
+            steps.value[0].status = 'running'
+          }
+        }
+      } else if (data.type === 'end') {
+        isRunning.value = false
+        if (executionWs) {
+          executionWs.close()
+          executionWs = null
+        }
+      }
+    } catch (e) {
+      console.error('解析 WebSocket 消息失败:', e)
+    }
+  }
+  
+  executionWs.onerror = (error) => {
+    console.error('WebSocket 错误:', error)
+    isRunning.value = false
+  }
+  
+  executionWs.onclose = () => {
+    console.log('WebSocket 已关闭')
+  }
+}
+
+// 取消执行
+async function cancelExecution() {
+  if (!executionId.value) {
+    ElMessage.warning('没有正在运行的执行')
+    return
+  }
+  
+  try {
+    await executionV2Api.cancel(executionId.value)
+    ElMessage.info('正在终止执行...')
+  } catch (e) {
+    ElMessage.error('终止失败: ' + (e.response?.data?.detail || e.message))
+  }
+}
+
 // Run Script
 async function runScript() {
     if(isRunning.value) return;
@@ -805,6 +1425,13 @@ async function runScript() {
         return
     }
     
+    // 使用 V2 执行引擎（基于 Midscene TypeScript）
+    if (useV2Engine.value) {
+        await runWithV2Engine()
+        return
+    }
+    
+    // 原有执行逻辑（本地模拟）
     isRunning.value = true;
     ElMessage.info('开始执行脚本...')
     
@@ -1326,6 +1953,12 @@ button { outline: none; }
     &.status-success {
         border-left-color: #10b981;
     }
+    
+    /* 执行失败 - 左边红色 */
+    &.status-failed {
+        border-left-color: #ef4444;
+        background: #fef2f2;
+    }
 }
 
 /* Left Colored Strip: 已废弃，改用 border-left */
@@ -1420,7 +2053,27 @@ button { outline: none; }
         }
     }
     
-    .hover-actions { margin-left:12px; opacity: 0; transition: opacity 0.2s; }
+    &.failed {
+        display: flex; align-items: center; gap: 8px;
+        color: #ef4444;
+        .error-circle { 
+            width: 16px; height: 16px; background: #ef4444; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 10px;
+        }
+    }
+    
+    .step-actions {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+}
+
+.step-row:hover .step-actions {
+    opacity: 1;
 }
 
 @keyframes rotate { to { transform: rotate(360deg); } }

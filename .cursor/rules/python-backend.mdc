@@ -1,0 +1,136 @@
+---
+description: Python 后端开发规范 - FastAPI + SQLAlchemy 最佳实践
+globs: ["backend/**/*.py"]
+---
+
+# Python 后端开发规范
+
+## 技术栈
+- Python 3.10+
+- FastAPI
+- SQLAlchemy 2.0 (异步)
+- Pydantic v2
+- pytest
+
+## 代码风格
+
+### 类型注解
+- 所有函数和类必须添加类型注解
+- 包含显式返回类型（包括适当的 None）
+- 使用 Pydantic models 而非原始字典进行输入验证
+
+```python
+# Good
+async def get_user_by_id(user_id: str) -> User | None:
+    """根据 ID 获取用户"""
+    pass
+
+# Bad
+def get_user(id):
+    pass
+```
+
+### 命名规范
+- 目录和文件: `lowercase_with_underscores` (如 `routers/user_routes.py`)
+- 函数: `snake_case`，使用描述性动词
+- 类: `PascalCase`
+- 常量: `UPPER_CASE`
+
+### 文档字符串
+- 遵循 PEP 257 文档字符串约定
+- 所有公共函数和类必须有 docstring
+
+```python
+async def analyze_page(
+    screenshot_url: str,
+    app_id: str,
+) -> PageAnalysisResult:
+    """
+    分析页面截图，提取元素信息。
+    
+    Args:
+        screenshot_url: 页面截图 URL
+        app_id: 应用 ID
+        
+    Returns:
+        PageAnalysisResult: 包含页面元素和布局的分析结果
+        
+    Raises:
+        AnalysisError: 分析失败时抛出
+    """
+    pass
+```
+
+## FastAPI 最佳实践
+
+### 路由定义
+- 使用 `def` 定义纯函数，`async def` 定义异步操作
+- 使用清晰的返回类型注解
+- 使用 RORO 模式 (Receive an Object, Return an Object)
+
+```python
+@router.post("/cases", response_model=TestCaseResponse)
+async def create_test_case(
+    request: CreateTestCaseRequest,
+    db: AsyncSession = Depends(get_db),
+) -> TestCaseResponse:
+    """创建测试用例"""
+    pass
+```
+
+### 错误处理
+- 使用 HTTPException 处理预期错误
+- 使用中间件处理意外错误和日志记录
+- 为特定 HTTP 响应建模错误
+
+```python
+from fastapi import HTTPException, status
+
+if not case:
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail=f"Test case {case_id} not found"
+    )
+```
+
+### 依赖注入
+- 使用 `Depends` 进行依赖注入
+- 使用 lifespan 上下文管理器管理启动和关闭事件
+
+### 性能优化
+- 所有数据库调用使用异步操作
+- 使用 Redis 实现缓存策略
+- 优化 Pydantic 的数据序列化和反序列化
+
+## 项目结构
+
+```
+backend/apps/ui_automation/
+├── api/              # API 路由
+├── models/           # SQLAlchemy 模型
+├── schemas/          # Pydantic 模式
+├── services/         # 业务逻辑服务
+├── repositories/     # 数据访问层
+└── utils/            # 工具函数
+```
+
+## 测试规范
+
+- 仅使用 pytest（不使用 unittest）
+- 所有测试必须有类型注解和 docstring
+- 测试文件放在 `./tests` 目录下
+
+```python
+import pytest
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pytest_mock.plugin import MockerFixture
+
+async def test_create_test_case(
+    client: AsyncClient,
+    mocker: "MockerFixture",
+) -> None:
+    """测试创建测试用例接口"""
+    pass
+```

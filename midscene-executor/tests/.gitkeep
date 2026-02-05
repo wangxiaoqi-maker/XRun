@@ -1,0 +1,9 @@
+# 测试文件目录
+# 编译后的 TypeScript 测试文件将放置于此
+
+# 目录结构:
+# tests/
+# ├── android/       # Android 平台测试
+# │   └── case_xxx.test.ts
+# └── ios/           # iOS 平台测试
+#     └── case_xxx.test.ts

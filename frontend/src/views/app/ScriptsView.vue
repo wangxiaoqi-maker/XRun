@@ -5,12 +5,25 @@
       <div class="sidebar-header">
         <div class="app-info">
           <div class="icon-box">⚡</div>
-          <span class="app-name">{{ truncateText(currentProject?.name || '翼支付', 6) }} Pro</span>
+          <span class="app-name">{{ truncateText(currentProject?.name || '项目', 8) }}</span>
         </div>
-        <button class="add-btn" @click="addFolder">+</button>
+        <el-tooltip content="新建目录" placement="top">
+          <button class="add-btn" @click="addFolder">+</button>
+        </el-tooltip>
       </div>
       
-      <div class="tree-content">
+      <div class="tree-content" v-loading="loadingTree">
+        <!-- 全部脚本 -->
+        <div 
+          class="tree-node all-scripts"
+          :class="{ active: !activeNodeId }"
+          @click="selectAllScripts"
+        >
+          <el-icon class="folder-icon"><Document /></el-icon>
+          <span class="node-name">全部脚本</span>
+        </div>
+        
+        <!-- 动态目录 -->
         <div 
           v-for="node in visibleTreeNodes" 
           :key="node.id"
@@ -28,6 +41,27 @@
           </div>
           <el-icon class="folder-icon"><Folder /></el-icon>
           <span class="node-name">{{ node.name }}</span>
+          <span class="case-count" v-if="node.caseCount">{{ node.caseCount }}</span>
+          <div class="node-actions" @click.stop>
+            <el-dropdown trigger="click" size="small">
+              <el-icon class="more-btn"><MoreFilled /></el-icon>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item @click="addSubFolder(node)">新建子目录</el-dropdown-item>
+                  <el-dropdown-item @click="renameFolder(node)">重命名</el-dropdown-item>
+                  <el-dropdown-item divided @click="deleteFolder(node)">
+                    <span style="color: #ef4444;">删除</span>
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </div>
+        </div>
+        
+        <!-- 空状态 -->
+        <div v-if="!loadingTree && rawTreeData.length === 0" class="empty-tree">
+          <p>暂无目录</p>
+          <el-button size="small" @click="addFolder">创建目录</el-button>
         </div>
       </div>
 
@@ -86,39 +120,47 @@
           </div>
 
           <!-- 表体 -->
-          <div class="t-body">
-            <div class="t-row" v-for="script in scripts" :key="script.id" @click="editScript(script)">
-              <div class="td col-name">
-                <div class="file-icon">TS</div>
-                <div class="info">
-                  <div class="name">{{ script.name }}</div>
-                  <div class="desc">{{ script.description }}</div>
+          <div class="t-body" v-loading="loading">
+            <template v-if="scripts.length > 0">
+              <div class="t-row" v-for="script in scripts" :key="script.id" @click="editScript(script)">
+                <div class="td col-name">
+                  <div class="file-icon">TS</div>
+                  <div class="info">
+                    <div class="name">{{ script.name }}</div>
+                    <div class="desc">{{ script.description || '暂无描述' }}</div>
+                  </div>
+                </div>
+                <div class="td col-id">#{{ script.id?.slice(0, 8) }}</div>
+                <div class="td col-platform">
+                  <span class="platform-badge" :class="script.platform?.toLowerCase()">{{ script.platform || 'N/A' }}</span>
+                </div>
+                <div class="td col-author">
+                  <img :src="getAuthorAvatar(script.createdBy)" class="avatar" />
+                  <span>{{ script.createdBy || 'system' }}</span>
+                </div>
+                <div class="td col-status">
+                  <span class="status-pill" :class="script.status?.toLowerCase()">{{ getStatusText(script.status) }}</span>
+                </div>
+                <div class="td col-action">
+                  <el-dropdown trigger="click" @command="handleCommand($event, script)">
+                    <button class="more-icon" @click.stop>•••</button>
+                    <template #dropdown>
+                      <el-dropdown-menu>
+                        <el-dropdown-item command="edit">编辑</el-dropdown-item>
+                        <el-dropdown-item command="run">执行</el-dropdown-item>
+                        <el-dropdown-item command="viewScript">查看脚本</el-dropdown-item>
+                        <el-dropdown-item command="copy">复制</el-dropdown-item>
+                        <el-dropdown-item command="delete" divided>删除</el-dropdown-item>
+                      </el-dropdown-menu>
+                    </template>
+                  </el-dropdown>
                 </div>
               </div>
-              <div class="td col-id">#{{ script.id }}</div>
-              <div class="td col-platform">
-                <span class="platform-badge" :class="script.platform.toLowerCase()">{{ script.platform }}</span>
-              </div>
-              <div class="td col-author">
-                <img :src="script.authorAvatar" class="avatar" />
-                <span>{{ script.author }}</span>
-              </div>
-              <div class="td col-status">
-                <span class="status-pill" :class="script.status">{{ getStatusText(script.status) }}</span>
-              </div>
-              <div class="td col-action">
-                <el-dropdown trigger="click" @command="handleCommand($event, script)">
-                  <button class="more-icon" @click.stop>•••</button>
-                  <template #dropdown>
-                    <el-dropdown-menu>
-                      <el-dropdown-item command="edit">编辑</el-dropdown-item>
-                      <el-dropdown-item command="run">执行</el-dropdown-item>
-                      <el-dropdown-item command="copy">复制</el-dropdown-item>
-                      <el-dropdown-item command="delete" divided>删除</el-dropdown-item>
-                    </el-dropdown-menu>
-                  </template>
-                </el-dropdown>
-              </div>
+            </template>
+            <div v-else class="empty-state">
+              <el-icon :size="48" color="#cbd5e1"><Document /></el-icon>
+              <p>暂无脚本</p>
+              <el-button type="primary" @click="createScript">新建脚本</el-button>
             </div>
           </div>
 
@@ -139,15 +181,56 @@
         </div>
       </div>
     </main>
+    
+    <!-- 查看 TS 脚本弹框 -->
+    <el-dialog 
+      v-model="showScriptDialog" 
+      :title="`生成的 TypeScript 脚本 - ${currentScript?.name || ''}`"
+      width="75%"
+      top="5vh"
+      class="script-preview-dialog"
+    >
+      <div class="script-preview-container" v-loading="compilingScript">
+        <div class="preview-header">
+          <div class="file-info">
+            <el-icon><Document /></el-icon>
+            <span class="filename">{{ scriptFileName }}</span>
+          </div>
+          <div class="preview-actions">
+            <el-button size="small" @click="copyScript" :icon="CopyDocument">复制代码</el-button>
+          </div>
+        </div>
+        <div class="code-wrapper">
+          <pre class="code-content"><code>{{ scriptContent }}</code></pre>
+        </div>
+        <div v-if="compileWarnings.length" class="warnings">
+          <el-alert type="warning" :closable="false">
+            <template #title>编译警告</template>
+            <ul>
+              <li v-for="(w, i) in compileWarnings" :key="i">{{ w }}</li>
+            </ul>
+          </el-alert>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Plus, Folder, ArrowRight, Delete, Document, Filter } from '@element-plus/icons-vue'
+import { Search, Plus, Folder, ArrowRight, Delete, Document, Filter, MoreFilled, CopyDocument } from '@element-plus/icons-vue'
 import { useProjectStore } from '@/stores/project'
+import { caseV2Api, suiteApi } from '@/api'
+
+// 查看脚本弹框相关
+const showScriptDialog = ref(false)
+const currentScript = ref(null)
+const scriptContent = ref('')
+const scriptFileName = ref('')
+const compileWarnings = ref([])
+const compilingScript = ref(false)
 
 const router = useRouter()
 const projectStore = useProjectStore()
@@ -155,37 +238,35 @@ const currentProject = computed(() => projectStore.currentProject)
 
 const searchText = ref('')
 const showFilter = ref(false)
-const activeNodeId = ref('1-1')
+const activeNodeId = ref('')  // 当前选中的目录 ID
 const page = ref(1)
 const pageSize = ref(10)
-const total = ref(56)
-const totalPages = computed(() => Math.ceil(total.value / pageSize.value) || 3)
+const total = ref(0)
+const loading = ref(false)
+const loadingTree = ref(false)
+const totalPages = computed(() => Math.ceil(total.value / pageSize.value) || 1)
 
-// 目录树数据
-const rawTreeData = ref([
-  {
-    id: '1', name: '全量回归测试', expanded: true, children: [
-      { id: '1-1', name: '登录注册模块' },
-      { id: '1-2', name: '支付收银台' }
-    ]
-  },
-  {
-    id: '2', name: '营销活动页', expanded: false, children: [
-      { id: '2-1', name: '双11大促' },
-      { id: '2-2', name: '元旦活动' }
-    ]
-  },
-  { id: '3', name: '公共组件库', expanded: false },
-  { id: '4', name: '个人中心', expanded: false }
-])
+// 目录树数据（从后端获取）
+const rawTreeData = ref([])
 
-// 展开的树节点
+// 展开的节点 ID 集合
+const expandedIds = ref(new Set())
+
+// 展开的树节点（平铺）
 const visibleTreeNodes = computed(() => {
   const result = []
   const traverse = (nodes, level = 0) => {
     for (const node of nodes) {
-      result.push({ ...node, level, hasChildren: node.children && node.children.length > 0 })
-      if (node.children && node.expanded) traverse(node.children, level + 1)
+      const expanded = expandedIds.value.has(node.id)
+      result.push({ 
+        ...node, 
+        level, 
+        hasChildren: node.children && node.children.length > 0,
+        expanded 
+      })
+      if (node.children && expanded) {
+        traverse(node.children, level + 1)
+      }
     }
   }
   traverse(rawTreeData.value)
@@ -194,39 +275,92 @@ const visibleTreeNodes = computed(() => {
 
 // 当前路径名
 const currentPathName = computed(() => {
+  if (!activeNodeId.value) return '全部脚本'
   const node = visibleTreeNodes.value.find(n => n.id === activeNodeId.value)
   return node ? node.name : '全部脚本'
 })
 
-// 脚本列表 Mock 数据
-const scripts = ref([
-  { id: '827364', name: 'Login_Flow_Main', description: 'Main login flow check', platform: 'Android', author: 'Felix', authorAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix', status: 'active' },
-  { id: '293847', name: 'Payment_Wechat', description: 'Check wechat pay sdk', platform: 'Backend', author: 'Ana', authorAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ana', status: 'pending' },
-  { id: '102938', name: 'Banner_Loop_Click', description: 'Verify banner auto scroll', platform: 'iOS', author: 'Bob', authorAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bob', status: 'failed' },
-  { id: '556123', name: 'Settings_Logout', description: 'User logout action', platform: 'Web', author: 'Sarah', authorAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah', status: 'active' },
-  { id: '123456', name: 'Search_Function', description: 'Keyword search test', platform: 'Android', author: 'Mike', authorAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mike', status: 'active' },
-])
+// 脚本列表（真实数据）
+const scripts = ref([])
+
+// 加载目录树
+async function loadSuiteTree() {
+  loadingTree.value = true
+  try {
+    const res = await suiteApi.tree(currentProject.value?.id)
+    rawTreeData.value = res.data || []
+    // 默认展开第一级
+    rawTreeData.value.forEach(node => expandedIds.value.add(node.id))
+  } catch (e) {
+    console.error('加载目录树失败:', e)
+  } finally {
+    loadingTree.value = false
+  }
+}
+
+// 加载脚本列表
+async function loadScripts() {
+  loading.value = true
+  try {
+    const params = {
+      page: page.value,
+      page_size: pageSize.value
+    }
+    
+    // 根据选择的目录筛选
+    if (activeNodeId.value) {
+      params.suite_id = activeNodeId.value
+    }
+    
+    // 搜索关键词
+    if (searchText.value) {
+      params.search = searchText.value
+    }
+    
+    const res = await caseV2Api.list(params)
+    scripts.value = res.data.items || res.data || []
+    total.value = res.data.total || scripts.value.length
+  } catch (e) {
+    console.error('加载脚本列表失败:', e)
+    ElMessage.error('加载脚本列表失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+// 监听筛选条件变化
+watch([page, activeNodeId], () => {
+  loadScripts()
+})
+
+// 搜索防抖
+let searchTimer = null
+watch(searchText, () => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    page.value = 1
+    loadScripts()
+  }, 300)
+})
+
+// 初始加载
+onMounted(() => {
+  loadSuiteTree()
+  loadScripts()
+})
 
 // 点击节点
 function handleNodeClick(node) {
   activeNodeId.value = node.id
-  if (node.hasChildren) {
-    const original = rawTreeData.value.find(n => n.id === node.id) || 
-      rawTreeData.value.flatMap(n => n.children || []).find(n => n.id === node.id)
-    if (original) original.expanded = !original.expanded
-  }
 }
 
 // 展开/折叠
 function toggleExpand(node) {
-  const findAndToggle = (nodes) => {
-    for (const n of nodes) {
-      if (n.id === node.id) { n.expanded = !n.expanded; return true }
-      if (n.children && findAndToggle(n.children)) return true
-    }
-    return false
+  if (expandedIds.value.has(node.id)) {
+    expandedIds.value.delete(node.id)
+  } else {
+    expandedIds.value.add(node.id)
   }
-  findAndToggle(rawTreeData.value)
 }
 
 // 选择全部脚本
@@ -239,17 +373,99 @@ function selectTrash() {
   activeNodeId.value = 'trash'
 }
 
-// 新建文件夹
-function addFolder() {
-  ElMessageBox.prompt('请输入目录名称', '新建目录', {
+// 新建文件夹（支持在选中目录下创建子目录）
+async function addFolder() {
+  const parentName = activeNodeId.value 
+    ? visibleTreeNodes.value.find(n => n.id === activeNodeId.value)?.name 
+    : null
+  
+  const title = parentName ? `在「${parentName}」下新建子目录` : '新建根目录'
+  
+  ElMessageBox.prompt('请输入目录名称', title, {
     confirmButtonText: '确定',
-    cancelButtonText: '取消'
-  }).then(({ value }) => {
+    cancelButtonText: '取消',
+    inputPattern: /^.{1,50}$/,
+    inputErrorMessage: '目录名称长度 1-50 个字符'
+  }).then(async ({ value }) => {
     if (value) {
-      rawTreeData.value.push({ id: Date.now().toString(), name: value, expanded: false })
-      ElMessage.success('目录创建成功')
+      try {
+        await suiteApi.create({
+          name: value,
+          parentId: activeNodeId.value || null,
+          projectId: currentProject.value?.id
+        })
+        ElMessage.success('目录创建成功')
+        loadSuiteTree()
+      } catch (e) {
+        ElMessage.error('创建失败: ' + (e.response?.data?.detail || e.message))
+      }
     }
   }).catch(() => {})
+}
+
+// 在指定目录下新建子目录
+async function addSubFolder(parentNode) {
+  ElMessageBox.prompt(`在「${parentNode.name}」下新建子目录`, '新建子目录', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    inputPattern: /^.{1,50}$/,
+    inputErrorMessage: '目录名称长度 1-50 个字符'
+  }).then(async ({ value }) => {
+    if (value) {
+      try {
+        await suiteApi.create({
+          name: value,
+          parentId: parentNode.id,
+          projectId: currentProject.value?.id
+        })
+        ElMessage.success('子目录创建成功')
+        // 展开父目录
+        expandedIds.value.add(parentNode.id)
+        loadSuiteTree()
+      } catch (e) {
+        ElMessage.error('创建失败: ' + (e.response?.data?.detail || e.message))
+      }
+    }
+  }).catch(() => {})
+}
+
+// 重命名目录
+async function renameFolder(node) {
+  ElMessageBox.prompt('请输入新名称', '重命名目录', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    inputValue: node.name,
+    inputPattern: /^.{1,50}$/,
+    inputErrorMessage: '目录名称长度 1-50 个字符'
+  }).then(async ({ value }) => {
+    if (value && value !== node.name) {
+      try {
+        await suiteApi.update(node.id, { name: value })
+        ElMessage.success('重命名成功')
+        loadSuiteTree()
+      } catch (e) {
+        ElMessage.error('重命名失败: ' + (e.response?.data?.detail || e.message))
+      }
+    }
+  }).catch(() => {})
+}
+
+// 删除目录
+async function deleteFolder(node) {
+  ElMessageBox.confirm(`确定删除目录「${node.name}」？`, '提示', { type: 'warning' })
+    .then(async () => {
+      try {
+        await suiteApi.delete(node.id)
+        ElMessage.success('删除成功')
+        if (activeNodeId.value === node.id) {
+          activeNodeId.value = ''
+        }
+        loadSuiteTree()
+      } catch (e) {
+        ElMessage.error('删除失败: ' + (e.response?.data?.detail || e.message))
+      }
+    })
+    .catch(() => {})
 }
 
 function truncateText(text, maxLen) {
@@ -258,8 +474,20 @@ function truncateText(text, maxLen) {
 }
 
 function getStatusText(status) {
-  const map = { pending: 'Pending', active: 'Active', inactive: 'Inactive', failed: 'Failed' }
-  return map[status] || status
+  const map = { 
+    DRAFT: '草稿', 
+    ACTIVE: '启用', 
+    DEPRECATED: '已废弃',
+    pending: '待执行', 
+    active: '启用', 
+    inactive: '禁用', 
+    failed: '失败' 
+  }
+  return map[status] || status || '草稿'
+}
+
+function getAuthorAvatar(author) {
+  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${author || 'system'}`
 }
 
 function createScript() {
@@ -270,17 +498,81 @@ function editScript(script) {
   router.push(`/ui/scripts/${script.id}/edit`)
 }
 
-function handleCommand(cmd, script) {
+async function handleCommand(cmd, script) {
   switch (cmd) {
-    case 'edit': editScript(script); break
-    case 'run': ElMessage.success(`开始执行: ${script.name}`); break
-    case 'copy': ElMessage.success('脚本已复制'); break
+    case 'edit': 
+      editScript(script)
+      break
+    case 'run': 
+      ElMessage.info(`即将执行: ${script.name}`)
+      router.push(`/ui/scripts/${script.id}/edit?autoRun=true`)
+      break
+    case 'viewScript':
+      await viewGeneratedScript(script)
+      break
+    case 'copy': 
+      try {
+        const res = await caseV2Api.create({
+          ...script,
+          id: undefined,
+          name: `${script.name}_copy`,
+          createdAt: undefined,
+          updatedAt: undefined
+        })
+        ElMessage.success('脚本已复制')
+        loadScripts()
+      } catch (e) {
+        ElMessage.error('复制失败')
+      }
+      break
     case 'delete':
       ElMessageBox.confirm(`确定删除「${script.name}」？`, '提示', { type: 'warning' })
-        .then(() => ElMessage.success('删除成功'))
+        .then(async () => {
+          try {
+            await caseV2Api.delete(script.id)
+            ElMessage.success('删除成功')
+            loadScripts()
+          } catch (e) {
+            ElMessage.error('删除失败')
+          }
+        })
         .catch(() => {})
       break
   }
+}
+
+// 查看生成的 TS 脚本
+async function viewGeneratedScript(script) {
+  currentScript.value = script
+  showScriptDialog.value = true
+  compilingScript.value = true
+  scriptContent.value = ''
+  compileWarnings.value = []
+  
+  try {
+    const res = await caseV2Api.compile(script.id)
+    scriptContent.value = res.data.content || res.data.content_preview || '// 编译结果为空'
+    scriptFileName.value = res.data.output_path?.split('/').pop() || `${script.name}.test.ts`
+    compileWarnings.value = res.data.warnings || []
+  } catch (e) {
+    console.error('编译失败:', e)
+    scriptContent.value = `// 编译失败\n// ${e.response?.data?.detail || e.message}`
+    scriptFileName.value = 'error.ts'
+  } finally {
+    compilingScript.value = false
+  }
+}
+
+// 复制脚本内容
+function copyScript() {
+  if (!scriptContent.value) {
+    ElMessage.warning('没有可复制的内容')
+    return
+  }
+  
+  navigator.clipboard.writeText(scriptContent.value)
+    .then(() => ElMessage.success('已复制到剪贴板'))
+    .catch(() => ElMessage.error('复制失败'))
 }
 
 function prevPage() { if (page.value > 1) page.value-- }
@@ -425,6 +717,56 @@ function nextPage() { if (page.value < totalPages.value) page.value++ }
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  flex: 1;
+}
+
+.case-count {
+  font-size: 11px;
+  color: #94a3b8;
+  background: #f1f5f9;
+  padding: 1px 6px;
+  border-radius: 10px;
+  margin-left: 4px;
+}
+
+.node-actions {
+  opacity: 0;
+  transition: opacity 0.2s;
+  margin-left: 4px;
+  
+  .more-btn {
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 2px;
+    border-radius: 4px;
+    
+    &:hover {
+      background: #e2e8f0;
+      color: #64748b;
+    }
+  }
+}
+
+.tree-node:hover .node-actions {
+  opacity: 1;
+}
+
+.all-scripts {
+  padding-left: 12px !important;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 8px;
+}
+
+.empty-tree {
+  text-align: center;
+  padding: 20px;
+  color: #94a3b8;
+  font-size: 13px;
+  
+  p {
+    margin-bottom: 8px;
+  }
 }
 
 .sidebar-footer {
@@ -813,6 +1155,109 @@ function nextPage() { if (page.value < totalPages.value) page.value++ }
   
   &:hover:not(.active) {
     background: #f8fafc;
+  }
+}
+
+/* 空状态 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #94a3b8;
+  
+  p {
+    margin: 16px 0;
+    font-size: 14px;
+  }
+}
+
+/* DRAFT 状态 */
+.status-pill.draft {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+/* 脚本预览弹框 */
+:deep(.script-preview-dialog) {
+  .el-dialog__body {
+    padding: 0;
+  }
+}
+
+.script-preview-container {
+  display: flex;
+  flex-direction: column;
+  height: 70vh;
+}
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: #1e293b;
+  border-bottom: 1px solid #334155;
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #94a3b8;
+  font-size: 13px;
+  font-family: monospace;
+  
+  .el-icon {
+    color: #3b82f6;
+  }
+  
+  .filename {
+    color: #e2e8f0;
+  }
+}
+
+.preview-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.code-wrapper {
+  flex: 1;
+  overflow: auto;
+  background: #0f172a;
+}
+
+.code-content {
+  margin: 0;
+  padding: 20px;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #e2e8f0;
+  white-space: pre;
+  tab-size: 2;
+  
+  /* TypeScript 语法高亮（简化版） */
+  code {
+    color: #e2e8f0;
+  }
+}
+
+.warnings {
+  padding: 12px 20px;
+  background: #fefce8;
+  border-top: 1px solid #fef08a;
+  
+  ul {
+    margin: 8px 0 0 0;
+    padding-left: 20px;
+    
+    li {
+      font-size: 12px;
+      color: #854d0e;
+    }
   }
 }
 </style>

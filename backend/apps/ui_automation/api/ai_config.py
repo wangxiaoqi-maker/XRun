@@ -1,5 +1,8 @@
 """
 AI 配置 API
+
+注意：此模块已废弃，执行用例时直接使用 llm_providers + llm_models 表中的模型配置。
+保留此文件是为了向后兼容，新功能请使用 llm_config.py 中的 API。
 """
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -203,4 +206,3 @@ async def test_config(config_data: AIConfigCreate):
                     return {"success": False, "message": f"API 返回错误: {error}"}
     except Exception as e:
         return {"success": False, "message": f"连接失败: {str(e)}"}
-

@@ -1,0 +1,180 @@
+---
+description: Vue 3 前端开发规范 - Composition API + Element Plus
+globs: ["frontend/**/*.vue", "frontend/**/*.ts", "frontend/**/*.js"]
+---
+
+# Vue 3 前端开发规范
+
+## 技术栈
+- Vue 3 + Composition API
+- Element Plus
+- Pinia (状态管理)
+- Vue Router 4
+- Vite
+
+## Composition API 最佳实践
+
+### setup 函数
+- 使用 `<script setup>` 语法糖
+- 使用 `ref` 和 `reactive` 创建响应式状态
+- 使用 `computed()` 实现计算属性
+- 使用 `watch` 和 `watchEffect` 处理副作用
+
+```vue
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import type { TestCase } from '@/types'
+
+// Props 定义
+const props = defineProps<{
+  caseId: string
+  platform: 'android' | 'ios'
+}>()
+
+// Emits 定义
+const emit = defineEmits<{
+  save: [data: TestCase]
+  cancel: []
+}>()
+
+// 响应式状态
+const loading = ref(false)
+const testCase = ref<TestCase | null>(null)
+
+// 计算属性
+const isValid = computed(() => {
+  return testCase.value?.steps?.length > 0
+})
+
+// 生命周期
+onMounted(async () => {
+  await loadTestCase()
+})
+</script>
+```
+
+### 组合式函数 (Composables)
+- 将可复用逻辑提取到 `composables/` 目录
+- 命名以 `use` 开头
+
+```typescript
+// composables/useTestCase.ts
+export function useTestCase(caseId: Ref<string>) {
+  const testCase = ref<TestCase | null>(null)
+  const loading = ref(false)
+  const error = ref<Error | null>(null)
+
+  async function load() {
+    loading.value = true
+    try {
+      testCase.value = await api.getTestCase(caseId.value)
+    } catch (e) {
+      error.value = e as Error
+    } finally {
+      loading.value = false
+    }
+  }
+
+  return { testCase, loading, error, load }
+}
+```
+
+## 命名规范
+
+### 文件命名
+- 组件: `PascalCase.vue` (如 `TestCaseEditor.vue`)
+- 组合式函数: `camelCase.ts` (如 `useTestCase.ts`)
+- 工具函数: `camelCase.ts`
+
+### 组件命名
+- 使用多词名称避免与 HTML 元素冲突
+- 基础组件使用 `Base` 前缀 (如 `BaseButton.vue`)
+- 单例组件使用 `The` 前缀 (如 `TheHeader.vue`)
+
+### 变量命名
+- 布尔值使用 `is/has/can` 前缀
+- 异步函数使用动词开头
+
+## 目录结构
+
+```
+frontend/src/
+├── api/              # API 调用
+├── assets/           # 静态资源
+├── components/       # 通用组件
+├── composables/      # 组合式函数
+├── router/           # 路由配置
+├── stores/           # Pinia stores
+├── types/            # TypeScript 类型
+├── utils/            # 工具函数
+├── views/            # 页面组件
+├── App.vue
+└── main.ts
+```
+
+## Element Plus 使用规范
+
+### 按需导入
+```typescript
+// 自动导入已配置，直接使用组件即可
+<el-button type="primary">提交</el-button>
+```
+
+### 表单验证
+```vue
+<script setup lang="ts">
+import type { FormRules } from 'element-plus'
+
+const rules: FormRules = {
+  name: [
+    { required: true, message: '请输入名称', trigger: 'blur' },
+    { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
+  ],
+}
+</script>
+```
+
+## 样式规范
+
+### Scoped 样式
+- 组件样式使用 `<style scoped>`
+- 全局样式放在 `styles/` 目录
+
+### 类名命名
+- 使用 BEM 命名法或语义化类名
+- 避免使用内联样式
+
+```vue
+<style scoped lang="scss">
+.test-case-editor {
+  &__header {
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  &__step-list {
+    margin-top: 16px;
+  }
+}
+</style>
+```
+
+## TypeScript 规范
+
+### 类型定义
+- 使用 `interface` 定义对象类型
+- 使用 `type` 定义联合类型或别名
+- 将共享类型放在 `types/` 目录
+
+```typescript
+// types/testCase.ts
+export interface TestCase {
+  id: string
+  name: string
+  platform: 'android' | 'ios'
+  steps: Step[]
+  variables?: Variable[]
+}
+
+export type StepType = 'aiTap' | 'aiInput' | 'aiAct' | 'aiAssert'
+```

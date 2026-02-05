@@ -45,24 +45,15 @@
       </el-tab-pane>
       
       <el-tab-pane label="AI 配置" name="ai">
-        <el-form :model="aiSettings" label-width="120px" style="max-width: 600px;">
-          <el-form-item label="API 地址">
-            <el-input v-model="aiSettings.baseUrl" />
-          </el-form-item>
-          <el-form-item label="API Key">
-            <el-input v-model="aiSettings.apiKey" type="password" show-password />
-          </el-form-item>
-          <el-form-item label="模型">
-            <el-select v-model="aiSettings.model">
-              <el-option label="gpt-4o" value="gpt-4o" />
-              <el-option label="gpt-4-vision" value="gpt-4-vision" />
-              <el-option label="claude-3" value="claude-3" />
-            </el-select>
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary">保存设置</el-button>
-          </el-form-item>
-        </el-form>
+        <el-alert 
+          title="AI 模型配置说明" 
+          type="info" 
+          :closable="false"
+          style="margin-bottom: 20px;"
+        >
+          <p>执行用例时会自动使用「模型供应商」中配置的视觉模型。</p>
+          <p>请在<router-link to="/llm" style="color: #409eff;">模型供应商</router-link>页面配置支持视觉的大模型（如 qwen-vl-max、gpt-4o 等）。</p>
+        </el-alert>
       </el-tab-pane>
     </el-tabs>
   </div>
@@ -75,7 +66,7 @@ import { ElMessage } from 'element-plus'
 const activeTab = ref('basic')
 
 const basicSettings = reactive({
-  name: 'QAUTO',
+  name: 'XRun',
   timeout: 10000,
   quality: 80
 })
@@ -85,12 +76,6 @@ const sonicSettings = reactive({
   agentKey: 'f63cbbfd-da49-4c86-8ae7-b5820382c768',
   username: 'sonic',
   password: 'sonic'
-})
-
-const aiSettings = reactive({
-  baseUrl: '',
-  apiKey: '',
-  model: 'gpt-4o'
 })
 
 function testConnection() {
