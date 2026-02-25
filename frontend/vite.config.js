@@ -9,6 +9,13 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
   },
+  css: {
+    preprocessorOptions: {
+      scss: {
+        silenceDeprecations: ['legacy-js-api'], // 静默 Sass 弃用警告
+      }
+    }
+  },
   server: {
     port: 5173,
     proxy: {

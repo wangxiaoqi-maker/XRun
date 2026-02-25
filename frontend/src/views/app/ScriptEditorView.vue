@@ -37,6 +37,10 @@
              </div>
           </div>
           <div class="header-actions">
+            <el-button @click="openReportsDrawer" class="header-btn" plain size="small">
+              <el-icon><DataAnalysis /></el-icon>
+              报告
+            </el-button>
             <el-button @click="saveScript" class="header-btn" plain size="default">保存</el-button>
             <el-button 
               v-if="!isRunning"
@@ -316,6 +320,90 @@
     </template>
   </el-dialog>
   
+  <!-- 报告与执行记录抽屉 -->
+  <el-drawer 
+    v-model="showReportsDrawer" 
+    title="执行报告与记录" 
+    size="550px"
+    direction="rtl"
+  >
+    <el-tabs v-model="reportsActiveTab">
+      <!-- 报告列表 -->
+      <el-tab-pane label="执行报告" name="reports">
+        <div class="reports-list" v-loading="loadingReports">
+          <div v-if="reportsList.length === 0" class="empty-reports">
+            <el-empty description="暂无执行报告" />
+          </div>
+          <div 
+            v-for="report in reportsList" 
+            :key="report.filename" 
+            class="report-item"
+          >
+            <div class="report-icon" @click="openReport(report)">
+              <el-icon :size="24" color="#3b82f6"><DataAnalysis /></el-icon>
+            </div>
+            <div class="report-info" @click="openReport(report)">
+              <div class="report-name">{{ report.filename }}</div>
+              <div class="report-meta">
+                <el-tag size="small" :type="report.platform === 'ios' ? 'primary' : 'success'">
+                  {{ report.platform?.toUpperCase() }}
+                </el-tag>
+                <span class="report-size">{{ report.size_mb }} MB</span>
+                <span class="report-time">{{ formatTime(report.created_at) }}</span>
+              </div>
+            </div>
+            <el-dropdown trigger="click" @command="(cmd) => handleReportAction(cmd, report)">
+              <el-icon class="report-arrow"><MoreFilled /></el-icon>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="minio" :disabled="!report.url?.startsWith('http')">
+                    <el-icon><Link /></el-icon> MinIO 链接
+                  </el-dropdown-item>
+                  <el-dropdown-item command="local">
+                    <el-icon><FolderOpened /></el-icon> 本地查看
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </div>
+        </div>
+      </el-tab-pane>
+      
+      <!-- 执行记录 -->
+      <el-tab-pane label="执行记录" name="history">
+        <div class="history-list" v-loading="loadingHistory">
+          <div v-if="executionHistory.length === 0" class="empty-reports">
+            <el-empty description="暂无执行记录" />
+          </div>
+          <div 
+            v-for="record in executionHistory" 
+            :key="record.id" 
+            class="history-item"
+          >
+            <div class="history-status">
+              <el-icon v-if="record.status === 'completed'" color="#10b981"><CircleCheck /></el-icon>
+              <el-icon v-else-if="record.status === 'failed'" color="#ef4444"><CircleClose /></el-icon>
+              <el-icon v-else-if="record.status === 'running'" color="#3b82f6" class="is-loading"><Loading /></el-icon>
+              <el-icon v-else color="#94a3b8"><Clock /></el-icon>
+            </div>
+            <div class="history-info">
+              <div class="history-name">{{ record.case_name || '未知用例' }}</div>
+              <div class="history-meta">
+                <span class="history-time">{{ formatTime(record.created_at) }}</span>
+                <span v-if="record.duration_ms" class="history-duration">
+                  耗时 {{ (record.duration_ms / 1000).toFixed(1) }}s
+                </span>
+              </div>
+            </div>
+            <el-tag size="small" :type="getStatusType(record.status)">
+              {{ getStatusText(record.status) }}
+            </el-tag>
+          </div>
+        </div>
+      </el-tab-pane>
+    </el-tabs>
+  </el-drawer>
+  
   <!-- AI 分析配置弹窗 -->
   <el-dialog 
     v-model="showAnalyzeConfig" 
@@ -497,7 +585,8 @@ import { ElMessage } from 'element-plus'
 import { 
   ArrowLeft, VideoPlay, Check, Minus, Setting, Delete, Plus, Loading, Camera,
   SwitchButton, CircleClose, Document, ChatLineSquare, MagicStick, Cpu, Edit,
-  Iphone, Platform
+  Iphone, Platform, MoreFilled, Link, FolderOpened, DataAnalysis, ArrowRight,
+  CircleCheck, Clock
 } from '@element-plus/icons-vue'
 import Draggable from 'vuedraggable'
 import DeviceMirror from '@/components/DeviceMirror.vue'
@@ -620,6 +709,14 @@ const showInlineAdd = ref(false)
 const inlineFormInput = ref(null)
 const inlineForm = ref({ action: 'click', target: '', value: '', url: '' })
 const editingIndex = ref(-1)
+
+// 报告与执行记录
+const showReportsDrawer = ref(false)
+const reportsActiveTab = ref('reports')
+const reportsList = ref([])
+const executionHistory = ref([])
+const loadingReports = ref(false)
+const loadingHistory = ref(false)
 
 // ========== 加载用例数据 ==========
 async function loadCaseData(id) {
@@ -1610,6 +1707,90 @@ function deleteStep(index) {
     isSaved.value = false
 }
 
+// ========== 报告与执行记录 ==========
+async function openReportsDrawer() {
+  showReportsDrawer.value = true
+  await Promise.all([loadReports(), loadExecutionHistory()])
+}
+
+async function loadReports() {
+  loadingReports.value = true
+  try {
+    const res = await executionV2Api.reports(20)
+    reportsList.value = res.data.reports || []
+  } catch (e) {
+    console.error('加载报告失败:', e)
+  } finally {
+    loadingReports.value = false
+  }
+}
+
+async function loadExecutionHistory() {
+  loadingHistory.value = true
+  try {
+    const res = await executionV2Api.list({ page: 1, page_size: 20 })
+    executionHistory.value = res.data.items || []
+  } catch (e) {
+    console.error('加载执行记录失败:', e)
+  } finally {
+    loadingHistory.value = false
+  }
+}
+
+function openReport(report) {
+  // 优先使用 MinIO URL，回退到本地 URL
+  const url = report.url || report.local_url || `/api/v2/executions/reports/${report.filename}/view`
+  window.open(url, '_blank')
+}
+
+function handleReportAction(command, report) {
+  if (command === 'minio') {
+    // MinIO 链接
+    if (report.url?.startsWith('http')) {
+      window.open(report.url, '_blank')
+    } else {
+      ElMessage.warning('该报告尚未上传到 MinIO')
+    }
+  } else if (command === 'local') {
+    // 本地查看
+    const localUrl = report.local_url || `/api/v2/executions/reports/${report.filename}/view`
+    window.open(localUrl, '_blank')
+  }
+}
+
+function formatTime(isoString) {
+  if (!isoString) return ''
+  const date = new Date(isoString)
+  return date.toLocaleString('zh-CN', { 
+    month: '2-digit', 
+    day: '2-digit', 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  })
+}
+
+function getStatusType(status) {
+  const map = {
+    'completed': 'success',
+    'failed': 'danger',
+    'running': 'primary',
+    'pending': 'info',
+    'cancelled': 'warning'
+  }
+  return map[status] || 'info'
+}
+
+function getStatusText(status) {
+  const map = {
+    'completed': '成功',
+    'failed': '失败',
+    'running': '执行中',
+    'pending': '待执行',
+    'cancelled': '已取消'
+  }
+  return map[status] || status
+}
+
 watchEffect(() => {
   if (mirrorRef.value?.fps !== undefined) {
     console.log('Parent[ScriptEditorView]: mirrorRef.fps =', mirrorRef.value.fps)
@@ -2241,5 +2422,84 @@ button { outline: none; }
   font-size: 12px;
   color: #94a3b8;
   margin-top: 4px;
+}
+
+/* 报告与执行记录抽屉 */
+.reports-list, .history-list {
+  padding: 0 4px;
+}
+
+.empty-reports {
+  padding: 40px 0;
+}
+
+.report-item, .history-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #f8fafc;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    background: #eff6ff;
+    transform: translateX(2px);
+  }
+}
+
+.report-icon {
+  width: 44px;
+  height: 44px;
+  background: #eff6ff;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.report-info, .history-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.report-name, .history-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.report-meta, .history-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.report-arrow {
+  color: #cbd5e1;
+  flex-shrink: 0;
+}
+
+.history-status {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 20px;
+}
+
+.history-duration {
+  color: #10b981;
 }
 </style>

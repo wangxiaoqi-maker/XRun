@@ -73,10 +73,10 @@
         <span class="title">执行详情</span>
         <div class="filter-actions">
           <el-radio-group v-model="resultFilter" size="small">
-            <el-radio-button label="">全部</el-radio-button>
-            <el-radio-button label="pass">通过</el-radio-button>
-            <el-radio-button label="fail">失败</el-radio-button>
-            <el-radio-button label="skip">跳过</el-radio-button>
+            <el-radio-button value="">全部</el-radio-button>
+            <el-radio-button value="pass">通过</el-radio-button>
+            <el-radio-button value="fail">失败</el-radio-button>
+            <el-radio-button value="skip">跳过</el-radio-button>
           </el-radio-group>
         </div>
       </div>

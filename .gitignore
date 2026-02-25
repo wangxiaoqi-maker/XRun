@@ -164,3 +164,6 @@ infra/sonic/agent/*.log
 # 临时文件
 *.tmp
 .DS_Store
+docs/test-case-generation-plan.md
+docs/midscene-execution-engine-design.md
+docs/midscene-execution-engine-design.md

@@ -443,6 +443,35 @@ async def _run_execution(
             
             log(f"[Runner] Execution completed with status: {run_result.status.value}")
             
+            # 异步上传报告到 MinIO（不阻塞）
+            if run_result.report_url:
+                try:
+                    from apps.ui_automation.knowledge.services.minio_service import get_minio_service
+                    import asyncio
+                    
+                    async def upload_report_async():
+                        try:
+                            # 从本地 URL 中提取文件名
+                            report_filename = run_result.report_url.split("/")[-1].replace("/view", "")
+                            base_dir = Path(__file__).parent.parent.parent.parent.parent.parent
+                            report_path = base_dir / "midscene-executor" / "midscene_run" / "report" / report_filename
+                            
+                            if report_path.exists():
+                                minio_service = get_minio_service()
+                                minio_url = minio_service.upload_report(str(report_path), report_filename)
+                                if minio_url:
+                                    log(f"[MinIO] 报告已上传: {minio_url}")
+                                    # 更新执行记录的报告 URL
+                                    _execution_status[execution_id]["report_url"] = minio_url
+                                    run_result.report_url = minio_url
+                        except Exception as e:
+                            log(f"[MinIO] 上传报告失败（不影响执行）: {e}")
+                    
+                    # 创建异步任务上传（不等待完成）
+                    asyncio.create_task(upload_report_async())
+                except Exception as e:
+                    log(f"[MinIO] 初始化上传任务失败: {e}")
+            
             # 更新数据库记录
             exec_result = await session.execute(
                 select(ExecutionRecord).where(ExecutionRecord.id == execution_id)
@@ -470,6 +499,134 @@ async def _run_execution(
         log(f"[Error] Execution failed: {str(e)}")
         _execution_status[execution_id]["status"] = ExecutionStatus.FAILED.value
         _execution_status[execution_id]["error"] = str(e)
+
+
+# ==================== 报告管理（必须在 /{execution_id} 之前定义）====================
+
+@router.get("/reports")
+async def list_reports(
+    limit: int = Query(20, ge=1, le=100, description="返回数量"),
+) -> dict[str, Any]:
+    """
+    获取 Midscene 执行报告列表
+    
+    扫描报告目录，返回最新的报告文件
+    自动检查 MinIO 是否已有该报告，优先返回 MinIO URL
+    """
+    from pathlib import Path
+    from apps.ui_automation.knowledge.services.minio_service import get_minio_service
+    
+    # 报告目录
+    base_dir = Path(__file__).parent.parent.parent.parent.parent.parent
+    report_dir = base_dir / "midscene-executor" / "midscene_run" / "report"
+    
+    if not report_dir.exists():
+        return {"reports": [], "report_dir": str(report_dir)}
+    
+    # 获取 MinIO 服务（用于检查文件是否已上传）
+    minio_service = None
+    try:
+        minio_service = get_minio_service()
+    except Exception:
+        pass
+    
+    reports = []
+    for f in sorted(report_dir.glob("*.html"), key=lambda x: x.stat().st_mtime, reverse=True)[:limit]:
+        stat = f.stat()
+        # 解析文件名获取信息: ios-2026-02-05_17-17-51-0dce4334.html
+        parts = f.stem.split("-")
+        platform = parts[0] if parts else "unknown"
+        
+        # 检查 MinIO 是否已有该文件，有则返回 MinIO URL
+        url = f"/api/v2/executions/reports/{f.name}/view"  # 默认本地 URL
+        minio_url = None
+        
+        if minio_service:
+            # 直接构建 MinIO URL（不做网络请求检查，假设执行后已上传）
+            minio_url = minio_service.get_report_url(f.name)
+        
+        reports.append({
+            "filename": f.name,
+            "platform": platform,
+            "size": stat.st_size,
+            "size_mb": round(stat.st_size / 1024 / 1024, 2),
+            "created_at": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+            "url": minio_url or url,  # 优先 MinIO URL
+            "local_url": url,  # 备用本地 URL
+        })
+    
+    return {
+        "reports": reports,
+        "report_dir": str(report_dir),
+        "total": len(reports),
+    }
+
+
+@router.post("/reports/{filename}/sync-to-minio")
+async def sync_report_to_minio(filename: str) -> dict[str, Any]:
+    """
+    将指定报告同步到 MinIO，返回公开 URL
+    
+    单独的接口，避免列表接口超时
+    """
+    from pathlib import Path
+    from apps.ui_automation.knowledge.services.minio_service import get_minio_service
+    
+    base_dir = Path(__file__).parent.parent.parent.parent.parent.parent
+    report_path = base_dir / "midscene-executor" / "midscene_run" / "report" / filename
+    
+    if not report_path.exists():
+        raise HTTPException(status_code=404, detail=f"报告不存在: {filename}")
+    
+    minio_service = get_minio_service()
+    try:
+        url = minio_service.upload_report(str(report_path), filename)
+        if url:
+            return {"success": True, "url": url, "filename": filename}
+        else:
+            return {"success": False, "error": "上传失败", "url": f"/api/v2/executions/reports/{filename}/view"}
+    except Exception as e:
+        return {"success": False, "error": str(e), "url": f"/api/v2/executions/reports/{filename}/view"}
+
+
+@router.get("/reports/{filename}/view")
+async def view_report(filename: str):
+    """
+    在浏览器中直接查看报告（不下载）
+    """
+    from pathlib import Path
+    from fastapi.responses import HTMLResponse
+    
+    base_dir = Path(__file__).parent.parent.parent.parent.parent.parent
+    report_path = base_dir / "midscene-executor" / "midscene_run" / "report" / filename
+    
+    if not report_path.exists() or not report_path.is_file():
+        raise HTTPException(status_code=404, detail="Report not found")
+    
+    # 读取 HTML 内容并返回
+    content = report_path.read_text(encoding='utf-8')
+    return HTMLResponse(content=content)
+
+
+@router.get("/reports/{filename}")
+async def download_report(filename: str):
+    """
+    下载报告文件
+    """
+    from pathlib import Path
+    from fastapi.responses import FileResponse
+    
+    base_dir = Path(__file__).parent.parent.parent.parent.parent.parent
+    report_path = base_dir / "midscene-executor" / "midscene_run" / "report" / filename
+    
+    if not report_path.exists() or not report_path.is_file():
+        raise HTTPException(status_code=404, detail="Report not found")
+    
+    return FileResponse(
+        path=str(report_path),
+        media_type="text/html",
+        filename=filename
+    )
 
 
 @router.get("/{execution_id}", response_model=ExecutionStatusResponse)

@@ -422,6 +422,15 @@ export const executionV2Api = {
   // 取消执行
   cancel: (id) => api.post(`/v2/executions/${id}/cancel`),
   
+  // 获取报告列表（自动返回 MinIO URL，执行后自动上传）
+  reports: (limit = 20) => api.get('/v2/executions/reports', { params: { limit } }),
+  
+  // 手动同步报告到 MinIO（备用，正常情况下执行后自动上传）
+  syncReportToMinio: (filename) => api.post(`/v2/executions/reports/${filename}/sync-to-minio`),
+  
+  // 获取报告 URL
+  getReportUrl: (filename) => `/api/v2/executions/reports/${filename}`,
+  
   // WebSocket 实时日志
   connectLogs: (executionId) => {
     const wsUrl = `ws://${window.location.host}/api/v2/executions/${executionId}/logs`

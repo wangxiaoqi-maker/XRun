@@ -222,8 +222,8 @@
         <div class="card-header">
           <span class="card-title">近7日执行趋势</span>
           <el-radio-group v-model="trendType" size="small">
-            <el-radio-button label="ui">UI</el-radio-button>
-            <el-radio-button label="api">接口</el-radio-button>
+            <el-radio-button value="ui">UI</el-radio-button>
+            <el-radio-button value="api">接口</el-radio-button>
           </el-radio-group>
         </div>
         <div class="card-content">

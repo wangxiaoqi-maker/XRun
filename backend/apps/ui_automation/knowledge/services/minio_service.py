@@ -236,6 +236,59 @@ class MinIOService:
         except Exception as e:
             logger.error(f"获取截图 URL 失败: {e}")
             return None
+    
+    def upload_report(
+        self,
+        file_path: str,
+        filename: str,
+    ) -> Optional[str]:
+        """
+        上传执行报告到 MinIO
+        
+        Args:
+            file_path: 本地文件路径
+            filename: 存储的文件名
+            
+        Returns:
+            报告的访问 URL，失败返回 None
+        """
+        if not self.initialize():
+            logger.error("MinIO 未初始化，无法上传报告")
+            return None
+        
+        try:
+            # 上传到 reports 子目录
+            object_name = f"reports/{filename}"
+            
+            client = self._get_client()
+            client.fput_object(
+                bucket_name=self.config.MINIO_BUCKET,
+                object_name=object_name,
+                file_path=file_path,
+                content_type="text/html"  # HTML 报告可直接在浏览器查看
+            )
+            
+            # 返回公开访问 URL
+            url = f"{self.config.MINIO_PUBLIC_URL}/{self.config.MINIO_BUCKET}/{object_name}"
+            logger.info(f"报告上传成功: {url}")
+            return url
+            
+        except Exception as e:
+            logger.error(f"上传报告失败: {e}")
+            return None
+    
+    def get_report_url(self, filename: str) -> Optional[str]:
+        """
+        获取报告的公开 URL
+        
+        Args:
+            filename: 报告文件名
+            
+        Returns:
+            报告 URL
+        """
+        object_name = f"reports/{filename}"
+        return f"{self.config.MINIO_PUBLIC_URL}/{self.config.MINIO_BUCKET}/{object_name}"
 
 
 # 全局单例
