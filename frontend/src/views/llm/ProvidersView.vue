@@ -206,6 +206,14 @@
             </div>
           </div>
         </el-form-item>
+        <el-form-item label="上下文窗口">
+          <el-input-number v-model="modelForm.context_window" :min="1024" :step="1024" placeholder="32768" style="width:100%" />
+          <div class="form-tip">模型支持的最大上下文 tokens，如 DeepSeek=65536, GPT-4o=128000</div>
+        </el-form-item>
+        <el-form-item label="最大输出">
+          <el-input-number v-model="modelForm.max_tokens" :min="256" :step="256" placeholder="4096" style="width:100%" />
+          <div class="form-tip">单次调用最大输出 tokens，如 DeepSeek=8192</div>
+        </el-form-item>
         <el-form-item label="支持视觉">
           <el-switch v-model="modelForm.supports_vision" />
           <span class="switch-tip">开启后可用于 AI 页面分析</span>
@@ -367,7 +375,8 @@ async function manageModels(provider) {
 function showAddModelDialog() {
   editingModel.value = null
   modelForm.value = {
-    name: '', model_id: '', supports_vision: false, icon: '', enabled: true
+    name: '', model_id: '', supports_vision: false, icon: '', enabled: true,
+    context_window: 32768, max_tokens: 4096,
   }
   modelDialogVisible.value = true
 }
@@ -379,7 +388,9 @@ function editModel(model) {
     model_id: model.model_id || '',
     supports_vision: model.supports_vision || false,
     icon: model.icon || '',
-    enabled: model.status === 'enabled'
+    enabled: model.status === 'enabled',
+    context_window: model.context_window || 32768,
+    max_tokens: model.max_tokens || 4096,
   }
   modelDialogVisible.value = true
 }
@@ -395,11 +406,12 @@ async function submitModelForm() {
     const data = {
       provider_id: currentProvider.value.id,
       model_id: modelForm.value.model_id,
-      name: modelForm.value.name || modelForm.value.model_id,  // 如果没填名称，用 model_id
+      name: modelForm.value.name || modelForm.value.model_id,
       model_type: modelForm.value.supports_vision ? 'vision' : 'chat',
       supports_vision: modelForm.value.supports_vision,
-      supports_function_call: true,  // 默认支持
-      max_tokens: 4096,  // 默认值
+      supports_function_call: true,
+      context_window: modelForm.value.context_window || 32768,
+      max_tokens: modelForm.value.max_tokens || 4096,
       icon: modelForm.value.icon || undefined,
       status: modelForm.value.enabled ? 'enabled' : 'disabled'
     }

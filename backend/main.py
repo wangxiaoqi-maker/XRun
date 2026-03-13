@@ -45,9 +45,10 @@ async def lifespan(app: FastAPI):
         await conn.run_sync(KnowledgeBase.metadata.create_all)
     print("✓ 知识库数据表初始化完成")
     
-    # 初始化 LLM 配置表、用户表、项目表和应用表
+    # 初始化 LLM 配置表、用户表、项目表、应用表、Skill 表
     from apps.ui_automation.models.llm_config import LLMProvider, LLMModel, LLMUsageLog
     from apps.ui_automation.models.user import User
+    from apps.ui_automation.skills.models import Skill
     from apps.ui_automation.models.project import Project, ProjectMember
     from apps.ui_automation.models.app import App
     from apps.ui_automation.database import Base as MainBase
@@ -63,6 +64,16 @@ async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(MainBase.metadata.create_all)
     print("✓ 执行引擎数据表初始化完成")
+    
+    # 初始化测试用例生成模块数据库表
+    from apps.test_case_generation.models import (
+        TcgProject, TcgGenerationSession, TcgTestCase, TcgInputFile,
+        TcgKbDocumentChunk, TcgReviewRecord, TcgExportTemplate, TcgModule,
+        TcgConversation, TcgConversationMessage, TcgTestExecution,
+    )
+    async with engine.begin() as conn:
+        await conn.run_sync(MainBase.metadata.create_all)
+    print("✓ 测试用例生成模块数据表初始化完成")
     
     # 初始化管理员账号
     from apps.ui_automation.database import AsyncSessionLocal
@@ -155,12 +166,32 @@ app.include_router(module_router, prefix="/api/knowledge", tags=["功能模块�
 # 路由 - LLM 配置模块
 app.include_router(llm_config.router, prefix="/api", tags=["大模型配置"])
 
+# 路由 - 平台级 Skills 模块
+from apps.ui_automation.skills.api import router as skills_router
+app.include_router(skills_router, prefix="/api/v2/skills")
+
 # 路由 - 执行引擎 V2 模块
 from apps.ui_automation.execution.api import cases_router, config_router, execution_router, suites_router
 app.include_router(cases_router, prefix="/api/v2", tags=["用例管理 V2"])
 app.include_router(config_router, prefix="/api/v2", tags=["执行配置 V2"])
 app.include_router(execution_router, prefix="/api/v2", tags=["执行管理 V2"])
 app.include_router(suites_router, prefix="/api/v2", tags=["测试套件 V2"])
+
+# 路由 - 测试用例生成模块 (TCG)
+from apps.test_case_generation.api import (
+    projects_router, test_cases_router,
+    documents_router, knowledge_router as tcg_knowledge_router,
+    modules_router as tcg_modules_router,
+    conversations_router as tcg_conversations_router,
+    executions_router as tcg_executions_router,
+)
+app.include_router(projects_router, prefix="/api/v2/tcg", tags=["TCG-项目管理"])
+app.include_router(test_cases_router, prefix="/api/v2/tcg", tags=["TCG-用例管理"])
+app.include_router(documents_router, prefix="/api/v2/tcg", tags=["TCG-文件管理"])
+app.include_router(tcg_knowledge_router, prefix="/api/v2/tcg", tags=["TCG-知识库"])
+app.include_router(tcg_modules_router, prefix="/api/v2/tcg", tags=["TCG-模块管理"])
+app.include_router(tcg_conversations_router, prefix="/api/v2/tcg", tags=["TCG-对话"])
+app.include_router(tcg_executions_router, prefix="/api/v2/tcg", tags=["TCG-用例执行"])
 
 # 静态文件
 os.makedirs("../data", exist_ok=True)

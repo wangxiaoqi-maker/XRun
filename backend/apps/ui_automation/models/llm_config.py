@@ -41,6 +41,7 @@ class LLMProvider(Base):
     # API 配置
     base_url = Column(String(500), nullable=False, comment="API Base URL")
     api_key = Column(String(500), comment="API Key（加密存储）")
+    litellm_prefix = Column(String(50), default="openai", comment="LiteLLM 路由前缀，如 deepseek、anthropic、openai")
     
     # 状态
     status = Column(SQLEnum(ModelStatus), default=ModelStatus.ENABLED, comment="状态")
@@ -94,7 +95,8 @@ class LLMModel(Base):
     model_type = Column(SQLEnum(ModelType), default=ModelType.CHAT, comment="模型类型")
     
     # 能力配置
-    max_tokens = Column(Integer, default=4096, comment="最大Token数")
+    context_window = Column(Integer, default=32768, comment="上下文窗口大小(tokens)，如 DeepSeek=65536, GPT-4o=128000")
+    max_tokens = Column(Integer, default=4096, comment="最大输出Token数")
     supports_vision = Column(Boolean, default=False, comment="是否支持视觉")
     supports_function_call = Column(Boolean, default=False, comment="是否支持函数调用")
     
@@ -123,6 +125,7 @@ class LLMModel(Base):
             "name": self.name,
             "model_id": self.model_id,
             "model_type": self.model_type.value if self.model_type else "chat",
+            "context_window": self.context_window,
             "max_tokens": self.max_tokens,
             "supports_vision": self.supports_vision,
             "supports_function_call": self.supports_function_call,

@@ -22,23 +22,23 @@ if is_mysql:
     # MySQL 配置（带连接池优化）
     engine = create_async_engine(
         settings.DATABASE_URL,
-        echo=settings.DEBUG,
-        # ========== 连接池配置 ==========
+        echo=settings.SQL_ECHO,
         poolclass=AsyncAdaptedQueuePool,
-        pool_size=10,              # 保持 10 个常驻连接
-        max_overflow=20,           # 最多可扩展到 30 个连接
-        pool_recycle=3600,         # 1小时回收连接（避免 MySQL wait_timeout）
-        pool_pre_ping=True,        # 使用前检测连接是否有效
-        pool_timeout=30,           # 获取连接超时时间
+        pool_size=10,
+        max_overflow=20,
+        pool_recycle=3600,
+        pool_pre_ping=True,
+        pool_timeout=30,
         connect_args={
-            "connect_timeout": 10  # MySQL 连接超时 10 秒
+            "connect_timeout": 10,
+            "init_command": "SET SESSION sort_buffer_size = 4194304",
         }
     )
 else:
     # SQLite 配置（简化版，不需要连接池）
     engine = create_async_engine(
         settings.DATABASE_URL,
-        echo=settings.DEBUG,
+        echo=settings.SQL_ECHO,
         poolclass=NullPool  # SQLite 不需要连接池
     )
 
@@ -56,6 +56,24 @@ async def init_db():
     """初始化数据库"""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        if is_mysql:
+            await _ensure_indexes(conn)
+
+
+async def _ensure_indexes(conn):
+    """补建模型中定义但数据库中缺失的索引"""
+    from sqlalchemy import text
+    indexes_to_check = [
+        ("tcg_conversation", "ix_tcg_conv_proj_updated", "project_id, updated_at"),
+    ]
+    for table, idx_name, columns in indexes_to_check:
+        result = await conn.execute(text(
+            f"SELECT COUNT(*) FROM information_schema.STATISTICS "
+            f"WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '{table}' AND INDEX_NAME = '{idx_name}'"
+        ))
+        if result.scalar() == 0:
+            await conn.execute(text(f"CREATE INDEX {idx_name} ON {table} ({columns})"))
+            print(f"  ✓ 补建索引: {idx_name} ON {table}({columns})")
 
 async def get_db():
     """获取数据库会话"""

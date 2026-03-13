@@ -454,4 +454,18 @@ export const elementSearchApi = {
   getPages: (appId) => api.get('/ai/pages', { params: { app_id: appId } })
 }
 
+// ===== Skills 技能管理 API =====
+export const skillApi = {
+  list: (params) => api.get('/v2/skills', { params }),
+  search: (params) => api.get('/v2/skills/search', { params }),
+  install: (data) => api.post('/v2/skills/install', data),
+  importUrl: (data) => api.post('/v2/skills/import-url', data),
+  create: (data) => api.post('/v2/skills', data),
+  get: (id) => api.get(`/v2/skills/${id}`),
+  update: (id, data) => api.put(`/v2/skills/${id}`, data),
+  delete: (id) => api.delete(`/v2/skills/${id}`),
+  refresh: (id) => api.post(`/v2/skills/${id}/refresh`),
+  seed: () => api.post('/v2/skills/seed'),
+}
+
 export default api

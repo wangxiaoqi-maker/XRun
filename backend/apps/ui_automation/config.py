@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     # 应用
     APP_NAME: str = "UI Automation Platform"
     DEBUG: bool = True
+    SQL_ECHO: bool = False
     
     # 数据库（支持 MySQL: mysql+aiomysql://user:pass@host:3306/db）
     DATABASE_URL: str = "sqlite+aiosqlite:///./data/app.db"  # 默认使用 SQLite

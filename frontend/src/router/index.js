@@ -43,7 +43,11 @@ const routes = [
   
   // LLM 配置
   { path: '/llm/providers', name: 'LLMProviders', component: () => import('../views/llm/ProvidersView.vue'), meta: { title: '模型供应商' } },
+  { path: '/llm/skills', name: 'LLMSkills', component: () => import('../views/llm/SkillsView.vue'), meta: { title: 'Skills技能' } },
   { path: '/llm/usage', name: 'LLMUsage', component: () => import('../views/llm/UsageView.vue'), meta: { title: '用量统计' } },
+  
+  // 测试用例生成 (TCG)
+  { path: '/tcg', name: 'TcgWorkspace', component: () => import('../views/tcg/WorkspaceView.vue'), meta: { title: '用例智能生成' } },
   
   // 404 - 放在最后
   { path: '/:pathMatch(.*)*', redirect: '/dashboard' }

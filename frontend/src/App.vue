@@ -131,16 +131,27 @@
             </template>
           </el-dropdown>
           
+          <!-- 用例智能生成（独立导航） -->
+          <span 
+            class="nav-item" 
+            :class="{ active: currentNav === 'tcg' }"
+            @click="navTo('/tcg')"
+          >
+            <el-icon><MagicStick /></el-icon>
+            <span>用例生成</span>
+          </span>
+          
           <!-- AI 中心 -->
           <el-dropdown trigger="click" @command="navTo" popper-class="nav-dropdown">
             <span class="nav-item" :class="{ active: currentNav === 'llm' }">
-              <el-icon><MagicStick /></el-icon>
-              <span>AI 中心</span>
+              <el-icon><Setting /></el-icon>
+              <span>AI 配置</span>
               <el-icon class="arrow"><ArrowDown /></el-icon>
             </span>
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item command="/llm/providers">模型供应商</el-dropdown-item>
+                <el-dropdown-item command="/llm/skills">Skills技能</el-dropdown-item>
                 <el-dropdown-item command="/llm/usage">用量统计</el-dropdown-item>
               </el-dropdown-menu>
             </template>
@@ -284,6 +295,7 @@ const routeComponentMap = {
   '/ui/scripts/new': 'ScriptEditorView',
   '/ui/mirror': 'MirrorView',
   '/ui/knowledge/new': 'PageAnalysisView',
+  '/tcg': 'TcgWorkspaceView',
 }
 
 // 根据路由获取组件名（支持动态路由如 /ui/scripts/:id/edit）
@@ -305,6 +317,7 @@ const currentNav = computed(() => {
   if (path.startsWith('/data')) return 'data'
   if (path.startsWith('/device')) return 'device'
   if (path.startsWith('/plan')) return 'plan'
+  if (path.startsWith('/tcg')) return 'tcg'
   if (path.startsWith('/llm')) return 'llm'
   if (path.startsWith('/project')) return 'project'
   return ''
